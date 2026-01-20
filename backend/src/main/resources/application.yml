@@ -1,0 +1,57 @@
+server:
+  port: ${BACKEND_PORT:8080}
+
+spring:
+  application:
+    name: Logistics Control Hub
+
+  # --- DATABASE CONFIG ---
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/logistics_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+
+  # --- JPA / HIBERNATE ---
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+
+  # --- KAFKA CONFIG ---
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: logistics_group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+# --- TEMPORAL CONFIG ---
+temporal:
+  service-address: ${TEMPORAL_ADDRESS:127.0.0.1:7233}
+  namespace: default
+
+# --- LOGGING ---
+logging:
+  level:
+    root: INFO
+    com.logistics: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# --- ACTUATOR ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: always

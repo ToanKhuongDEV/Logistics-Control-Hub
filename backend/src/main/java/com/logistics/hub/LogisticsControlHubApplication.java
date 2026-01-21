@@ -7,7 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class LogisticsControlHubApplication {
 
 	public static void main(String[] args) {
+		
 		SpringApplication.run(LogisticsControlHubApplication.class, args);
+		System.out.println("AI Supply Chain Control Tower");
+
 	}
 
 }

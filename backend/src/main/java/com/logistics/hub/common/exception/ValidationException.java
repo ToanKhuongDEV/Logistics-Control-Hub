@@ -1,4 +1,4 @@
-package com.logistics.hub.shared.exception;
+package com.logistics.hub.common.exception;
 
 public class ValidationException extends RuntimeException {
     public ValidationException(String message) {

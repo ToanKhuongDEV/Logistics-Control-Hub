@@ -1,4 +1,4 @@
-package com.logistics.hub.shared.valueobject;
+package com.logistics.hub.common.valueobject;
 
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;

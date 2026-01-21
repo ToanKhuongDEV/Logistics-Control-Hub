@@ -1,4 +1,4 @@
-package com.logistics.hub.shared.exception;
+package com.logistics.hub.common.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

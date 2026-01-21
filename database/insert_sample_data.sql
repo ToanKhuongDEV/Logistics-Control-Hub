@@ -5,6 +5,15 @@
 -- Chạy sau khi đã chạy create_schema.sql (hoặc update_schema_v2.sql)
 
 -- =====================================================
+-- 0. Dispatchers (Default Admin)
+-- =====================================================
+
+-- Password: 'password' (BCrypt hash)
+INSERT INTO dispatchers (username, password, full_name, role) VALUES
+('admin', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'System Administrator', 'ADMIN'),
+('dispatcher', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', 'Vận Hành Viên 1', 'DISPATCHER');
+
+-- =====================================================
 -- 1. Locations
 -- =====================================================
 

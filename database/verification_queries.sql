@@ -46,7 +46,8 @@ ORDER BY tablename, indexname;
 -- =====================================================
 
 -- Count records in all tables
-SELECT 'locations' as table_name, COUNT(*) as count FROM locations
+SELECT 'dispatchers' as table_name, COUNT(*) as count FROM dispatchers
+UNION ALL SELECT 'locations', COUNT(*) FROM locations
 UNION ALL SELECT 'depots', COUNT(*) FROM depots
 UNION ALL SELECT 'drivers', COUNT(*) FROM drivers
 UNION ALL SELECT 'vehicles', COUNT(*) FROM vehicles

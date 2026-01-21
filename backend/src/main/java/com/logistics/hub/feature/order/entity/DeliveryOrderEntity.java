@@ -16,8 +16,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho DeliveryOrder (Đơn hàng giao nhận)
- * Input chính cho AI tối ưu tuyến đường
+ * Entity representing DeliveryOrder (Delivery Order)
+ * Main input for AI route optimization
  * Loose Coupling: customerId, pickupLocationId, deliveryLocationId
  */
 @Entity
@@ -42,31 +42,31 @@ public class DeliveryOrderEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Mã đơn hàng không được để trống")
+    @NotBlank(message = "Order number is required")
     @Column(name = "order_number", nullable = false, unique = true, length = 50)
     private String orderNumber;
 
     /**
      * Customer ID - Loose coupling
-     * KHÔNG có FK constraint (customer có thể ở service khác)
+     * No FK constraint (customer may be in another service)
      */
-    @NotNull(message = "Customer ID không được để trống")
+    @NotNull(message = "Customer ID is required")
     @Column(name = "customer_id", nullable = false)
     private Long customerId;
 
     /**
      * Pickup Location ID - Loose coupling
-     * Database có FK constraint → locations.id
+     * Database has FK constraint -> locations.id
      */
-    @NotNull(message = "Điểm lấy hàng không được để trống")
+    @NotNull(message = "Pickup location is required")
     @Column(name = "pickup_location_id", nullable = false)
     private Long pickupLocationId;
 
     /**
      * Delivery Location ID - Loose coupling
-     * Database có FK constraint → locations.id
+     * Database has FK constraint -> locations.id
      */
-    @NotNull(message = "Điểm giao hàng không được để trống")
+    @NotNull(message = "Delivery location is required")
     @Column(name = "delivery_location_id", nullable = false)
     private Long deliveryLocationId;
 
@@ -75,11 +75,11 @@ public class DeliveryOrderEntity {
         @AttributeOverride(name = "startTime", column = @Column(name = "delivery_start_time")),
         @AttributeOverride(name = "endTime", column = @Column(name = "delivery_end_time"))
     })
-    @NotNull(message = "Khung giờ giao hàng không được để trống")
+    @NotNull(message = "Delivery time window is required")
     private TimeWindow deliveryTimeWindow;
 
     /**
-     * Khung giờ lấy hàng (optional - nếu null thì flexible)
+     * Pickup time window (optional - if null then flexible)
      */
     @Embedded
     @AttributeOverrides({
@@ -88,17 +88,17 @@ public class DeliveryOrderEntity {
     })
     private TimeWindow pickupTimeWindow;
 
-    @Min(value = 0, message = "Trọng lượng phải lớn hơn hoặc bằng 0")
-    @NotNull(message = "Trọng lượng không được để trống")
+    @Min(value = 0, message = "Weight must be greater than or equal to 0")
+    @NotNull(message = "Weight is required")
     @Column(nullable = false)
     private Double weight;
 
-    @NotNull(message = "Độ ưu tiên không được để trống")
+    @NotNull(message = "Priority is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OrderPriority priority = OrderPriority.NORMAL;
 
-    @NotNull(message = "Trạng thái đơn hàng không được để trống")
+    @NotNull(message = "Order status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private DeliveryOrderStatus status = DeliveryOrderStatus.PENDING;
@@ -114,3 +114,4 @@ public class DeliveryOrderEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

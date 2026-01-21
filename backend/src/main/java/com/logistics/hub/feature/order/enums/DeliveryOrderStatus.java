@@ -1,41 +1,42 @@
 package com.logistics.hub.feature.order.enums;
 
 /**
- * Trạng thái đơn hàng giao nhận
+ * Delivery order status enumeration
  */
 public enum DeliveryOrderStatus {
     /**
-     * Đơn hàng mới tạo, chưa được lên kế hoạch
+     * New order, not yet planned
      */
     PENDING,
 
     /**
-     * Đã được AI tối ưu và lên kế hoạch
+     * AI optimized and planned
      */
     PLANNED,
 
     /**
-     * Đã gán xe và tài xế
+     * Vehicle and driver assigned
      */
     ASSIGNED,
 
     /**
-     * Đang giao hàng
+     * In transit
      */
     IN_TRANSIT,
 
     /**
-     * Đã giao thành công
+     * Successfully delivered
      */
     DELIVERED,
 
     /**
-     * Giao thất bại
+     * Delivery failed
      */
     FAILED,
 
     /**
-     * Đơn hàng bị hủy
+     * Order cancelled
      */
     CANCELLED
 }
+

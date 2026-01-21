@@ -1,41 +1,42 @@
 package com.logistics.hub.feature.event.enums;
 
 /**
- * Loại sự cố vận hành
+ * Operational disruption type enumeration
  */
 public enum DisruptionType {
     /**
-     * Tắc đường
+     * Traffic jam
      */
     TRAFFIC_JAM,
 
     /**
-     * Xe hỏng
+     * Vehicle breakdown
      */
     VEHICLE_BREAKDOWN,
 
     /**
-     * Thời tiết xấu
+     * Bad weather
      */
     WEATHER,
 
     /**
-     * Tai nạn
+     * Accident
      */
     ACCIDENT,
 
     /**
-     * Tài xế không khả dụng
+     * Driver unavailable
      */
     DRIVER_UNAVAILABLE,
 
     /**
-     * Đơn hàng thay đổi
+     * Order change
      */
     ORDER_CHANGE,
 
     /**
-     * Khác
+     * Other
      */
     OTHER
 }
+

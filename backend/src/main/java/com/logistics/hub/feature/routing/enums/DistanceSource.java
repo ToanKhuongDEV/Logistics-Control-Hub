@@ -1,31 +1,32 @@
 package com.logistics.hub.feature.routing.enums;
 
 /**
- * Nguồn tính toán khoảng cách
+ * Distance calculation source enumeration
  */
 public enum DistanceSource {
     /**
-     * Tính toán bằng công thức Haversine (as-the-crow-flies)
+     * Calculated using Haversine formula (as-the-crow-flies)
      */
     CALCULATED,
     
     /**
-     * Lấy từ Google Maps API
+     * From Google Maps API
      */
     GOOGLE_MAPS,
     
     /**
-     * Lấy từ OSRM (Open Source Routing Machine)
+     * From OSRM (Open Source Routing Machine)
      */
     OSRM,
     
     /**
-     * Lấy từ OpenRouteService
+     * From OpenRouteService
      */
     OPENROUTE,
     
     /**
-     * Nhập thủ công
+     * Manual input
      */
     MANUAL
 }
+

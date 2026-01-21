@@ -1,26 +1,27 @@
 package com.logistics.hub.feature.event.enums;
 
 /**
- * Trạng thái sự cố
+ * Disruption status enumeration
  */
 public enum DisruptionStatus {
     /**
-     * Đã phát hiện
+     * Detected
      */
     DETECTED,
 
     /**
-     * Đang xử lý
+     * In progress
      */
     IN_PROGRESS,
 
     /**
-     * Đã giải quyết
+     * Resolved
      */
     RESOLVED,
 
     /**
-     * Bỏ qua
+     * Ignored
      */
     IGNORED
 }
+

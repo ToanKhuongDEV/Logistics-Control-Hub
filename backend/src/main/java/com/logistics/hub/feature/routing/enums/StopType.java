@@ -1,21 +1,22 @@
 package com.logistics.hub.feature.routing.enums;
 
 /**
- * Loại điểm dừng
+ * Stop type enumeration
  */
 public enum StopType {
     /**
-     * Điểm dừng tại depot (xuất phát/kết thúc)
+     * Stop at depot (start/end)
      */
     DEPOT,
 
     /**
-     * Điểm lấy hàng
+     * Pickup point
      */
     PICKUP,
 
     /**
-     * Điểm giao hàng
+     * Delivery point
      */
     DELIVERY
 }
+

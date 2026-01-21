@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho VehiclePosition (Vị trí xe theo thời gian)
- * Time-series data từ GPS/Kafka
+ * Entity representing VehiclePosition (Vehicle position over time)
+ * Time-series data from GPS/Kafka
  * Loose Coupling: vehicleId
  */
 @Entity
@@ -34,38 +34,38 @@ public class VehiclePositionEntity {
 
     /**
      * Vehicle ID - Loose coupling
-     * Database có FK constraint → vehicles.id
+     * Database has FK constraint -> vehicles.id
      */
-    @NotNull(message = "Vehicle ID không được để trống")
+    @NotNull(message = "Vehicle ID is required")
     @Column(name = "vehicle_id", nullable = false)
     private Long vehicleId;
 
-    @Min(value = -90, message = "Latitude phải từ -90 đến 90")
-    @Max(value = 90, message = "Latitude phải từ -90 đến 90")
-    @NotNull(message = "Latitude không được để trống")
+    @Min(value = -90, message = "Latitude must be between -90 and 90")
+    @Max(value = 90, message = "Latitude must be between -90 and 90")
+    @NotNull(message = "Latitude is required")
     @Column(nullable = false)
     private Double latitude;
 
-    @Min(value = -180, message = "Longitude phải từ -180 đến 180")
-    @Max(value = 180, message = "Longitude phải từ -180 đến 180")
-    @NotNull(message = "Longitude không được để trống")
+    @Min(value = -180, message = "Longitude must be between -180 and 180")
+    @Max(value = 180, message = "Longitude must be between -180 and 180")
+    @NotNull(message = "Longitude is required")
     @Column(nullable = false)
     private Double longitude;
 
-    @Min(value = 0, message = "Tốc độ phải >= 0")
+    @Min(value = 0, message = "Speed must be >= 0")
     @Column(name = "speed_kmh")
     private Double speedKmh;
 
-    @Min(value = 0, message = "Heading phải từ 0 đến 360")
-    @Max(value = 360, message = "Heading phải từ 0 đến 360")
+    @Min(value = 0, message = "Heading must be between 0 and 360")
+    @Max(value = 360, message = "Heading must be between 0 and 360")
     @Column(name = "heading_degrees")
     private Double headingDegrees;
 
-    @NotNull(message = "Timestamp không được để trống")
+    @NotNull(message = "Timestamp is required")
     @Column(nullable = false)
     private Instant timestamp;
 
-    @NotNull(message = "Source không được để trống")
+    @NotNull(message = "Source is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private PositionSource source = PositionSource.GPS;
@@ -73,3 +73,4 @@ public class VehiclePositionEntity {
     @Column(name = "accuracy_meters")
     private Double accuracyMeters;
 }
+

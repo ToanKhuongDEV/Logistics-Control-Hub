@@ -1,7 +1,7 @@
 package com.logistics.hub.feature.event.enums;
 
 /**
- * Nguồn dữ liệu vị trí
+ * Position data source enumeration
  */
 public enum PositionSource {
     /**
@@ -10,7 +10,7 @@ public enum PositionSource {
     GPS,
 
     /**
-     * Nhập thủ công
+     * Manual input
      */
     MANUAL,
 
@@ -19,3 +19,4 @@ public enum PositionSource {
      */
     SIMULATION
 }
+

@@ -1,21 +1,22 @@
 package com.logistics.hub.feature.location.enums;
 
 /**
- * Loại địa điểm
+ * Location type enumeration
  */
 public enum LocationType {
     /**
-     * Kho hàng
+     * Warehouse
      */
     WAREHOUSE,
 
     /**
-     * Khách hàng
+     * Customer
      */
     CUSTOMER,
 
     /**
-     * Trung tâm phân phối
+     * Distribution hub
      */
     HUB
 }
+

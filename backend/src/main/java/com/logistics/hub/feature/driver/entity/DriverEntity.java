@@ -13,7 +13,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho Driver (Tài xế)
+ * Entity representing Driver
  */
 @Entity
 @Table(name = "drivers", uniqueConstraints = {
@@ -28,19 +28,19 @@ public class DriverEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Họ tên tài xế không được để trống")
+    @NotBlank(message = "Driver full name is required")
     @Column(nullable = false, length = 100)
     private String fullName;
 
-    @NotBlank(message = "Số bằng lái không được để trống")
+    @NotBlank(message = "License number is required")
     @Column(nullable = false, unique = true, length = 50)
     private String licenseNumber;
 
-    @NotBlank(message = "Số điện thoại không được để trống")
+    @NotBlank(message = "Phone number is required")
     @Column(nullable = false, length = 20)
     private String phoneNumber;
 
-    @NotNull(message = "Trạng thái tài xế không được để trống")
+    @NotNull(message = "Driver status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private DriverStatus status = DriverStatus.AVAILABLE;
@@ -53,3 +53,4 @@ public class DriverEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

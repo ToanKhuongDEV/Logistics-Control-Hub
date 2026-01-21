@@ -1,46 +1,47 @@
 package com.logistics.hub.feature.event.enums;
 
 /**
- * Loại sự kiện hệ thống
+ * System event type enumeration
  */
 public enum SystemEventType {
     /**
-     * Sự kiện liên quan đến đơn hàng
+     * Order-related events
      */
     ORDER_CREATED,
     ORDER_UPDATED,
     ORDER_CANCELLED,
 
     /**
-     * Sự kiện tối ưu hóa
+     * Optimization events
      */
     OPTIMIZATION_STARTED,
     OPTIMIZATION_COMPLETED,
     OPTIMIZATION_FAILED,
 
     /**
-     * Sự kiện route
+     * Route events
      */
     ROUTE_ASSIGNED,
     ROUTE_STARTED,
     ROUTE_COMPLETED,
 
     /**
-     * Sự kiện vehicle
+     * Vehicle events
      */
     VEHICLE_DEPARTED,
     VEHICLE_ARRIVED,
     VEHICLE_STATUS_CHANGED,
 
     /**
-     * Sự kiện disruption
+     * Disruption events
      */
     DISRUPTION_DETECTED,
     DISRUPTION_RESOLVED,
 
     /**
-     * Sự kiện khác
+     * Other events
      */
     SYSTEM_ALERT,
     SYSTEM_ERROR
 }
+

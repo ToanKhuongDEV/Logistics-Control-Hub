@@ -1,51 +1,67 @@
 package com.logistics.hub.feature.auth.controller;
 
-import com.logistics.hub.feature.auth.dto.DispatcherDTO;
-import com.logistics.hub.feature.auth.entity.DispatcherEntity;
-import com.logistics.hub.feature.auth.repository.DispatcherRepository;
+import com.logistics.hub.feature.auth.dto.request.LoginRequest;
+import com.logistics.hub.feature.auth.dto.request.RefreshTokenRequest;
+import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
+import com.logistics.hub.feature.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.Data;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // Ensure bean or manual
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Login APIs for Dispatchers")
+@Tag(name = "Authentication", description = "Login & Token APIs for Dispatchers")
 public class AuthController {
 
-    private final DispatcherRepository dispatcherRepository;
-    // Note: In a real app, inject PasswordEncoder bean. 
-    // Since SecurityConfig is basic, we might need to verify if BCrypt bean is available.
-    // For now, simpler manual check or standard bean usage.
-    
-    // Quick Hack: We need a PasswordEncoder. 
-    // I will assume for a moment we can use a simple check or the user will configure Security proper.
-    // Let's create a temporary login logic.
-    
+    private final AuthService authService;
+
     @PostMapping("/login")
-    @Operation(summary = "Login (Simple check for now)")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        // Warning: This is a placeholder login logic. 
-        // Real implementation should use Spring Security AuthenticationManager.
-        
-        return dispatcherRepository.findByUsername(request.getUsername())
-            .map(user -> {
-                // In real app: passwordEncoder.matches(request.getPassword(), user.getPassword())
-                // Here we just return user info for "success" signal as requested "login feature"
-                // The actual detailed Security wiring is usually a separate large task.
-                return ResponseEntity.ok(new DispatcherDTO(user.getId(), user.getUsername(), user.getFullName(), user.getRole(), user.getActive()));
-            })
-            .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+    @Operation(summary = "Login with Username/Password", description = "Returns access and refresh tokens on successful login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        try {
+            DispatcherResponse user = authService.login(request);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
-    
-    @Data
-    public static class LoginRequest {
-        private String username;
-        private String password;
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh Access Token", description = "Use refresh token to get new access token")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        try {
+            DispatcherResponse response = authService.refreshToken(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get Current User", description = "Returns current authenticated user info (requires valid token)")
+    public ResponseEntity<?> getCurrentUser() {
+        // This endpoint requires authentication - will be protected by JWT filter
+        // Returns current user info from SecurityContext
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+        
+        return ResponseEntity.ok(Map.of(
+                "username", authentication.getName(),
+                "authorities", authentication.getAuthorities()
+        ));
     }
 }

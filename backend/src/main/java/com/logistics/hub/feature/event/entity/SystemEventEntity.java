@@ -15,8 +15,8 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Entity đại diện cho SystemEvent (Sự kiện hệ thống)
- * Event sourcing cho monitoring & analytics
+ * Entity representing SystemEvent (System Event)
+ * Event sourcing for monitoring & analytics
  */
 @Entity
 @Table(name = "system_events",
@@ -36,12 +36,12 @@ public class SystemEventEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Event type không được để trống")
+    @NotNull(message = "Event type is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false, length = 50)
     private SystemEventType eventType;
 
-    @NotBlank(message = "Entity type không được để trống")
+    @NotBlank(message = "Entity type is required")
     @Column(name = "entity_type", nullable = false, length = 50)
     private String entityType;
 
@@ -49,17 +49,17 @@ public class SystemEventEntity {
     private Long entityId;
 
     /**
-     * Payload JSON - dữ liệu bổ sung của event
+     * Payload JSON - additional event data
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> payload;
 
-    @NotNull(message = "Timestamp không được để trống")
+    @NotNull(message = "Timestamp is required")
     @Column(nullable = false)
     private Instant timestamp;
 
-    @NotNull(message = "Severity không được để trống")
+    @NotNull(message = "Severity is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SeverityLevel severity = SeverityLevel.INFO;
@@ -67,3 +67,4 @@ public class SystemEventEntity {
     @Column(length = 1000)
     private String message;
 }
+

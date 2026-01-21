@@ -1,26 +1,27 @@
 package com.logistics.hub.feature.order.enums;
 
 /**
- * Mức độ ưu tiên đơn hàng
+ * Order priority enumeration
  */
 public enum OrderPriority {
     /**
-     * Ưu tiên thấp
+     * Low priority
      */
     LOW,
 
     /**
-     * Ưu tiên thường (mặc định)
+     * Normal priority (default)
      */
     NORMAL,
 
     /**
-     * Ưu tiên cao
+     * High priority
      */
     HIGH,
 
     /**
-     * Khẩn cấp - ưu tiên tối đa
+     * Urgent - maximum priority
      */
     URGENT
 }
+

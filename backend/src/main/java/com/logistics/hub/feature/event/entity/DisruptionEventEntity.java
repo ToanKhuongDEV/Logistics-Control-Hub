@@ -15,7 +15,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho DisruptionEvent (Sự cố vận hành)
+ * Entity representing DisruptionEvent (Operational Disruption)
  * Trigger re-optimization
  * Loose Coupling: affectedVehicleId, affectedRouteId, locationId
  */
@@ -38,7 +38,7 @@ public class DisruptionEventEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Disruption type không được để trống")
+    @NotNull(message = "Disruption type is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private DisruptionType type;
@@ -56,28 +56,28 @@ public class DisruptionEventEntity {
     private Long affectedRouteId;
 
     /**
-     * Location ID - Loose coupling (nullable - nơi xảy ra sự cố)
+     * Location ID - Loose coupling (nullable - where disruption occurred)
      */
     @Column(name = "location_id")
     private Long locationId;
 
-    @NotNull(message = "Severity không được để trống")
+    @NotNull(message = "Severity is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SeverityLevel severity;
 
-    @NotBlank(message = "Description không được để trống")
+    @NotBlank(message = "Description is required")
     @Column(nullable = false, length = 1000)
     private String description;
 
-    @NotNull(message = "Detected at không được để trống")
+    @NotNull(message = "Detected at is required")
     @Column(name = "detected_at", nullable = false)
     private Instant detectedAt;
 
     @Column(name = "resolved_at")
     private Instant resolvedAt;
 
-    @NotNull(message = "Status không được để trống")
+    @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private DisruptionStatus status = DisruptionStatus.DETECTED;
@@ -93,3 +93,4 @@ public class DisruptionEventEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

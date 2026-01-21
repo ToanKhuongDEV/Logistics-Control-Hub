@@ -2,6 +2,13 @@ spring:
   application:
     name: logistics-control-hub
 
+  # JWT Configuration
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 3600000   # 1 hour
+    refresh-token:
+      expiration: 604800000 # 7 days
+
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}

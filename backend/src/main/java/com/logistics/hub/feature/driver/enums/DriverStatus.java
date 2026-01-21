@@ -1,21 +1,22 @@
 package com.logistics.hub.feature.driver.enums;
 
 /**
- * Trạng thái của tài xế
+ * Driver status enumeration
  */
 public enum DriverStatus {
     /**
-     * Tài xế sẵn sàng nhận việc
+     * Driver is available for work
      */
     AVAILABLE,
 
     /**
-     * Tài xế đang lái xe giao hàng
+     * Driver is currently driving for delivery
      */
     DRIVING,
 
     /**
-     * Tài xế nghỉ phép/không làm việc
+     * Driver is on leave/not working
      */
     OFF_DUTY
 }
+

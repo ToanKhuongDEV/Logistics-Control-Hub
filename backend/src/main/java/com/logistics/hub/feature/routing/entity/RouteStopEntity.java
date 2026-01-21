@@ -14,8 +14,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho RouteStop (Điểm dừng trên tuyến)
- * So sánh planned vs actual
+ * Entity representing RouteStop (Stop on route)
+ * Compares planned vs actual
  * Loose Coupling: routePlanId, locationId, deliveryOrderId
  */
 @Entity
@@ -39,45 +39,45 @@ public class RouteStopEntity {
 
     /**
      * Route Plan ID - Loose coupling
-     * Database có FK constraint → route_plans.id
+     * Database has FK constraint -> route_plans.id
      */
-    @NotNull(message = "Route Plan ID không được để trống")
+    @NotNull(message = "Route Plan ID is required")
     @Column(name = "route_plan_id", nullable = false)
     private Long routePlanId;
 
     /**
      * Location ID - Loose coupling
-     * Database có FK constraint → locations.id
+     * Database has FK constraint -> locations.id
      */
-    @NotNull(message = "Location ID không được để trống")
+    @NotNull(message = "Location ID is required")
     @Column(name = "location_id", nullable = false)
     private Long locationId;
 
     /**
-     * Delivery Order ID - Loose coupling (nullable - depot stop không có order)
-     * Database có FK constraint → delivery_orders.id
+     * Delivery Order ID - Loose coupling (nullable - depot stop has no order)
+     * Database has FK constraint -> delivery_orders.id
      */
     @Column(name = "delivery_order_id")
     private Long deliveryOrderId;
 
     /**
-     * Stop Type - Phân loại điểm dừng
+     * Stop Type - Classifies the stop
      */
-    @NotNull(message = "Stop type không được để trống")
+    @NotNull(message = "Stop type is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "stop_type", nullable = false, length = 20)
     private StopType stopType;
 
-    @Min(value = 1, message = "Thứ tự phải >= 1")
-    @NotNull(message = "Thứ tự không được để trống")
+    @Min(value = 1, message = "Sequence must be >= 1")
+    @NotNull(message = "Sequence is required")
     @Column(nullable = false)
     private Integer sequence;
 
-    @NotNull(message = "Thời gian đến dự kiến không được để trống")
+    @NotNull(message = "Planned arrival time is required")
     @Column(name = "planned_arrival", nullable = false)
     private Instant plannedArrival;
 
-    @NotNull(message = "Thời gian rời dự kiến không được để trống")
+    @NotNull(message = "Planned departure time is required")
     @Column(name = "planned_departure", nullable = false)
     private Instant plannedDeparture;
 
@@ -88,24 +88,24 @@ public class RouteStopEntity {
     private Instant actualDeparture;
 
     /**
-     * Khoảng cách từ điểm dừng trước (km)
+     * Distance from previous stop (km)
      */
     @Column(name = "distance_from_prev_km")
     private Double distanceFromPrevKm;
 
     /**
-     * Thời gian di chuyển từ điểm dừng trước (phút)
+     * Travel time from previous stop (minutes)
      */
     @Column(name = "duration_from_prev_minutes")
     private Integer durationFromPrevMinutes;
 
     /**
-     * Thời gian xử lý tại điểm dừng (phút)
+     * Service time at stop (minutes)
      */
     @Column(name = "service_time_minutes")
     private Integer serviceTimeMinutes = 15;
 
-    @NotNull(message = "Status không được để trống")
+    @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RouteStopStatus status = RouteStopStatus.PENDING;
@@ -121,3 +121,4 @@ public class RouteStopEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

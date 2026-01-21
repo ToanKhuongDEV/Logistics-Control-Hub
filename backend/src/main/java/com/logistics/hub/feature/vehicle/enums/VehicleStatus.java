@@ -1,26 +1,27 @@
 package com.logistics.hub.feature.vehicle.enums;
 
 /**
- * Trạng thái của xe giao hàng
+ * Vehicle status enumeration
  */
 public enum VehicleStatus {
     /**
-     * Xe sẵn sàng để sử dụng
+     * Vehicle is available for use
      */
     AVAILABLE,
 
     /**
-     * Xe đang được sử dụng để giao hàng
+     * Vehicle is currently in use for delivery
      */
     IN_USE,
 
     /**
-     * Xe đang bảo trì
+     * Vehicle is under maintenance
      */
     MAINTENANCE,
 
     /**
-     * Xe bị vô hiệu hóa (không thể sử dụng)
+     * Vehicle is disabled (cannot be used)
      */
     DISABLED
 }
+

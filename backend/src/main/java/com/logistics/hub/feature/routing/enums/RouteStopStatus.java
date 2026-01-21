@@ -1,36 +1,37 @@
 package com.logistics.hub.feature.routing.enums;
 
 /**
- * Trạng thái điểm dừng
+ * Route stop status enumeration
  */
 public enum RouteStopStatus {
     /**
-     * Chưa bắt đầu
+     * Not started
      */
     PENDING,
 
     /**
-     * Đang đến
+     * On the way
      */
     EN_ROUTE,
 
     /**
-     * Đã đến
+     * Arrived
      */
     ARRIVED,
 
     /**
-     * Hoàn thành
+     * Completed
      */
     COMPLETED,
 
     /**
-     * Bỏ qua
+     * Skipped
      */
     SKIPPED,
 
     /**
-     * Thất bại
+     * Failed
      */
     FAILED
 }
+

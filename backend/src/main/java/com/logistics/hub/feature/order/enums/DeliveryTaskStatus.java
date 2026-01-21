@@ -1,41 +1,42 @@
 package com.logistics.hub.feature.order.enums;
 
 /**
- * Trạng thái thực thi giao hàng
+ * Delivery task execution status enumeration
  */
 public enum DeliveryTaskStatus {
     /**
-     * Task mới tạo, chưa bắt đầu
+     * Task newly created, not started
      */
     CREATED,
 
     /**
-     * Đang tiến hành lấy hàng
+     * Picking up in progress
      */
     PICKING_UP,
 
     /**
-     * Đã lấy hàng, đang vận chuyển
+     * Picked up, in transit
      */
     IN_TRANSIT,
 
     /**
-     * Đang giao hàng cho khách
+     * Delivering to customer
      */
     DELIVERING,
 
     /**
-     * Hoàn thành giao hàng
+     * Delivery completed
      */
     COMPLETED,
 
     /**
-     * Thất bại
+     * Failed
      */
     FAILED,
 
     /**
-     * Bị hủy
+     * Cancelled
      */
     CANCELLED
 }
+

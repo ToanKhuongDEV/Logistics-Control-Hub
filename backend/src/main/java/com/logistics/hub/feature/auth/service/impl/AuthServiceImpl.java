@@ -1,0 +1,99 @@
+package com.logistics.hub.feature.auth.service.impl;
+
+import com.logistics.hub.feature.auth.dto.request.LoginRequest;
+import com.logistics.hub.feature.auth.dto.request.RefreshTokenRequest;
+import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
+import com.logistics.hub.feature.auth.entity.DispatcherEntity;
+import com.logistics.hub.feature.auth.repository.DispatcherRepository;
+import com.logistics.hub.feature.auth.service.AuthService;
+import com.logistics.hub.feature.auth.util.JwtUtils;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+
+    private final DispatcherRepository dispatcherRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+
+    @Override
+    public DispatcherResponse login(LoginRequest request) {
+        // 1. Find user by username
+        DispatcherEntity user = dispatcherRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+
+        // 2. Check if active
+        if (Boolean.FALSE.equals(user.getActive())) {
+            throw new RuntimeException("Account is disabled");
+        }
+
+        // 3. Verify password using BCrypt
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid username or password");
+        }
+
+        // 4. Generate Tokens
+        UserDetails userDetails = new User(user.getUsername(), user.getPassword(), new ArrayList<>());
+        String accessToken = jwtUtils.generateToken(userDetails);
+        String refreshToken = jwtUtils.generateRefreshToken(userDetails);
+
+        // 5. Return Response
+        return new DispatcherResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getRole(),
+                user.getActive(),
+                accessToken,
+                refreshToken
+        );
+    }
+
+    @Override
+    public DispatcherResponse refreshToken(RefreshTokenRequest request) {
+        // 1. Extract username from refresh token
+        String username;
+        try {
+            username = jwtUtils.extractUsername(request.getRefreshToken());
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+
+        // 2. Find user in database
+        DispatcherEntity user = dispatcherRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 3. Check if user is still active
+        if (Boolean.FALSE.equals(user.getActive())) {
+            throw new RuntimeException("Account is disabled");
+        }
+
+        // 4. Validate refresh token
+        UserDetails userDetails = new User(user.getUsername(), user.getPassword(), new ArrayList<>());
+        if (!jwtUtils.isTokenValid(request.getRefreshToken(), userDetails)) {
+            throw new RuntimeException("Refresh token expired or invalid");
+        }
+
+        // 5. Generate new tokens
+        String newAccessToken = jwtUtils.generateToken(userDetails);
+        String newRefreshToken = jwtUtils.generateRefreshToken(userDetails);
+
+        // 6. Return Response with new tokens
+        return new DispatcherResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getFullName(),
+                user.getRole(),
+                user.getActive(),
+                newAccessToken,
+                newRefreshToken
+        );
+    }
+}

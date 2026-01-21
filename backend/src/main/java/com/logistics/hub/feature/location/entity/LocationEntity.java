@@ -15,8 +15,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho Location (Điểm địa lý chuẩn hóa)
- * Mục đích: Tránh lặp lat-long, normalize địa chỉ
+ * Entity representing Location (Normalized geographic point)
+ * Purpose: Avoid lat-long duplication, normalize addresses
  */
 @Entity
 @Table(name = "locations",
@@ -36,23 +36,23 @@ public class LocationEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Tên địa điểm không được để trống")
+    @NotBlank(message = "Location name is required")
     @Column(nullable = false, unique = true, length = 200)
     private String name;
 
-    @Min(value = -90, message = "Latitude phải từ -90 đến 90")
-    @Max(value = 90, message = "Latitude phải từ -90 đến 90")
-    @NotNull(message = "Latitude không được để trống")
+    @Min(value = -90, message = "Latitude must be between -90 and 90")
+    @Max(value = 90, message = "Latitude must be between -90 and 90")
+    @NotNull(message = "Latitude is required")
     @Column(nullable = false)
     private Double latitude;
 
-    @Min(value = -180, message = "Longitude phải từ -180 đến 180")
-    @Max(value = 180, message = "Longitude phải từ -180 đến 180")
-    @NotNull(message = "Longitude không được để trống")
+    @Min(value = -180, message = "Longitude must be between -180 and 180")
+    @Max(value = 180, message = "Longitude must be between -180 and 180")
+    @NotNull(message = "Longitude is required")
     @Column(nullable = false)
     private Double longitude;
 
-    @NotNull(message = "Loại địa điểm không được để trống")
+    @NotNull(message = "Location type is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private LocationType type;
@@ -68,3 +68,4 @@ public class LocationEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

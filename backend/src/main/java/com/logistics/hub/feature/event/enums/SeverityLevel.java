@@ -1,31 +1,32 @@
 package com.logistics.hub.feature.event.enums;
 
 /**
- * Mức độ nghiêm trọng
+ * Severity level enumeration
  */
 public enum SeverityLevel {
     /**
-     * Thông tin
+     * Information
      */
     INFO,
 
     /**
-     * Cảnh báo thấp
+     * Low warning
      */
     LOW,
 
     /**
-     * Cảnh báo trung bình
+     * Medium warning
      */
     MEDIUM,
 
     /**
-     * Cảnh báo cao
+     * High warning
      */
     HIGH,
 
     /**
-     * Khẩn cấp
+     * Critical
      */
     CRITICAL
 }
+

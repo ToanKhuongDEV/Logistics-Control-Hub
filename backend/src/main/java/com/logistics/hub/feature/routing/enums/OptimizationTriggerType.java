@@ -1,26 +1,27 @@
 package com.logistics.hub.feature.routing.enums;
 
 /**
- * Kiểu trigger tối ưu hóa
+ * Optimization trigger type enumeration
  */
 public enum OptimizationTriggerType {
     /**
-     * Tối ưu theo lịch trình (hàng ngày/giờ)
+     * Scheduled optimization (daily/hourly)
      */
     SCHEDULED,
 
     /**
-     * Tối ưu do sự cố
+     * Optimization due to disruption
      */
     DISRUPTION,
 
     /**
-     * Can thiệp thủ công
+     * Manual intervention
      */
     MANUAL,
 
     /**
-     * Đơn hàng mới
+     * New orders
      */
     NEW_ORDERS
 }
+

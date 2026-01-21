@@ -1,31 +1,32 @@
 package com.logistics.hub.feature.routing.enums;
 
 /**
- * Trạng thái chạy tối ưu
+ * Optimization run status enumeration
  */
 public enum OptimizationStatus {
     /**
-     * Đang chờ xử lý
+     * Pending
      */
     PENDING,
 
     /**
-     * Đang chạy
+     * Running
      */
     RUNNING,
 
     /**
-     * Hoàn thành thành công
+     * Completed successfully
      */
     COMPLETED,
 
     /**
-     * Thất bại
+     * Failed
      */
     FAILED,
 
     /**
-     * Bị hủy
+     * Cancelled
      */
     CANCELLED
 }
+

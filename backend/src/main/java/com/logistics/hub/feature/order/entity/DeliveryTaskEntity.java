@@ -12,8 +12,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho DeliveryTask (Thực thi giao hàng)
- * Tách biệt plan vs execution
+ * Entity representing DeliveryTask (Delivery Execution)
+ * Separates plan vs execution
  * Loose Coupling: deliveryOrderId, vehicleId, driverId, routePlanId
  */
 @Entity
@@ -37,35 +37,35 @@ public class DeliveryTaskEntity {
 
     /**
      * Delivery Order ID - Loose coupling
-     * Database có FK constraint → delivery_orders.id
+     * Database has FK constraint -> delivery_orders.id
      */
-    @NotNull(message = "Delivery Order ID không được để trống")
+    @NotNull(message = "Delivery Order ID is required")
     @Column(name = "delivery_order_id", nullable = false)
     private Long deliveryOrderId;
 
     /**
      * Vehicle ID - Loose coupling
-     * Database có FK constraint → vehicles.id
+     * Database has FK constraint -> vehicles.id
      */
-    @NotNull(message = "Vehicle ID không được để trống")
+    @NotNull(message = "Vehicle ID is required")
     @Column(name = "vehicle_id", nullable = false)
     private Long vehicleId;
 
     /**
      * Driver ID - Loose coupling
-     * Database có FK constraint → drivers.id
+     * Database has FK constraint -> drivers.id
      */
     @Column(name = "driver_id")
     private Long driverId;
 
     /**
      * Route Plan ID - Loose coupling
-     * Database có FK constraint → route_plans.id
+     * Database has FK constraint -> route_plans.id
      */
     @Column(name = "route_plan_id")
     private Long routePlanId;
 
-    @NotNull(message = "Trạng thái task không được để trống")
+    @NotNull(message = "Task status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private DeliveryTaskStatus status = DeliveryTaskStatus.CREATED;
@@ -87,3 +87,4 @@ public class DeliveryTaskEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

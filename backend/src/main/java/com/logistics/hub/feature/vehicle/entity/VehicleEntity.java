@@ -15,8 +15,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho Vehicle (Xe giao hàng)
- * Sử dụng Loose Coupling: lưu depotId và driverId thay vì entity references
+ * Entity representing Vehicle (Delivery Vehicle)
+ * Uses Loose Coupling: stores depotId and driverId instead of entity references
  */
 @Entity
 @Table(name = "vehicles", 
@@ -38,27 +38,27 @@ public class VehicleEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Biển số xe không được để trống")
+    @NotBlank(message = "Plate number is required")
     @Column(nullable = false, unique = true, length = 20)
     private String plateNumber;
 
     /**
-     * Depot ID - Loose coupling: Không dùng @ManyToOne
-     * Database vẫn có FK constraint để đảm bảo tính toàn vẹn
+     * Depot ID - Loose coupling: No @ManyToOne
+     * Database still has FK constraint for data integrity
      */
-    @NotNull(message = "Depot ID không được để trống")
+    @NotNull(message = "Depot ID is required")
     @Column(nullable = false)
     private Long depotId;
 
     /**
-     * Driver ID - Loose coupling: Có thể null (xe chưa có tài xế)
-     * Database vẫn có FK constraint khi không null
+     * Driver ID - Loose coupling: Can be null (vehicle without driver)
+     * Database still has FK constraint when not null
      */
     @Column(nullable = true)
     private Long driverId;
 
-    @Min(value = 0, message = "Tải trọng phải lớn hơn hoặc bằng 0")
-    @NotNull(message = "Tải trọng không được để trống")
+    @Min(value = 0, message = "Capacity must be greater than or equal to 0")
+    @NotNull(message = "Capacity is required")
     @Column(nullable = false)
     private Double capacity;
 
@@ -69,7 +69,7 @@ public class VehicleEntity {
     })
     private Location currentLocation;
 
-    @NotNull(message = "Trạng thái xe không được để trống")
+    @NotNull(message = "Vehicle status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private VehicleStatus status = VehicleStatus.AVAILABLE;
@@ -82,3 +82,4 @@ public class VehicleEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

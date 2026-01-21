@@ -15,8 +15,8 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Entity đại diện cho OptimizationRun (Lần chạy tối ưu AI)
- * Lưu lịch sử và truy vết hiệu quả AI
+ * Entity representing OptimizationRun (AI Optimization Run)
+ * Stores history and traces AI efficiency
  */
 @Entity
 @Table(name = "optimization_runs",
@@ -35,7 +35,7 @@ public class OptimizationRunEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Trigger type không được để trống")
+    @NotNull(message = "Trigger type is required")
     @Enumerated(EnumType.STRING)
     @Column(name = "trigger_type", nullable = false, length = 20)
     private OptimizationTriggerType triggerType;
@@ -44,16 +44,16 @@ public class OptimizationRunEntity {
     private String triggerReason;
 
     /**
-     * Snapshot dữ liệu đầu vào (JSON)
-     * Ví dụ: {orders: [...], vehicles: [...], constraints: {...}}
+     * Input data snapshot (JSON)
+     * Example: {orders: [...], vehicles: [...], constraints: {...}}
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "input_snapshot", columnDefinition = "jsonb")
     private Map<String, Object> inputSnapshot;
 
     /**
-     * Metrics đầu ra (JSON)
-     * Ví dụ: {totalDistance: 100, totalTime: 200, vehiclesUsed: 5}
+     * Output metrics (JSON)
+     * Example: {totalDistance: 100, totalTime: 200, vehiclesUsed: 5}
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "output_metrics", columnDefinition = "jsonb")
@@ -65,7 +65,7 @@ public class OptimizationRunEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
-    @NotNull(message = "Status không được để trống")
+    @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OptimizationStatus status = OptimizationStatus.PENDING;
@@ -77,3 +77,4 @@ public class OptimizationRunEntity {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 }
+

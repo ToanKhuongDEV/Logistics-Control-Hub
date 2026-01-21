@@ -13,8 +13,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 /**
- * Entity đại diện cho RoutePlan (Kế hoạch tuyến đường)
- * Kết quả tối ưu cho 1 vehicle
+ * Entity representing RoutePlan (Route Plan)
+ * Optimization result for 1 vehicle
  * Loose Coupling: optimizationRunId, vehicleId
  */
 @Entity
@@ -37,45 +37,45 @@ public class RoutePlanEntity {
 
     /**
      * Optimization Run ID - Loose coupling
-     * Database có FK constraint → optimization_runs.id
+     * Database has FK constraint -> optimization_runs.id
      */
-    @NotNull(message = "Optimization Run ID không được để trống")
+    @NotNull(message = "Optimization Run ID is required")
     @Column(name = "optimization_run_id", nullable = false)
     private Long optimizationRunId;
 
     /**
      * Vehicle ID - Loose coupling
-     * Database có FK constraint → vehicles.id
+     * Database has FK constraint -> vehicles.id
      */
-    @NotNull(message = "Vehicle ID không được để trống")
+    @NotNull(message = "Vehicle ID is required")
     @Column(name = "vehicle_id", nullable = false)
     private Long vehicleId;
 
-    @NotNull(message = "Thời gian bắt đầu không được để trống")
+    @NotNull(message = "Planned start time is required")
     @Column(name = "planned_start_time", nullable = false)
     private Instant plannedStartTime;
 
-    @NotNull(message = "Thời gian kết thúc không được để trống")
+    @NotNull(message = "Planned end time is required")
     @Column(name = "planned_end_time", nullable = false)
     private Instant plannedEndTime;
 
-    @Min(value = 0, message = "Tổng quãng đường phải >= 0")
+    @Min(value = 0, message = "Total distance must be >= 0")
     @Column(name = "total_distance_km")
     private Double totalDistanceKm;
 
-    @Min(value = 0, message = "Tổng thời gian phải >= 0")
+    @Min(value = 0, message = "Total duration must be >= 0")
     @Column(name = "total_duration_minutes")
     private Integer totalDurationMinutes;
 
-    @NotNull(message = "Version không được để trống")
+    @NotNull(message = "Version is required")
     @Column(nullable = false)
     private Integer version = 1;
 
-    @NotNull(message = "Is active không được để trống")
+    @NotNull(message = "Is active is required")
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @NotNull(message = "Status không được để trống")
+    @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RoutePlanStatus status = RoutePlanStatus.DRAFT;
@@ -91,3 +91,4 @@ public class RoutePlanEntity {
     @Column(nullable = false)
     private Instant updatedAt;
 }
+

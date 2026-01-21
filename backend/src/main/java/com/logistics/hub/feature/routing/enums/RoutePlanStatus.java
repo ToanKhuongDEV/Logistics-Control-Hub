@@ -1,31 +1,32 @@
 package com.logistics.hub.feature.routing.enums;
 
 /**
- * Trạng thái kế hoạch tuyến đường
+ * Route plan status enumeration
  */
 public enum RoutePlanStatus {
     /**
-     * Kế hoạch mới tạo
+     * Newly created plan
      */
     DRAFT,
 
     /**
-     * Đang hoạt động
+     * Active
      */
     ACTIVE,
 
     /**
-     * Đã hoàn thành
+     * Completed
      */
     COMPLETED,
 
     /**
-     * Bị hủy/thay thế
+     * Cancelled/Superseded
      */
     SUPERSEDED,
 
     /**
-     * Thất bại
+     * Failed
      */
     FAILED
 }
+

@@ -6,8 +6,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * Entity đại diện cho cache khoảng cách giữa các locations
- * Dùng cho OR-Tools optimization
+ * Entity representing distance cache between locations
+ * Used for OR-Tools optimization
  */
 @Entity
 @Table(name = "distance_matrix", 

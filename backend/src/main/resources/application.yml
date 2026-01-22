@@ -5,7 +5,7 @@ spring:
   # JWT Configuration
   jwt:
     secret: ${JWT_SECRET}
-    expiration: 3600000   # 1 hour
+    expiration: 3600000 # 1 hour
     refresh-token:
       expiration: 604800000 # 7 days
 
@@ -52,27 +52,39 @@ server:
   error:
     include-message: always
     include-binding-errors: always
-
 logging:
   level:
-    root: WARN
+    # Mặc định: chỉ log WARNING trở lên
+    root: ERROR
 
     # Chỉ log code của bạn
     com.logistics.hub: INFO
 
-    # Tắt gần hết log framework
-    org.springframework: WARN
-    org.springframework.web: WARN
-    org.springframework.kafka: WARN
+    # Spring core
+    org.springframework: ERROR
 
-    # Hibernate
-    org.hibernate: WARN
+    # Spring Boot startup
+    org.springframework.boot: ERROR
+
+    # Spring Security (rất ồn)
+    org.springframework.security: ERROR
+    org.springframework.security.config: ERROR
+
+    # Kafka
+    org.springframework.kafka: ERROR
+    org.apache.kafka: ERROR
+
+    # Hibernate / JPA
+    org.hibernate: ERROR
     org.hibernate.SQL: OFF
     org.hibernate.type.descriptor.sql: OFF
+    org.hibernate.orm.jdbc.bind: OFF
 
     # Tomcat
-    org.apache.catalina: WARN
-    org.apache.coyote: WARN
+    org.apache.catalina: ERROR
+    org.apache.coyote: ERROR
+    org.apache.tomcat: ERROR
+
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 

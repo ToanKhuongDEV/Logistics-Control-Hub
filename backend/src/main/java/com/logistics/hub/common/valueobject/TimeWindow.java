@@ -1,5 +1,6 @@
 package com.logistics.hub.common.valueobject;
 
+import com.logistics.hub.common.constant.MessageConstant;
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -14,20 +15,23 @@ import java.time.Instant;
 @AllArgsConstructor
 public class TimeWindow {
 
-    @NotNull(message = "Start time is required")
+    @NotNull(message = MessageConstant.START_TIME_REQUIRED)
     private Instant startTime;
 
-    @NotNull(message = "End time is required")
+    @NotNull(message = MessageConstant.END_TIME_REQUIRED)
     private Instant endTime;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isValid() {
         return startTime != null && endTime != null && startTime.isBefore(endTime);
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean contains(Instant time) {
         return time.isAfter(startTime) && time.isBefore(endTime);
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean overlaps(TimeWindow other) {
         return this.startTime.isBefore(other.endTime) && this.endTime.isAfter(other.startTime);
     }

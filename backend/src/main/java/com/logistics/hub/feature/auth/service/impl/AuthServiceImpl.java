@@ -2,7 +2,7 @@ package com.logistics.hub.feature.auth.service.impl;
 
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.RefreshTokenRequest;
-import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
+import com.logistics.hub.feature.auth.dto.response.LoginResponse;
 import com.logistics.hub.feature.auth.entity.DispatcherEntity;
 import com.logistics.hub.feature.auth.repository.DispatcherRepository;
 import com.logistics.hub.feature.auth.service.AuthService;
@@ -24,7 +24,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
 
     @Override
-    public DispatcherResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
         // 1. Find user by username
         DispatcherEntity user = dispatcherRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
@@ -45,19 +45,12 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtUtils.generateRefreshToken(userDetails);
 
         // 5. Return Response
-        return new DispatcherResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getFullName(),
-                user.getRole(),
-                user.getActive(),
-                accessToken,
-                refreshToken
-        );
+        return new LoginResponse(accessToken, refreshToken);
     }
 
+
     @Override
-    public DispatcherResponse refreshToken(RefreshTokenRequest request) {
+    public LoginResponse refreshToken(RefreshTokenRequest request) {
         // 1. Extract username from refresh token
         String username;
         try {
@@ -86,14 +79,7 @@ public class AuthServiceImpl implements AuthService {
         String newRefreshToken = jwtUtils.generateRefreshToken(userDetails);
 
         // 6. Return Response with new tokens
-        return new DispatcherResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getFullName(),
-                user.getRole(),
-                user.getActive(),
-                newAccessToken,
-                newRefreshToken
-        );
+        return new LoginResponse(newAccessToken, newRefreshToken);
     }
+
 }

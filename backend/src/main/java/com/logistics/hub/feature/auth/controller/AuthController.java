@@ -2,7 +2,7 @@ package com.logistics.hub.feature.auth.controller;
 
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.RefreshTokenRequest;
-import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
+import com.logistics.hub.feature.auth.dto.response.LoginResponse;
 import com.logistics.hub.feature.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,7 +26,7 @@ public class AuthController {
     @Operation(summary = "Login with Username/Password", description = "Returns access and refresh tokens on successful login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
-            DispatcherResponse user = authService.login(request);
+            LoginResponse user = authService.login(request);
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -38,7 +38,7 @@ public class AuthController {
     @Operation(summary = "Refresh Access Token", description = "Use refresh token to get new access token")
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         try {
-            DispatcherResponse response = authService.refreshToken(request);
+            LoginResponse response = authService.refreshToken(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

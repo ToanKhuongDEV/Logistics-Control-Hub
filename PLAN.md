@@ -2,19 +2,18 @@
 
 > **AI Supply Chain Control Tower System**  
 > **Thời gian:** 12-13 tuần (3 tháng)  
-> **Team:** 2 Backend Devs + 1 Frontend Dev
 
 ---
 
 ## 🎯 Mục Tiêu Dự Án
 
 Xây dựng hệ thống quản lý logistics với các tính năng:
-- ✅ CRUD cơ bản cho **Location, Customer**, Depot, Vehicle, Driver, Order
-- ✅ Tối ưu hóa tuyến đường (Google OR-Tools)
+- ✅ CRUD cơ bản cho **Location, Customer**, Depot, Vehicle, Order
+- ✅ Authentication cho dispatcher
+- ✅ Tối ưu hóa tuyến đường, chi phí (Google OR-Tools)
+- ✅ Analytics: Tổng km, tổng thời gian, số xe, số đơn
 - ✅ Real-time tracking (WebSocket)
-- ✅ Disruption handling tự động
-- ✅ Admin intervention & audit trail
-- ✅ Analytics & reporting
+- ✅ Disruption handling bằng cách can thiệp của admin
 
 ---
 
@@ -56,42 +55,71 @@ Xây dựng hệ thống quản lý logistics với các tính năng:
 
 ## 📅 Timeline & Phases
 
-### **Phase 1: Foundation & Basic CRUD** (4 tuần) ✅ Week 1 DONE
+### **Phase 1: Foundation & Core Features** (4 tuần) ✅ Week 1 DONE
+
+> **Scope:** Chạy được bài toán logistics cơ bản, có kết quả rõ ràng
 
 **Week 1: Project Setup** ✅
 - Backend: Spring Boot + PostgreSQL + Kafka setup ✅
 - Frontend: React + Vite + Ant Design setup ✅
 - Exception handling, Value objects ✅
 
-**Week 2-3: CRUD Implementation**
+**week2 : Create database schema**
+
+**Week 3: CRUD + Basic Routing**
 - **Location, Customer**, Depot, Vehicle, Driver, Order entities
 - Full CRUD endpoints + UI pages
 - **Order**: Manual create + Auto-generate button
+- **Routing**: OR-Tools integration (simplified - no time windows)
 
-**Week 4: Integration & Testing**
-
----
-
-### **Phase 2: Route Optimization & Tracking** (4 tuần)
-
-**Week 5-6:** OR-Tools routing, Distance calculation  
-**Week 7:** WebSocket real-time tracking  
-**Week 8:** Basic simulation engine
+**Week 4: UI Integration & KPI**
+- Hiển thị route trên map (Leaflet)
+- Bảng xe - đơn
+- KPI cơ bản (km, thời gian, số xe, số đơn)
+- Lưu lịch sử routing runs vào DB
 
 ---
 
-### **Phase 3: Advanced Features** (3 tuần)
+### **Phase 2: Optimization Enhancement** (2-3 tuần)
 
-**Week 8:** Disruption management  
-**Week 9:** Temporal workflows  
-**Week 10:** Admin override & audit
+**Week 5-6:** Tích ích hợp Google OR-Tools:
+- Single depot
+- Capacity constraint (volume / weight)
+- No time window 
+- Batch optimize (bấm nút “Optimize”)
+- Lưu kết quả:
+  - routing_run
+  - vehicle_routes
+- **Kafka Integration:**
+  - Publish events: `RoutingOptimizationRequested`, `RoutingOptimizationCompleted`
+  - Consumer xử lý optimization task async
+- refactor and optimize database schema
+**Week 7:** Visualization & KPI
+- Hiển thị tuyến giao trên map (Leaflet)
+- Bảng:
+  - Xe → danh sách đơn được gán
+- KPI:
+  - Tổng km
+  - Tổng thời gian
+  - Số xe dùng
+  - Số đơn giao
+- Xem lại lịch sử routing runs
 
----
+### **Phase 3: Admin Intervention & Workflow Orchestration** (2-3 tuần)
 
-### **Phase 4: Analytics & Polish** (2 tuần)
+**Week 8:** Admin intervention
+- Admin can add or remove disruption and request re-optimization
+- Admin can change route manually
+- **Kafka Events:**
+  - `DisruptionReported`, `RouteModified`, `ReoptimizationRequested`
 
-**Week 11:** Analytics dashboard  
-**Week 12:** Testing, optimization, documentation
+**Week 9:** Temporal Workflow Integration
+- **Workflow:** `RouteOptimizationWorkflow`
+  - Orchestrate: fetch orders → optimize → save results → notify
+  - Handle retry logic, timeouts
+- **Workflow:** `DisruptionHandlingWorkflow`
+  - Detect disruption → re-optimize affected routes → update DB
+- Activity implementation cho các bước trong workflow
 
 ---
 
@@ -136,4 +164,4 @@ npm run dev
 ---
 
 **Status:** Phase 1 - Week 1 ✅ COMPLETED  
-**Next:** Week 2-3 - CRUD Implementation
+**Next:** Week 2-3 - CRUD + Basic Routing (simplified OR-Tools)

@@ -51,7 +51,7 @@ public class AuthServiceImpl implements AuthService {
         // 1. Extract username from refresh token
         String username;
         try {
-            username = jwtUtils.extractUsername(request.getRefreshToken());
+            username = jwtUtils.extractUsernameFromRefreshToken(request.getRefreshToken());
         } catch (Exception e) {
             throw new RuntimeException("Invalid refresh token");
         }
@@ -64,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 4. Validate refresh token
         UserDetails userDetails = new User(user.getUsername(), user.getPassword(), new ArrayList<>());
-        if (!jwtUtils.isTokenValid(request.getRefreshToken(), userDetails)) {
+        if (!jwtUtils.isRefreshTokenValid(request.getRefreshToken(), userDetails)) {
             throw new RuntimeException("Refresh token expired or invalid");
         }
 

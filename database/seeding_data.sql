@@ -8,8 +8,8 @@
 
 INSERT INTO dispatchers (username, password, full_name, role)
 VALUES
-('dispatcher01', '$2a$10$dummyhashedpassword', 'Nguyen Van A', 'DISPATCHER'),
-('admin01', '$2a$10$dummyhashedpassword', 'Tran Thi B', 'ADMIN');
+('dispatcher01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Nguyen Van A', 'DISPATCHER'),
+('admin01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Tran Thi B', 'ADMIN');
 
 -- =====================================================
 -- 2. Vehicles
@@ -68,9 +68,11 @@ INSERT INTO route_stops (
     duration_from_prev_min
 )
 VALUES
+(1, NULL, 1, 0, 0.00, 0),       -- Start at Depot
 (1, 1, 2, 1, 5.20, 12),
 (1, 2, 3, 2, 6.40, 15),
-(1, 3, 4, 3, 6.60, 15);
+(1, 3, 4, 3, 6.60, 15),
+(1, NULL, 1, 4, 5.50, 20);      -- Return to Depot
 
 -- =====================================================
 -- END OF SEED DATA

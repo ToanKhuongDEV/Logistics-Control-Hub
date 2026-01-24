@@ -28,10 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         DispatcherEntity dispatcher = dispatcherRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        // 2. Check if user is active
-        if (Boolean.FALSE.equals(dispatcher.getActive())) {
-            throw new UsernameNotFoundException("User account is disabled: " + username);
-        }
+
 
         // 3. Build and return UserDetails
         return new User(

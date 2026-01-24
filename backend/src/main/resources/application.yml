@@ -5,9 +5,9 @@ spring:
   # JWT Configuration
   jwt:
     secret: ${JWT_SECRET}
-    expiration: 3600000 # 1 hour
+    expiration: 3600000
     refresh-token:
-      expiration: 604800000 # 7 days
+      expiration: 604800000
 
   datasource:
     url: ${SPRING_DATASOURCE_URL}
@@ -22,12 +22,13 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  
-    show-sql: true
+      ddl-auto: update
+    defer-datasource-initialization: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false
         jdbc:
           time_zone: UTC
           batch_size: 20

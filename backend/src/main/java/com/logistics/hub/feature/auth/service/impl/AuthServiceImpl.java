@@ -29,10 +29,7 @@ public class AuthServiceImpl implements AuthService {
         DispatcherEntity user = dispatcherRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
-        // 2. Check if active
-        if (Boolean.FALSE.equals(user.getActive())) {
-            throw new RuntimeException("Account is disabled");
-        }
+
 
         // 3. Verify password using BCrypt
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -63,10 +60,7 @@ public class AuthServiceImpl implements AuthService {
         DispatcherEntity user = dispatcherRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 3. Check if user is still active
-        if (Boolean.FALSE.equals(user.getActive())) {
-            throw new RuntimeException("Account is disabled");
-        }
+
 
         // 4. Validate refresh token
         UserDetails userDetails = new User(user.getUsername(), user.getPassword(), new ArrayList<>());

@@ -1,8 +1,5 @@
 package com.logistics.hub.common.util;
 
-import com.logistics.hub.common.constant.MessageConstant;
-import com.logistics.hub.common.valueobject.Location;
-
 public class GeoUtils {
 
     private static final int EARTH_RADIUS_KM = 6371;
@@ -12,26 +9,18 @@ public class GeoUtils {
     }
 
     /**
-     * Calculate distance between two locations using Haversine formula
-     * @param loc1 First location
-     * @param loc2 Second location
+     * Calculate distance between two points using Haversine formula
+     * @param lat1 Latitude of first point
+     * @param lon1 Longitude of first point
+     * @param lat2 Latitude of second point
+     * @param lon2 Longitude of second point
      * @return Distance in kilometers
      */
-    public static double calculateDistance(Location loc1, Location loc2) {
-        if (loc1 == null || loc2 == null) {
-            throw new IllegalArgumentException(MessageConstant.LOCATION_REQUIRED);
-        }
-        
-        // Handle null coordinates gracefully if needed, or assume Validated Location
-        if (loc1.getLatitude() == null || loc1.getLongitude() == null ||
-            loc2.getLatitude() == null || loc2.getLongitude() == null) {
-            throw new IllegalArgumentException(MessageConstant.COORDINATES_REQUIRED);
-        }
-
-        double lat1Rad = Math.toRadians(loc1.getLatitude());
-        double lat2Rad = Math.toRadians(loc2.getLatitude());
-        double deltaLat = Math.toRadians(loc2.getLatitude() - loc1.getLatitude());
-        double deltaLon = Math.toRadians(loc2.getLongitude() - loc1.getLongitude());
+    public static double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        double lat1Rad = Math.toRadians(lat1);
+        double lat2Rad = Math.toRadians(lat2);
+        double deltaLat = Math.toRadians(lat2 - lat1);
+        double deltaLon = Math.toRadians(lon2 - lon1);
 
         double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2)
                 + Math.cos(lat1Rad) * Math.cos(lat2Rad)

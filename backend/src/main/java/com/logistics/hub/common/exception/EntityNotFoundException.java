@@ -1,5 +1,8 @@
 package com.logistics.hub.common.exception;
 
+import lombok.Getter;
+
+@Getter
 public class EntityNotFoundException extends RuntimeException {
     private final String entityName;
     private final Object identifier;
@@ -10,11 +13,4 @@ public class EntityNotFoundException extends RuntimeException {
         this.identifier = identifier;
     }
 
-    public String getEntityName() {
-        return entityName;
-    }
-
-    public Object getIdentifier() {
-        return identifier;
-    }
 }

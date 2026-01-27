@@ -36,13 +36,11 @@ Xây dựng hệ thống quản lý logistics với các tính năng:
 ### Frontend
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| Framework | React | UI library |
-| Build Tool | Vite | Fast dev server & build |
-| Language | JavaScript | (ES6+) |
-| UI Library | Ant Design | Component library |
-| Routing | React Router v6 | Navigation |
-| HTTP Client | Axios | API calls |
+| Framework | Next.js 16 | React Framework (App Router) |
+| Styling | Tailwind CSS v4 | Utility-first CSS |
+| UI Library | Shadcn UI | Accessible implementation |
 | State | React Context / Zustand | State management |
+| Validation | Zod + React Hook Form | Form validation |
 | Map | Leaflet | Map visualization |
 
 ### Infrastructure
@@ -136,10 +134,10 @@ Logistics-Control-Hub/
 │
 ├── frontend/                    ✅
 │   └── src/
-│       ├── pages/
-│       ├── components/
-│       ├── services/            ✅
-│       └── utils/
+│       ├── app/                 ✅ (Next.js App Router)
+│       ├── components/          ✅ (Shadcn UI)
+│       ├── lib/                 ✅
+│       └── styles/              ✅
 │
 └── PLAN.md                      ✅ (this file)
 ```
@@ -160,7 +158,7 @@ mvn spring-boot:run
 cd frontend
 npm run dev
 ```
-→ http://localhost:5174
+→ http://localhost:3000
 
 ---
 

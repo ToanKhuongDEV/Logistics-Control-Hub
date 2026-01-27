@@ -64,9 +64,10 @@ Xây dựng hệ thống quản lý logistics với các tính năng:
 - Frontend: React + Vite + Ant Design setup ✅
 - Exception handling, Value objects ✅
 
-**week2 : Create database schema**
+**week2 : Create database schema** ✅
 
 **Week 3: CRUD + Basic Routing**
+- **Authentication** ✅
 - **Location, Customer**, Depot, Vehicle, Driver, Order entities
 - Full CRUD endpoints + UI pages
 - **Order**: Manual create + Auto-generate button

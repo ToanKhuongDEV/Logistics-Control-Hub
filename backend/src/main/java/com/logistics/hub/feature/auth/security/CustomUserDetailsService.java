@@ -1,7 +1,7 @@
 package com.logistics.hub.feature.auth.security;
 
-import com.logistics.hub.feature.auth.entity.DispatcherEntity;
-import com.logistics.hub.feature.auth.repository.DispatcherRepository;
+import com.logistics.hub.feature.dispatcher.entity.DispatcherEntity;
+import com.logistics.hub.feature.dispatcher.repository.DispatcherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;

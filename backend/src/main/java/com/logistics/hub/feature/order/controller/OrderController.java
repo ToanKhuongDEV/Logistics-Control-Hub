@@ -1,5 +1,7 @@
 package com.logistics.hub.feature.order.controller;
 
+import com.logistics.hub.common.base.ApiResponse;
+import com.logistics.hub.feature.order.constant.OrderConstant;
 import com.logistics.hub.feature.order.dto.request.OrderRequest;
 import com.logistics.hub.feature.order.dto.response.OrderResponse;
 import com.logistics.hub.feature.order.service.OrderService;
@@ -22,28 +24,33 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public ResponseEntity<List<OrderResponse>> findAll() {
-        return ResponseEntity.ok(orderService.findAll());
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> findAll() {
+        List<OrderResponse> orders = orderService.findAll();
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDERS_RETRIEVED_SUCCESS, orders));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(orderService.findById(id));
+    public ResponseEntity<ApiResponse<?>> findById(@PathVariable Long id) {
+        OrderResponse order = orderService.findById(id);
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_RETRIEVED_SUCCESS, order));
     }
 
     @PostMapping
-    public ResponseEntity<OrderResponse> create(@Valid @RequestBody OrderRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(request));
+    public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody OrderRequest request) {
+        OrderResponse createdOrder = orderService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(OrderConstant.ORDER_CREATED_SUCCESS, createdOrder));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<OrderResponse> update(@PathVariable Long id, @Valid @RequestBody OrderRequest request) {
-        return ResponseEntity.ok(orderService.update(id, request));
+    public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody OrderRequest request) {
+        OrderResponse updatedOrder = orderService.update(id, request);
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_UPDATED_SUCCESS, updatedOrder));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>> delete(@PathVariable Long id) {
         orderService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_DELETED_SUCCESS, null));
     }
 }

@@ -1,5 +1,7 @@
 package com.logistics.hub.feature.auth.controller;
 
+import com.logistics.hub.common.base.ApiResponse;
+import com.logistics.hub.feature.auth.constant.AuthConstant;
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.RefreshTokenRequest;
 import com.logistics.hub.feature.auth.dto.response.LoginResponse;
@@ -30,7 +32,7 @@ public class AuthController {
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(ApiResponse.error(401, e.getMessage()));
         }
     }
 
@@ -42,13 +44,13 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(ApiResponse.error(401, e.getMessage()));
         }
     }
 
     @GetMapping("/me")
     @Operation(summary = "Get Current User", description = "Returns current authenticated user info (requires valid token)")
-    public ResponseEntity<?> getCurrentUser() {
+    public ResponseEntity<ApiResponse<?>> getCurrentUser() {
         // This endpoint requires authentication - will be protected by JWT filter
         // Returns current user info from SecurityContext
         var authentication = org.springframework.security.core.context.SecurityContextHolder
@@ -56,12 +58,14 @@ public class AuthController {
         
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Not authenticated"));
+                    .body(ApiResponse.error(401, AuthConstant.NOT_AUTHENTICATED));
         }
         
-        return ResponseEntity.ok(Map.of(
+        Map<String, Object> userData = Map.of(
                 "username", authentication.getName(),
                 "authorities", authentication.getAuthorities()
-        ));
+        );
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.USER_INFO_RETRIEVED_SUCCESS, userData));
     }
 }
+

@@ -11,4 +11,11 @@ public final class OrderConstant {
     public static final String DELIVERY_LOCATION_REQUIRED = "Delivery location is required";
     public static final String ORDER_NOT_FOUND = "Order not found with id: ";
     public static final String ORDER_CODE_EXISTS = "Order code already exists: ";
+    
+    // API Response Messages
+    public static final String ORDER_RETRIEVED_SUCCESS = "Order retrieved successfully";
+    public static final String ORDERS_RETRIEVED_SUCCESS = "Orders retrieved successfully";
+    public static final String ORDER_CREATED_SUCCESS = "Order created successfully";
+    public static final String ORDER_UPDATED_SUCCESS = "Order updated successfully";
+    public static final String ORDER_DELETED_SUCCESS = "Order deleted successfully";
 }

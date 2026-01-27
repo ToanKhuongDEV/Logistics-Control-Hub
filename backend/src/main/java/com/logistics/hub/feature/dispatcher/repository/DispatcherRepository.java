@@ -1,6 +1,6 @@
-package com.logistics.hub.feature.auth.repository;
+package com.logistics.hub.feature.dispatcher.repository;
 
-import com.logistics.hub.feature.auth.entity.DispatcherEntity;
+import com.logistics.hub.feature.dispatcher.entity.DispatcherEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

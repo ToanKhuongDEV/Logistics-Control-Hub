@@ -1,4 +1,4 @@
-package com.logistics.hub.feature.auth.entity;
+package com.logistics.hub.feature.dispatcher.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

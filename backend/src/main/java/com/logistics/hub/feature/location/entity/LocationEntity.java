@@ -1,6 +1,7 @@
 package com.logistics.hub.feature.location.entity;
 
 import jakarta.persistence.*;
+import com.logistics.hub.feature.location.constant.LocationConstant;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -26,15 +27,15 @@ public class LocationEntity {
     @Column(length = 255)
     private String name;
 
-    @Min(value = -90, message = "Latitude must be between -90 and 90")
-    @Max(value = 90, message = "Latitude must be between -90 and 90")
-    @NotNull(message = "Latitude is required")
+    @Min(value = -90, message = LocationConstant.LATITUDE_RANGE)
+    @Max(value = 90, message = LocationConstant.LATITUDE_RANGE)
+    @NotNull(message = LocationConstant.LATITUDE_REQUIRED)
     @Column(nullable = false)
     private Double latitude;
 
-    @Min(value = -180, message = "Longitude must be between -180 and 180")
-    @Max(value = 180, message = "Longitude must be between -180 and 180")
-    @NotNull(message = "Longitude is required")
+    @Min(value = -180, message = LocationConstant.LONGITUDE_RANGE)
+    @Max(value = 180, message = LocationConstant.LONGITUDE_RANGE)
+    @NotNull(message = LocationConstant.LONGITUDE_REQUIRED)
     @Column(nullable = false)
     private Double longitude;
 }

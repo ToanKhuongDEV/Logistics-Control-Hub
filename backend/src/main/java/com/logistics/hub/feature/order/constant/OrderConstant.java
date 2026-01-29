@@ -1,8 +1,5 @@
 package com.logistics.hub.feature.order.constant;
 
-/**
- * Order constants for validation messages
- */
 public final class OrderConstant {
     
     private OrderConstant() {}
@@ -12,7 +9,6 @@ public final class OrderConstant {
     public static final String ORDER_NOT_FOUND = "Order not found with id: ";
     public static final String ORDER_CODE_EXISTS = "Order code already exists: ";
     
-    // API Response Messages
     public static final String ORDER_RETRIEVED_SUCCESS = "Order retrieved successfully";
     public static final String ORDERS_RETRIEVED_SUCCESS = "Orders retrieved successfully";
     public static final String ORDER_CREATED_SUCCESS = "Order created successfully";

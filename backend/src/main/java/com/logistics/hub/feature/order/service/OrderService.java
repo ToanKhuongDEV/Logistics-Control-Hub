@@ -5,9 +5,7 @@ import com.logistics.hub.feature.order.dto.response.OrderResponse;
 
 import java.util.List;
 
-/**
- * Service interface for Order operations
- */
+
 public interface OrderService {
     
     List<OrderResponse> findAll();

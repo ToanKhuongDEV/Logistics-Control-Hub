@@ -6,10 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * Response DTO for order data
- * Matches OrderEntity fields
- */
+
 @Data
 public class OrderResponse {
     private Long id;

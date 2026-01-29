@@ -23,10 +23,13 @@ CREATE TABLE vehicles (
 -- 3. Locations (Coordinates only)
 CREATE TABLE locations (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255),
+    name VARCHAR(255) NOT NULL,
 
     latitude DOUBLE PRECISION NOT NULL,
-    longitude DOUBLE PRECISION NOT NULL
+    longitude DOUBLE PRECISION NOT NULL,
+    
+    CONSTRAINT uq_locations_lat_lng
+        UNIQUE (latitude, longitude)
 );
 
 -- 4. Orders (Each order has 1 delivery location)

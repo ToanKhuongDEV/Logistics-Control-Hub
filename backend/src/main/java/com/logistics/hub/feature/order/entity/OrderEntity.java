@@ -10,11 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * Entity representing Order
- * Maps to table: orders
- * Loose Coupling: deliveryLocationId (FK -> locations.id)
- */
+
 @Entity
 @Table(name = "orders")
 @Data
@@ -29,10 +25,7 @@ public class OrderEntity {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
-    /**
-     * Delivery Location ID - Loose coupling
-     * Database has FK constraint -> locations.id
-     */
+
     @Column(name = "delivery_location_id", nullable = false)
     private Long deliveryLocationId;
 

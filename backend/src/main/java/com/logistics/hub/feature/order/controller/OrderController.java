@@ -12,12 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.logistics.hub.common.constant.UrlConstant;
 
-/**
- * REST Controller for Order operations
- */
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping(UrlConstant.Order.PREFIX)
 @RequiredArgsConstructor
 public class OrderController {
 
@@ -29,7 +27,7 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDERS_RETRIEVED_SUCCESS, orders));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(UrlConstant.Order.BY_ID)
     public ResponseEntity<ApiResponse<?>> findById(@PathVariable Long id) {
         OrderResponse order = orderService.findById(id);
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_RETRIEVED_SUCCESS, order));
@@ -42,13 +40,13 @@ public class OrderController {
                 .body(ApiResponse.success(OrderConstant.ORDER_CREATED_SUCCESS, createdOrder));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(UrlConstant.Order.BY_ID)
     public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody OrderRequest request) {
         OrderResponse updatedOrder = orderService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_UPDATED_SUCCESS, updatedOrder));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(UrlConstant.Order.BY_ID)
     public ResponseEntity<ApiResponse<?>> delete(@PathVariable Long id) {
         orderService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_DELETED_SUCCESS, null));

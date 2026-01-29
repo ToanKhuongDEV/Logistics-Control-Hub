@@ -6,12 +6,26 @@ public class UrlConstant {
     private UrlConstant() {
     }
 
-    public static class Order {
-        private static final String PRE_FIX = API_V1 + "/orders";
-        public static final String ORDER_COMMON = PRE_FIX;
-        public static final String ORDER_ID = PRE_FIX + "/{id}";
+    public static class Auth {
+        public static final String PREFIX = API_V1 + "/auth";
+        public static final String LOGIN = "/login";
+        public static final String REFRESH = "/refresh";
+        public static final String ME = "/me";
         
-        private Order() {
-        }
+        private Auth() {}
+    }
+
+    public static class Order {
+        public static final String PREFIX = API_V1 + "/orders";
+        public static final String BY_ID = "/{id}";
+        
+        private Order() {}
+    }
+    
+    public static class Location {
+        public static final String PREFIX = API_V1 + "/locations";
+        public static final String BY_ID = "/{id}";
+        
+        private Location() {}
     }
 }

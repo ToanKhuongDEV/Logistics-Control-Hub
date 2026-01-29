@@ -8,6 +8,7 @@ import com.logistics.hub.feature.order.entity.OrderEntity;
 import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.repository.OrderRepository;
 import com.logistics.hub.feature.order.service.OrderService;
+import com.logistics.hub.feature.order.mapper.OrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,21 +16,21 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Implementation of OrderService
- */
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderMapper orderMapper;
+    private final com.logistics.hub.feature.location.service.LocationService locationService;
 
     @Override
     @Transactional(readOnly = true)
     public List<OrderResponse> findAll() {
         return orderRepository.findAll().stream()
-                .map(this::toResponse)
+                .map(orderMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -38,20 +39,19 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse findById(Long id) {
         OrderEntity entity = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
-        return toResponse(entity);
+        return orderMapper.toResponse(entity);
     }
 
     @Override
     public OrderResponse create(OrderRequest request) {
-        OrderEntity entity = new OrderEntity();
-        entity.setCode(request.getCode());
-        entity.setDeliveryLocationId(request.getDeliveryLocationId());
-        entity.setWeightKg(request.getWeightKg());
-        entity.setVolumeM3(request.getVolumeM3());
+        OrderEntity entity = orderMapper.toEntity(request);
         entity.setStatus(OrderStatus.CREATED);
         
+        com.logistics.hub.feature.location.entity.LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
+        entity.setDeliveryLocationId(location.getId());
+        
         OrderEntity saved = orderRepository.save(entity);
-        return toResponse(saved);
+        return orderMapper.toResponse(saved);
     }
 
     @Override
@@ -59,16 +59,20 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity entity = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
         
-        entity.setCode(request.getCode());
-        entity.setDeliveryLocationId(request.getDeliveryLocationId());
-        entity.setWeightKg(request.getWeightKg());
-        entity.setVolumeM3(request.getVolumeM3());
+        orderMapper.updateEntityFromRequest(request, entity);
+        
         if (request.getStatus() != null) {
-            entity.setStatus(OrderStatus.valueOf(request.getStatus()));
+            entity.setStatus(request.getStatus());
+        }
+
+        // Handle location update if needed (currently focus on create flow)
+        if (request.getDeliveryLocation() != null) {
+             com.logistics.hub.feature.location.entity.LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
+             entity.setDeliveryLocationId(location.getId());
         }
         
         OrderEntity saved = orderRepository.save(entity);
-        return toResponse(saved);
+        return orderMapper.toResponse(saved);
     }
 
     @Override
@@ -77,17 +81,5 @@ public class OrderServiceImpl implements OrderService {
             throw new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id);
         }
         orderRepository.deleteById(id);
-    }
-
-    private OrderResponse toResponse(OrderEntity entity) {
-        OrderResponse response = new OrderResponse();
-        response.setId(entity.getId());
-        response.setCode(entity.getCode());
-        response.setDeliveryLocationId(entity.getDeliveryLocationId());
-        response.setWeightKg(entity.getWeightKg());
-        response.setVolumeM3(entity.getVolumeM3());
-        response.setStatus(entity.getStatus());
-        response.setCreatedAt(entity.getCreatedAt());
-        return response;
     }
 }

@@ -23,7 +23,7 @@ public class LocationController {
     public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody LocationRequest request) {
         LocationResponse response = locationService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(LocationConstant.LOCATION_CREATED_SUCCESS, response));
+                .body(ApiResponse.success(201,LocationConstant.LOCATION_CREATED_SUCCESS, response));
     }
 
     @DeleteMapping(UrlConstant.Location.BY_ID)

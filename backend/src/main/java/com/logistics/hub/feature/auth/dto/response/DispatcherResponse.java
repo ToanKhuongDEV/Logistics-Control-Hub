@@ -12,7 +12,4 @@ public class DispatcherResponse {
     private String username;
     private String fullName;
     private String role;
-    private Boolean active;
-    private String accessToken;
-    private String refreshToken;
 }

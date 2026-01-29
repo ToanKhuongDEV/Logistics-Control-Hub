@@ -65,7 +65,6 @@ public class OrderServiceImpl implements OrderService {
             entity.setStatus(request.getStatus());
         }
 
-        // Handle location update if needed (currently focus on create flow)
         if (request.getDeliveryLocation() != null) {
              com.logistics.hub.feature.location.entity.LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
              entity.setDeliveryLocationId(location.getId());

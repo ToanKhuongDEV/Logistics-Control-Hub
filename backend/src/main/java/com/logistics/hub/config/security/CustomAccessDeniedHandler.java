@@ -14,10 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * Custom handler for access denied scenarios
- * Returns 403 Forbidden with consistent ApiResponse format
- */
+
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 

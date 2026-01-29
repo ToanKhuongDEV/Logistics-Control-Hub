@@ -12,10 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 
-/**
- * Custom UserDetailsService to load user from database
- * Used by Spring Security and JwtAuthenticationFilter
- */
+
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -24,13 +21,13 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // 1. Find user in database
+
         DispatcherEntity dispatcher = dispatcherRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
 
 
-        // 3. Build and return UserDetails
+
         return new User(
                 dispatcher.getUsername(),
                 dispatcher.getPassword(),

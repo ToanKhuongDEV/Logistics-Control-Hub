@@ -30,7 +30,7 @@ public class SecurityConfig {
     private final com.logistics.hub.config.security.CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final com.logistics.hub.config.security.CustomAccessDeniedHandler accessDeniedHandler;
 
-    // Public endpoints - no authentication required
+
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
             "/actuator/**",
@@ -43,30 +43,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF for stateless API
+
                 .csrf(AbstractHttpConfigurer::disable)
                 
-                // Configure authorization
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated()
                 )
                 
-                // Stateless session - no server-side session storage
+
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 
-                // Custom exception handlers
+
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 
-                // Add authentication provider
+
                 .authenticationProvider(authenticationProvider())
                 
-                // Add JWT filter before UsernamePasswordAuthenticationFilter
+
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

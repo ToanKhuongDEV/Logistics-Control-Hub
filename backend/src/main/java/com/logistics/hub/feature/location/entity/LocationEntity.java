@@ -9,10 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Entity representing Location (Geographic point)
- * Maps to table: locations
- */
+
 @Entity
 @Table(name = "locations")
 @Data

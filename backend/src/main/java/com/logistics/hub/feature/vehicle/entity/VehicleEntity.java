@@ -9,10 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * Entity representing Vehicle
- * Maps to table: vehicles
- */
+
 @Entity
 @Table(name = "vehicles")
 @Data

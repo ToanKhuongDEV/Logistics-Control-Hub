@@ -37,7 +37,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody OrderRequest request) {
         OrderResponse createdOrder = orderService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(OrderConstant.ORDER_CREATED_SUCCESS, createdOrder));
+                .body(ApiResponse.success(201, OrderConstant.ORDER_CREATED_SUCCESS, createdOrder));
     }
 
     @PutMapping(UrlConstant.Order.BY_ID)

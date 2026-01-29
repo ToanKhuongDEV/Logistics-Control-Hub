@@ -10,11 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-/**
- * Entity representing Route (Optimized route for 1 vehicle)
- * Maps to table: routes
- * Loose Coupling: vehicleId (FK -> vehicles.id)
- */
+
 @Entity
 @Table(name = "routes")
 @Data
@@ -26,10 +22,7 @@ public class RouteEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Vehicle ID - Loose coupling
-     * Database has FK constraint -> vehicles.id
-     */
+
     @Column(name = "vehicle_id", nullable = false)
     private Long vehicleId;
 

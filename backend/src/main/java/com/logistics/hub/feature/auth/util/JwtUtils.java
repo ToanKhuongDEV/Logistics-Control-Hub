@@ -30,7 +30,7 @@ public class JwtUtils {
     @Value("${spring.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
-    // --- Access Token Methods ---
+
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -69,7 +69,7 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // --- Refresh Token Methods ---
+
 
     public String extractUsernameFromRefreshToken(String token) {
         return extractClaim(token, Claims::getSubject, getRefreshSignInKey());
@@ -99,7 +99,7 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // --- Generic Helper Methods ---
+
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver, Key key) {
         final Claims claims = extractAllClaims(token, key);

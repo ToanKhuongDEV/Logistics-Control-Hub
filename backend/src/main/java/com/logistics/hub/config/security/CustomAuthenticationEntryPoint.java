@@ -14,10 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-/**
- * Custom entry point for authentication failures
- * Returns 401 Unauthorized with consistent ApiResponse format
- */
+
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

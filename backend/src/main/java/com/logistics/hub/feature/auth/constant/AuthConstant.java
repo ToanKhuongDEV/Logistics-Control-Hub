@@ -11,7 +11,7 @@ public final class AuthConstant {
     public static final String INVALID_CREDENTIALS = "Invalid username or password";
     public static final String INVALID_TOKEN = "Invalid or expired token";
     
-    // Validation Messages
+
     public static final String USERNAME_REQUIRED = "Username cannot be empty";
     public static final String PASSWORD_REQUIRED = "Password cannot be empty";
     public static final String REFRESH_TOKEN_REQUIRED = "Refresh token cannot be empty";

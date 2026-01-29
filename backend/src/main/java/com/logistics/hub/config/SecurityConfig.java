@@ -27,6 +27,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    private final com.logistics.hub.config.security.CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final com.logistics.hub.config.security.CustomAccessDeniedHandler accessDeniedHandler;
 
     // Public endpoints - no authentication required
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -53,6 +55,12 @@ public class SecurityConfig {
                 // Stateless session - no server-side session storage
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                
+                // Custom exception handlers
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
                 
                 // Add authentication provider

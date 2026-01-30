@@ -39,7 +39,7 @@ export function ShipmentList({ shipments }: ShipmentListProps) {
 								<p className="text-sm font-medium text-foreground truncate">{shipment.id}</p>
 								<p className="text-xs text-muted-foreground">{shipment.location}</p>
 							</div>
-							<div className="flex items-center gap-2 ml-2 flex-shrink-0">
+							<div className="flex items-center gap-2 ml-2 shrink-0">
 								<div className="text-right">
 									<p className="text-xs font-medium text-foreground">ETA: {shipment.eta}</p>
 								</div>

@@ -28,4 +28,12 @@ public class UrlConstant {
         
         private Location() {}
     }
+    
+    public static class Vehicle {
+        public static final String PREFIX = API_V1 + "/vehicles";
+        public static final String BY_ID = "/{id}";
+        public static final String STATISTICS = "/statistics";
+        
+        private Vehicle() {}
+    }
 }

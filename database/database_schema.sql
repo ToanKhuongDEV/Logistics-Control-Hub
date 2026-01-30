@@ -17,6 +17,10 @@ CREATE TABLE vehicles (
 
     cost_per_km NUMERIC(10,2),
 
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    type VARCHAR(100),
+    driver VARCHAR(100),
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

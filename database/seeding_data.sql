@@ -15,10 +15,18 @@ VALUES
 -- 2. Vehicles
 -- =====================================================
 
-INSERT INTO vehicles (code, max_weight_kg, max_volume_m3, cost_per_km)
+INSERT INTO vehicles (code, max_weight_kg, max_volume_m3, cost_per_km, status, type, driver)
 VALUES
-('VEH-01', 1000, 5.0, 8000),
-('VEH-02', 500, 3.0, 6000);
+('VH001', 2500, 15.5, 5000, 'ACTIVE', 'Hyundai Mighty', 'Nguyễn Văn A'),
+('VH002', 3500, 18.0, 6500, 'ACTIVE', 'Isuzu FRR', 'Trần Thị B'),
+('VH003', 2000, 12.0, 4500, 'MAINTENANCE', 'Kia K250', 'Lê Văn C'),
+('VH004', 3000, 16.5, 5500, 'ACTIVE', 'Hino XZU', 'Phạm Thị D'),
+('VH005', 4000, 20.0, 7000, 'ACTIVE', 'Isuzu FVR', 'Hoàng Văn E'),
+('VH006', 1800, 11.0, 4000, 'IDLE', 'Thaco Kia K200', NULL),
+('VH007', 2800, 14.5, 5200, 'ACTIVE', 'Hyundai HD120S', 'Đỗ Thị F'),
+('VH008', 3200, 17.0, 6000, 'ACTIVE', 'Hino FC', 'Vũ Văn G'),
+('VH009', 2200, 13.0, 4800, 'MAINTENANCE', 'Kia K250', 'Bùi Thị H'),
+('VH010', 3800, 19.5, 6800, 'ACTIVE', 'Isuzu FVR', 'Mai Văn I');
 
 -- =====================================================
 -- 3. Locations

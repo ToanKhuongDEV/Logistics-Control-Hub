@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.vehicle.entity;
 
+import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +33,16 @@ public class VehicleEntity {
 
     @Column(name = "cost_per_km", precision = 10, scale = 2)
     private BigDecimal costPerKm;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private VehicleStatus status = VehicleStatus.ACTIVE;
+
+    @Column(length = 100)
+    private String type;
+
+    @Column(length = 100)
+    private String driver;
 
     @CreationTimestamp
     @Column(name = "created_at")

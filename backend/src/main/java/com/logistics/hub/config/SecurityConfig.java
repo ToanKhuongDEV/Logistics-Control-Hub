@@ -45,6 +45,7 @@ public class SecurityConfig {
         http
 
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(org.springframework.security.config.Customizer.withDefaults())
                 
 
                 .authorizeHttpRequests(auth -> auth

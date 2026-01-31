@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { KPICard } from "@/components/kpi-card";
-import { TrackingMap } from "@/components/tracking-map";
+import { LeafletMap } from "@/components/leaflet-map";
 import { ShipmentList } from "@/components/shipment-list";
 import { Truck, Package, TrendingUp } from "lucide-react";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -79,7 +79,7 @@ export default function DashboardPage() {
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 						{/* Map */}
 						<div className="lg:col-span-2">
-							<TrackingMap />
+							<LeafletMap />
 						</div>
 
 						{/* Shipment List */}

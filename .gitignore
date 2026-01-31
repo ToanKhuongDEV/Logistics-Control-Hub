@@ -36,4 +36,4 @@ yarn-error.log*
 DOCKER_GUIDE.md
 docker-compose.yml
 # PLAN.md
-**/AI_generate
+# **/AI_generate

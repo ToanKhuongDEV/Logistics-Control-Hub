@@ -1,17 +1,21 @@
 package com.logistics.hub.feature.order.controller;
 
 import com.logistics.hub.common.base.ApiResponse;
+import com.logistics.hub.common.base.PaginatedResponse;
 import com.logistics.hub.feature.order.constant.OrderConstant;
 import com.logistics.hub.feature.order.dto.request.OrderRequest;
 import com.logistics.hub.feature.order.dto.response.OrderResponse;
+import com.logistics.hub.feature.order.dto.response.OrderStatisticsResponse;
+import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 import com.logistics.hub.common.constant.UrlConstant;
 
 @RestController
@@ -22,9 +26,31 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<OrderResponse>>> findAll() {
-        List<OrderResponse> orders = orderService.findAll();
-        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDERS_RETRIEVED_SUCCESS, orders));
+    public ResponseEntity<ApiResponse<PaginatedResponse<OrderResponse>>> findAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String search
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<OrderResponse> orderPage = orderService.findAll(pageable, status, search);
+        
+        PaginatedResponse<OrderResponse> response = new PaginatedResponse<>();
+        response.setData(orderPage.getContent());
+        response.setPagination(new PaginatedResponse.PaginationInfo(
+                orderPage.getNumber(),
+                orderPage.getSize(),
+                orderPage.getTotalElements(),
+                orderPage.getTotalPages()
+        ));
+        
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDERS_RETRIEVED_SUCCESS, response));
+    }
+
+    @GetMapping(UrlConstant.Order.STATISTICS)
+    public ResponseEntity<ApiResponse<?>> getStatistics() {
+        OrderStatisticsResponse statistics = orderService.getStatistics();
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_STATISTICS_RETRIEVED_SUCCESS, statistics));
     }
 
     @GetMapping(UrlConstant.Order.BY_ID)

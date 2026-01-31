@@ -14,4 +14,5 @@ public final class OrderConstant {
     public static final String ORDER_CREATED_SUCCESS = "Order created successfully";
     public static final String ORDER_UPDATED_SUCCESS = "Order updated successfully";
     public static final String ORDER_DELETED_SUCCESS = "Order deleted successfully";
+    public static final String ORDER_STATISTICS_RETRIEVED_SUCCESS = "Order statistics retrieved successfully";
 }

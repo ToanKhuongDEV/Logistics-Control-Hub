@@ -3,12 +3,12 @@ package com.logistics.hub.feature.order.service;
 import com.logistics.hub.feature.order.dto.request.OrderRequest;
 import com.logistics.hub.feature.order.dto.response.OrderResponse;
 
-import java.util.List;
+
 
 
 public interface OrderService {
     
-    List<OrderResponse> findAll();
+    org.springframework.data.domain.Page<OrderResponse> findAll(org.springframework.data.domain.Pageable pageable, com.logistics.hub.feature.order.enums.OrderStatus status, String search);
     
     OrderResponse findById(Long id);
     
@@ -17,4 +17,6 @@ public interface OrderService {
     OrderResponse update(Long id, OrderRequest request);
     
     void delete(Long id);
+
+    com.logistics.hub.feature.order.dto.response.OrderStatisticsResponse getStatistics();
 }

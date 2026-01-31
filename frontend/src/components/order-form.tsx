@@ -27,7 +27,7 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 			status: order?.status || OrderStatus.CREATED,
 			locationStreet: addressParts[0] || "",
 			locationCity: addressParts[1] || "",
-			locationCountry: addressParts[2] || "",
+			locationCountry: "Việt Nam",
 		};
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
@@ -35,9 +35,6 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 	const validateForm = () => {
 		const newErrors: Record<string, string> = {};
 
-		if (!formData.code.trim()) {
-			newErrors.code = "Mã đơn hàng là bắt buộc";
-		}
 		if (!formData.locationStreet.trim()) {
 			newErrors.locationStreet = "Địa chỉ là bắt buộc";
 		}
@@ -88,10 +85,9 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 				<form onSubmit={handleSubmit} className="p-6 space-y-4">
 					<div className="space-y-2">
 						<Label htmlFor="code" className="text-foreground">
-							Mã đơn hàng <span className="text-red-500">*</span>
+							Mã đơn hàng
 						</Label>
-						<Input id="code" placeholder="ORD-001" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="border-border" disabled={isSubmitting} />
-						{errors.code && <p className="text-red-500 text-sm">{errors.code}</p>}
+						<Input id="code" placeholder={order ? "" : "Tự động tạo"} value={order ? formData.code : ""} readOnly disabled className="border-border bg-muted text-muted-foreground" />
 					</div>
 
 					<div className="space-y-2">
@@ -146,14 +142,6 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 								</Label>
 								<Input id="locationCity" placeholder="VD: Hồ Chí Minh" value={formData.locationCity} onChange={(e) => setFormData({ ...formData, locationCity: e.target.value })} className="border-border" disabled={isSubmitting} />
 								{errors.locationCity && <p className="text-red-500 text-sm">{errors.locationCity}</p>}
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="locationCountry" className="text-foreground">
-									Quốc gia <span className="text-red-500">*</span>
-								</Label>
-								<Input id="locationCountry" placeholder="VD: Việt Nam" value={formData.locationCountry} onChange={(e) => setFormData({ ...formData, locationCountry: e.target.value })} className="border-border" disabled={isSubmitting} />
-								{errors.locationCountry && <p className="text-red-500 text-sm">{errors.locationCountry}</p>}
 							</div>
 						</div>
 					</div>

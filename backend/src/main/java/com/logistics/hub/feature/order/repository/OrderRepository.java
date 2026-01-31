@@ -42,4 +42,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
     
     
     boolean existsByCode(String code);
+
+    Optional<OrderEntity> findTopByOrderByIdDesc();
 }

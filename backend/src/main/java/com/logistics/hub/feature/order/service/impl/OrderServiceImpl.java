@@ -75,7 +75,9 @@ public class OrderServiceImpl implements OrderService {
     
     @Override
     public OrderResponse create(OrderRequest request) {
-        if (orderRepository.existsByCode(request.getCode())) {
+        if (request.getCode() == null || request.getCode().trim().isEmpty()) {
+            request.setCode(generateOrderCode());
+        } else if (orderRepository.existsByCode(request.getCode())) {
             throw new IllegalArgumentException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
         }
 
@@ -119,5 +121,22 @@ public class OrderServiceImpl implements OrderService {
             throw new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id);
         }
         orderRepository.deleteById(id);
+    }
+
+    private String generateOrderCode() {
+        return orderRepository.findTopByOrderByIdDesc()
+            .map(lastOrder -> {
+                String lastCode = lastOrder.getCode();
+                if (lastCode.startsWith("ORD-")) {
+                    try {
+                        int sequence = Integer.parseInt(lastCode.substring(4));
+                        return String.format("ORD-%03d", sequence + 1);
+                    } catch (NumberFormatException e) {
+                        return "ORD-001";
+                    }
+                }
+                return "ORD-001";
+            })
+            .orElse("ORD-001");
     }
 }

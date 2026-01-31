@@ -8,10 +8,11 @@ interface PaginationProps {
 	totalPages: number;
 	itemsPerPage: number;
 	totalItems: number;
+	entityName?: string;
 	onPageChange: (page: number) => void;
 }
 
-export function Pagination({ currentPage, totalPages, itemsPerPage, totalItems, onPageChange }: PaginationProps) {
+export function Pagination({ currentPage, totalPages, itemsPerPage, totalItems, entityName = "mục", onPageChange }: PaginationProps) {
 	const startItem = (currentPage - 1) * itemsPerPage + 1;
 	const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
@@ -55,7 +56,7 @@ export function Pagination({ currentPage, totalPages, itemsPerPage, totalItems, 
 	return (
 		<div className="flex items-center justify-between px-6 py-4 border border-border rounded-b-lg bg-card">
 			<div className="text-sm text-muted-foreground">
-				Hiển thị {startItem} - {endItem} của tổng số <span className="font-semibold text-foreground">{totalItems}</span> phương tiện
+				Hiển thị {startItem} - {endItem} của tổng số <span className="font-semibold text-foreground">{totalItems}</span> {entityName}
 			</div>
 
 			<div className="flex items-center gap-2">

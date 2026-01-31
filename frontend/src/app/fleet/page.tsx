@@ -196,7 +196,7 @@ export default function FleetPage() {
 						<div className="space-y-4">
 							<FleetTable vehicles={vehicles} onEdit={handleEditVehicle} onDelete={handleDeleteVehicle} isLoading={isLoading} />
 
-							{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={handlePageChange} />}
+							{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={handlePageChange} entityName="phương tiện" />}
 						</div>
 					</div>
 				</div>

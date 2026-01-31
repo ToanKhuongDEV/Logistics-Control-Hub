@@ -16,8 +16,7 @@ export interface Location {
 export interface Order {
 	id: number;
 	code: string;
-	deliveryLocationId: number;
-	deliveryLocation?: Location;
+	deliveryLocationName: string;
 	weightKg: number;
 	volumeM3: number;
 	status: OrderStatus;

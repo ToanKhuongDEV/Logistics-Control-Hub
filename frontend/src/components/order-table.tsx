@@ -77,7 +77,7 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 								<td className="px-6 py-4 text-sm font-medium text-foreground">{order.code}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{formatNumber(order.weightKg)}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{Number(order.volumeM3).toFixed(2)}</td>
-								<td className="px-6 py-4 text-sm text-foreground">{order.deliveryLocation?.name || `#${order.deliveryLocationId}`}</td>
+								<td className="px-6 py-4 text-sm text-foreground">{order.deliveryLocationName}</td>
 								<td className="px-6 py-4">
 									<span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>{statusConfig.label}</span>
 								</td>

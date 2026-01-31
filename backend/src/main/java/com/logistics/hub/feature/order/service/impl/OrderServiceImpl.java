@@ -1,7 +1,7 @@
 package com.logistics.hub.feature.order.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
-import com.logistics.hub.feature.location.dto.response.LocationResponse;
+
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.location.service.LocationService;
 import com.logistics.hub.feature.order.constant.OrderConstant;
@@ -19,10 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 
 
 @Service
@@ -40,9 +37,8 @@ public class OrderServiceImpl implements OrderService {
         String statusStr = status != null ? status.name() : null;
         String searchStr = (search != null && !search.isEmpty()) ? search : null;
         
-        Page<Map<String, Object>> pageResult = orderRepository.findAllWithLocationAndFilters(statusStr, searchStr, pageable);
-        
-        return pageResult.map(this::buildOrderResponseFromMap);
+        return orderRepository.findAllWithLocationAndFilters(statusStr, searchStr, pageable)
+                .map(OrderResponse::fromProjection);
     }
     
     @Override
@@ -71,41 +67,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public OrderResponse findById(Long id) {
-        Map<String, Object> resultMap = orderRepository.findByIdWithLocationData(id);
-        if (resultMap == null || resultMap.isEmpty()) {
-            throw new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id);
-        }
-        
-        return buildOrderResponseFromMap(resultMap);
+        return orderRepository.findByIdWithLocation(id)
+                .map(OrderResponse::fromProjection)
+                .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
     }
-    
-    private OrderResponse buildOrderResponseFromMap(Map<String, Object> map) {
-        OrderResponse response = new OrderResponse();
-        response.setId(((Number) map.get("id")).longValue());
-        response.setCode((String) map.get("code"));
-        response.setDeliveryLocationId(((Number) map.get("delivery_location_id")).longValue());
-        
-        if (map.get("weight_kg") != null) {
-            response.setWeightKg(((Number) map.get("weight_kg")).intValue());
-        }
-        if (map.get("volume_m3") != null) {
-            response.setVolumeM3(new BigDecimal(map.get("volume_m3").toString()));
-        }
-        response.setStatus(OrderStatus.valueOf((String) map.get("status")));
-        response.setCreatedAt(((Timestamp) map.get("created_at")).toInstant());
-        
-        // Build location if joined
-        if (map.get("loc_id") != null) {
-            LocationResponse location = new LocationResponse();
-            location.setId(((Number) map.get("loc_id")).longValue());
-            location.setName((String) map.get("loc_name"));
-            location.setLatitude(((Number) map.get("loc_lat")).doubleValue());
-            location.setLongitude(((Number) map.get("loc_lng")).doubleValue());
-            response.setDeliveryLocation(location);
-        }
-        
-        return response;
-    }
+
     
     @Override
     public OrderResponse create(OrderRequest request) {

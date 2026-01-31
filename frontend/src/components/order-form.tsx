@@ -17,14 +17,18 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: OrderFormProps) {
-	const [formData, setFormData] = useState({
-		code: order?.code || "",
-		weightKg: order?.weightKg?.toString() || "",
-		volumeM3: order?.volumeM3?.toString() || "",
-		status: order?.status || OrderStatus.CREATED,
-		locationStreet: "",
-		locationCity: "",
-		locationCountry: "",
+	const [formData, setFormData] = useState(() => {
+		const addressParts = order?.deliveryLocationName?.split(", ") || [];
+
+		return {
+			code: order?.code || "",
+			weightKg: order?.weightKg?.toString() || "",
+			volumeM3: order?.volumeM3?.toString() || "",
+			status: order?.status || OrderStatus.CREATED,
+			locationStreet: addressParts[0] || "",
+			locationCity: addressParts[1] || "",
+			locationCountry: addressParts[2] || "",
+		};
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
 

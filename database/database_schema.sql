@@ -1,4 +1,18 @@
--- 1. Dispatcher 
+-- 1. Companies
+CREATE TABLE companies (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(255),
+    website VARCHAR(255),
+    tax_id VARCHAR(50),
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE
+);
+
+-- 2. Dispatcher 
 CREATE TABLE dispatchers (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -7,7 +21,7 @@ CREATE TABLE dispatchers (
     role VARCHAR(20) NOT NULL DEFAULT 'DISPATCHER'
 );
 
--- 2. Vehicles
+-- 3. Vehicles
 CREATE TABLE vehicles (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -24,7 +38,7 @@ CREATE TABLE vehicles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Locations (Coordinates only)
+-- 4. Locations (Coordinates only)
 CREATE TABLE locations (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -36,7 +50,7 @@ CREATE TABLE locations (
         UNIQUE (latitude, longitude)
 );
 
--- 4. Orders (Each order has 1 delivery location)
+-- 5. Orders (Each order has 1 delivery location)
 
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
@@ -55,7 +69,7 @@ CREATE TABLE orders (
         REFERENCES locations(id)
 );
 
--- 5. Routes (1 vehicle = 1 optimized route)
+-- 6. Routes (1 vehicle = 1 optimized route)
 CREATE TABLE routes (
     id BIGSERIAL PRIMARY KEY,
 
@@ -74,7 +88,7 @@ CREATE TABLE routes (
         REFERENCES vehicles(id)
 );
 
--- 6. Route Stops (Ordered delivery sequence)
+-- 7. Route Stops (Ordered delivery sequence)
 CREATE TABLE route_stops (
     id BIGSERIAL PRIMARY KEY,
 
@@ -104,7 +118,7 @@ CREATE TABLE route_stops (
         UNIQUE (route_id, stop_sequence)
 );
 
--- 7. Indexes (minimal but useful)
+-- 8. Indexes (minimal but useful)
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_routes_vehicle ON routes(vehicle_id);
 CREATE INDEX idx_route_stops_route ON route_stops(route_id);

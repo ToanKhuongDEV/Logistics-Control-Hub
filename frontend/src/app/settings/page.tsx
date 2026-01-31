@@ -1,31 +1,91 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Globe, Bell, Lock, Users, Save, X } from "lucide-react";
+import { Globe, Bell, Lock, Users, Save, X, Loader2 } from "lucide-react";
+import { companyApi } from "@/lib/company-api";
+import { Company } from "@/types/company-types";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
 	const [activeTab, setActiveTab] = useState<"company" | "notifications" | "system" | "users">("company");
 	const [isEditingCompany, setIsEditingCompany] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
+	const [isSaving, setIsSaving] = useState(false);
 
 	const [companyData, setCompanyData] = useState({
-		name: "LogiTower Vietnam",
-		email: "contact@logitower.vn",
-		phone: "+84 28 1234 5678",
-		address: "123 Đường Trần Hưng Đạo, Quận 1, TPHCM",
-		website: "www.logitower.vn",
-		taxId: "0123456789",
+		name: "",
+		email: "",
+		phone: "",
+		address: "",
+		website: "",
+		taxId: "",
 		description: "",
 	});
 
-	const handleCompanySave = () => {
+	const [originalData, setOriginalData] = useState(companyData);
+
+	// Fetch company info on mount
+	useEffect(() => {
+		const fetchCompanyInfo = async () => {
+			setIsLoading(true);
+			try {
+				const data = await companyApi.getCompanyInfo();
+				if (data) {
+					const formattedData = {
+						name: data.name || "",
+						email: data.email || "",
+						phone: data.phone || "",
+						address: data.address || "",
+						website: data.website || "",
+						taxId: data.taxId || "",
+						description: data.description || "",
+					};
+					setCompanyData(formattedData);
+					setOriginalData(formattedData);
+				}
+			} catch (error: any) {
+				console.error("Error fetching company info:", error);
+				toast.error("Không thể tải thông tin công ty");
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchCompanyInfo();
+	}, []);
+
+	const handleCompanySave = async () => {
+		setIsSaving(true);
+		try {
+			await companyApi.updateCompanyInfo({
+				name: companyData.name,
+				email: companyData.email,
+				phone: companyData.phone,
+				address: companyData.address,
+				website: companyData.website,
+				taxId: companyData.taxId,
+				description: companyData.description,
+			});
+			setOriginalData(companyData);
+			setIsEditingCompany(false);
+			toast.success("Lưu thông tin công ty thành công");
+		} catch (error: any) {
+			console.error("Error saving company info:", error);
+			toast.error("Không thể lưu thông tin công ty");
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	const handleCancel = () => {
+		setCompanyData(originalData);
 		setIsEditingCompany(false);
-		// TODO: Call API to save
 	};
 
 	return (
@@ -74,56 +134,71 @@ export default function SettingsPage() {
 								<Card className="p-6">
 									<div className="flex items-center justify-between mb-6">
 										<h2 className="text-xl font-semibold text-foreground">Thông tin công ty</h2>
-										<Button onClick={() => setIsEditingCompany(!isEditingCompany)} variant={isEditingCompany ? "default" : "outline"} className="gap-2">
-											{isEditingCompany ? (
-												<>
-													<X className="w-4 h-4" />
-													Hủy
-												</>
-											) : (
-												"Sửa"
-											)}
-										</Button>
-									</div>
-
-									<div className="space-y-4">
-										<div>
-											<Label htmlFor="companyName">Tên công ty</Label>
-											<Input id="companyName" value={companyData.name} onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
-										</div>
-
-										<div>
-											<Label htmlFor="companyEmail">Email công ty</Label>
-											<Input id="companyEmail" type="email" value={companyData.email} onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
-										</div>
-
-										<div>
-											<Label htmlFor="phone">Số điện thoại</Label>
-											<Input id="phone" value={companyData.phone} onChange={(e) => setCompanyData({ ...companyData, phone: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
-										</div>
-
-										<div>
-											<Label htmlFor="address">Địa chỉ</Label>
-											<Input id="address" value={companyData.address} onChange={(e) => setCompanyData({ ...companyData, address: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
-										</div>
-
-										<div>
-											<Label htmlFor="website">Website</Label>
-											<Input id="website" value={companyData.website} onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
-										</div>
-
-										<div>
-											<Label htmlFor="taxId">Mã số thuế</Label>
-											<Input id="taxId" value={companyData.taxId} onChange={(e) => setCompanyData({ ...companyData, taxId: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
-										</div>
-
-										{isEditingCompany && (
-											<Button onClick={handleCompanySave} className="w-full bg-primary hover:bg-primary/90 gap-2">
-												<Save className="w-4 h-4" />
-												Lưu thay đổi
+										{!isEditingCompany ? (
+											<Button onClick={() => setIsEditingCompany(true)} variant="outline" disabled={isLoading}>
+												{isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sửa"}
+											</Button>
+										) : (
+											<Button onClick={handleCancel} variant="outline" className="gap-2">
+												<X className="w-4 h-4" />
+												Hủy
 											</Button>
 										)}
 									</div>
+
+									{isLoading ? (
+										<div className="flex items-center justify-center py-12">
+											<Loader2 className="w-8 h-8 animate-spin text-primary" />
+										</div>
+									) : (
+										<div className="space-y-4">
+											<div>
+												<Label htmlFor="companyName">Tên công ty</Label>
+												<Input id="companyName" value={companyData.name} onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
+											</div>
+
+											<div>
+												<Label htmlFor="companyEmail">Email công ty</Label>
+												<Input id="companyEmail" type="email" value={companyData.email} onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
+											</div>
+
+											<div>
+												<Label htmlFor="phone">Số điện thoại</Label>
+												<Input id="phone" value={companyData.phone} onChange={(e) => setCompanyData({ ...companyData, phone: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
+											</div>
+
+											<div>
+												<Label htmlFor="address">Địa chỉ</Label>
+												<Input id="address" value={companyData.address} onChange={(e) => setCompanyData({ ...companyData, address: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
+											</div>
+
+											<div>
+												<Label htmlFor="website">Website</Label>
+												<Input id="website" value={companyData.website} onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
+											</div>
+
+											<div>
+												<Label htmlFor="taxId">Mã số thuế</Label>
+												<Input id="taxId" value={companyData.taxId} onChange={(e) => setCompanyData({ ...companyData, taxId: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
+											</div>
+
+											{isEditingCompany && (
+												<Button onClick={handleCompanySave} className="w-full bg-primary hover:bg-primary/90 gap-2" disabled={isSaving}>
+													{isSaving ? (
+														<>
+															<Loader2 className="w-4 h-4 animate-spin" />
+															Đang lưu...
+														</>
+													) : (
+														<>
+															<Save className="w-4 h-4" />
+															Lưu thay đổi
+														</>
+													)}
+												</Button>
+											)}
+										</div>
+									)}
 								</Card>
 							</div>
 						)}

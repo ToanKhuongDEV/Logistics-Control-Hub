@@ -3,7 +3,15 @@
 -- =====================================================
 
 -- =====================================================
--- 1. Dispatchers
+-- 1. Companies
+-- =====================================================
+
+INSERT INTO companies (name, address, phone, email, website, tax_id, description)
+VALUES
+('LogiTower Vietnam', '123 Đường Trần Hưng Đạo, Quận 1, TPHCM', '+84 28 1234 5678', 'contact@logitower.vn', 'www.logitower.vn', '0123456789', 'Công ty logistics hàng đầu tại Việt Nam');
+
+-- =====================================================
+-- 2. Dispatchers
 -- =====================================================
 
 INSERT INTO dispatchers (username, password, full_name, role)
@@ -12,7 +20,7 @@ VALUES
 ('admin01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Tran Thi B', 'ADMIN');
 
 -- =====================================================
--- 2. Vehicles
+-- 3. Vehicles
 -- =====================================================
 
 INSERT INTO vehicles (code, max_weight_kg, max_volume_m3, cost_per_km, status, type, driver)
@@ -29,7 +37,7 @@ VALUES
 ('VH010', 3800, 19.5, 6800, 'ACTIVE', 'Isuzu FVR', 'Mai Văn I');
 
 -- =====================================================
--- 3. Locations
+-- 4. Locations
 -- =====================================================
 
 INSERT INTO locations (name, latitude, longitude)
@@ -40,7 +48,7 @@ VALUES
 ('Customer C', 10.751889, 106.670806);
 
 -- =====================================================
--- 4. Orders
+-- 5. Orders
 -- =====================================================
 
 INSERT INTO orders (code, delivery_location_id, weight_kg, volume_m3, status)
@@ -50,7 +58,7 @@ VALUES
 ('ORD-003', 4, 400, 2.0, 'CREATED');
 
 -- =====================================================
--- 5. Routes (SIMULATED OPTIMIZATION RESULT)
+-- 6. Routes (SIMULATED OPTIMIZATION RESULT)
 -- =====================================================
 
 INSERT INTO routes (
@@ -64,7 +72,7 @@ VALUES
 (1, 18.20, 42, 145600, 'CREATED');
 
 -- =====================================================
--- 6. Route Stops (Delivery Sequence)
+-- 7. Route Stops (Delivery Sequence)
 -- =====================================================
 
 INSERT INTO route_stops (

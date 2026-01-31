@@ -37,4 +37,10 @@ public class UrlConstant {
         
         private Vehicle() {}
     }
+
+    public static class Company {
+        public static final String PREFIX = API_V1 + "/company";
+
+        private Company() {}
+    }
 }

@@ -2,13 +2,14 @@
 
 import React from "react";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VehicleStatus, Vehicle, VehicleRequest } from "@/types/vehicle-types";
+import { driverApi, Driver } from "@/lib/driver-api";
 
 interface VehicleFormProps {
 	vehicle?: Vehicle;
@@ -25,16 +26,17 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 		costPerKm: vehicle?.costPerKm || "",
 		status: vehicle?.status || VehicleStatus.ACTIVE,
 		type: vehicle?.type || "",
-		driver: vehicle?.driver || "",
+		driverId: vehicle?.driverId ?? null,
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
+	const [drivers, setDrivers] = useState<Driver[]>([]);
 
 	const validateForm = () => {
 		const newErrors: Record<string, string> = {};
 
-		if (!formData.code.trim()) {
-			newErrors.code = "Mã xe là bắt buộc";
-		}
+		// if (!formData.code.trim()) {
+		// 	newErrors.code = "Mã xe là bắt buộc";
+		// }
 		if (!formData.maxWeightKg || Number(formData.maxWeightKg) <= 0) {
 			newErrors.maxWeightKg = "Tải trọng phải lớn hơn 0";
 		}
@@ -49,6 +51,19 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 		return Object.keys(newErrors).length === 0;
 	};
 
+	useEffect(() => {
+		const fetchDrivers = async () => {
+			try {
+				// Only fetch available drivers + current driver (if editing)
+				const data = await driverApi.getAvailable(vehicle?.driverId);
+				setDrivers(data);
+			} catch (error) {
+				console.error("Failed to fetch drivers:", error);
+			}
+		};
+		fetchDrivers();
+	}, [vehicle?.driverId]);
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!validateForm()) return;
@@ -60,7 +75,7 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 			costPerKm: Number(formData.costPerKm),
 			status: formData.status as VehicleStatus,
 			type: formData.type || undefined,
-			driver: formData.driver || undefined,
+			driverId: formData.driverId ?? null,
 		});
 	};
 
@@ -77,10 +92,9 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 				<form onSubmit={handleSubmit} className="p-6 space-y-4">
 					<div className="space-y-2">
 						<Label htmlFor="code" className="text-foreground">
-							Mã xe <span className="text-red-500">*</span>
+							Mã xe
 						</Label>
-						<Input id="code" placeholder="VH001" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="border-border" disabled={isSubmitting} />
-						{errors.code && <p className="text-red-500 text-sm">{errors.code}</p>}
+						<Input id="code" placeholder={vehicle ? "" : "Tự động tạo (VD: LDT-001)"} value={vehicle ? formData.code : ""} readOnly disabled className="border-border bg-muted text-muted-foreground" />
 					</div>
 
 					<div className="space-y-2">
@@ -124,18 +138,39 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 					</div>
 
 					<div className="space-y-2">
+						<Label htmlFor="driver" className="text-foreground">
+							Tài xế (Tùy chọn)
+						</Label>
+						<Select value={formData.driverId?.toString() ?? "null"} onValueChange={(value) => setFormData({ ...formData, driverId: value === "null" ? null : Number(value) })} disabled={isSubmitting}>
+							<SelectTrigger id="driver" className="border-border">
+								<SelectValue placeholder="Chọn tài xế" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="null">Không gán tài xế</SelectItem>
+								{Array.isArray(drivers) &&
+									drivers.map((driver) => (
+										<SelectItem key={driver.id} value={driver.id.toString()}>
+											{driver.name} - {driver.licenseNumber}
+										</SelectItem>
+									))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div className="space-y-2">
 						<Label htmlFor="type" className="text-foreground">
 							Loại xe (Hãng/Model)
 						</Label>
 						<Input id="type" type="text" placeholder="VD: Hyundai Mighty, Isuzu FRR,..." value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="border-border" disabled={isSubmitting} />
 					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="driver" className="text-foreground">
+					{/* TODO: Implement driver selection dropdown */}
+					{/* <div className="space-y-2">
+						<Label htmlFor="driverId" className="text-foreground">
 							Tài xế
 						</Label>
-						<Input id="driver" placeholder="Nguyễn Văn A" value={formData.driver} onChange={(e) => setFormData({ ...formData, driver: e.target.value })} className="border-border" disabled={isSubmitting} />
-					</div>
+						<Input id="driverId" value={formData.driverId} disabled />
+					</div> */}
 
 					<div className="flex gap-3 pt-6">
 						<Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent" disabled={isSubmitting}>

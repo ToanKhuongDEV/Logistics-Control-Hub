@@ -19,6 +19,8 @@ export interface Order {
 	deliveryLocationName: string;
 	weightKg: number;
 	volumeM3: number;
+	driverId?: number;
+	driverName?: string;
 	status: OrderStatus;
 	createdAt: string;
 }
@@ -35,6 +37,7 @@ export interface OrderRequest {
 	weightKg?: number;
 	volumeM3?: number;
 	status?: OrderStatus;
+	driverId?: number | null;
 }
 
 export interface OrderStatistics {

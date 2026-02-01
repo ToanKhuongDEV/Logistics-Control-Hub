@@ -2,10 +2,16 @@
 
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { KPICard } from "@/components/kpi-card";
-import { LeafletMap } from "@/components/leaflet-map";
+// import { LeafletMap } from "@/components/leaflet-map";
 import { ShipmentList } from "@/components/shipment-list";
 import { Truck, Package, TrendingUp } from "lucide-react";
 import { ProtectedRoute } from "@/components/protected-route";
+import dynamic from "next/dynamic";
+
+const LeafletMap = dynamic(() => import("@/components/leaflet-map").then((mod) => mod.LeafletMap), {
+	ssr: false,
+	loading: () => <p className="h-[400px] w-full flex items-center justify-center bg-gray-100 rounded-lg">Đang tải bản đồ...</p>,
+});
 
 const shipments = [
 	{

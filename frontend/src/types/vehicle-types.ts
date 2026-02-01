@@ -12,7 +12,8 @@ export interface Vehicle {
 	costPerKm: number;
 	status: VehicleStatus;
 	type?: string;
-	driver?: string;
+	driverId?: number;
+	driverName?: string;
 	createdAt?: string;
 }
 
@@ -23,7 +24,7 @@ export interface VehicleRequest {
 	costPerKm: number;
 	status: VehicleStatus;
 	type?: string;
-	driver?: string;
+	driverId?: number | null;
 }
 
 export interface VehicleStatistics {

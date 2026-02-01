@@ -70,7 +70,7 @@ export function FleetTable({ vehicles, onEdit, onDelete, isLoading = false }: Fl
 								<td className="px-6 py-4">
 									<span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>{statusConfig.label}</span>
 								</td>
-								<td className="px-6 py-4 text-sm text-muted-foreground">{vehicle.driver || "-"}</td>
+								<td className="px-6 py-4 text-sm text-muted-foreground">{vehicle.driverName || "-"}</td>
 								<td className="px-6 py-4 text-right">
 									<div className="flex items-center justify-end gap-2">
 										<Button size="sm" variant="outline" onClick={() => onEdit(vehicle)} className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground">

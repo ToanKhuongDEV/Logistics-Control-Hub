@@ -54,6 +54,7 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Khối lượng (kg)</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Thể tích (m³)</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Điểm giao hàng</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tài xế</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Trạng thái</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Ngày tạo</th>
 						<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>
@@ -78,6 +79,7 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 								<td className="px-6 py-4 text-sm text-foreground">{formatNumber(order.weightKg)}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{Number(order.volumeM3).toFixed(2)}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{order.deliveryLocationName}</td>
+								<td className="px-6 py-4 text-sm text-muted-foreground">{order.driverName || "-"}</td>
 								<td className="px-6 py-4">
 									<span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>{statusConfig.label}</span>
 								</td>

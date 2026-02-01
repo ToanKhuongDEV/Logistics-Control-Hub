@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 @Data
 public class VehicleRequest {
     
-    @NotBlank(message = VehicleConstant.VEHICLE_CODE_REQUIRED)
     @Size(max = 50, message = "Vehicle code must not exceed 50 characters")
     private String code;
     
@@ -32,6 +31,5 @@ public class VehicleRequest {
     @Size(max = 100, message = "Vehicle type must not exceed 100 characters")
     private String type;
     
-    @Size(max = 100, message = "Driver name must not exceed 100 characters")
-    private String driver;
+    private Long driverId;
 }

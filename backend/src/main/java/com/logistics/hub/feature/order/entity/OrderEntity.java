@@ -35,6 +35,9 @@ public class OrderEntity {
     @Column(name = "volume_m3", precision = 6, scale = 2)
     private BigDecimal volumeM3;
 
+    @Column(name = "driver_id")
+    private Long driverId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status = OrderStatus.CREATED;

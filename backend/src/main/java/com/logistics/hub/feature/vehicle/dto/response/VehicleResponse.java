@@ -15,6 +15,7 @@ public class VehicleResponse {
     private BigDecimal costPerKm;
     private VehicleStatus status;
     private String type;
-    private String driver;
+    private Long driverId;
+    private String driverName;
     private Instant createdAt;
 }

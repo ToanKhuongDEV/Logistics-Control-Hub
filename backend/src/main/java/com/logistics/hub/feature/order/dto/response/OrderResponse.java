@@ -16,6 +16,8 @@ public class OrderResponse {
     private String deliveryLocationName;
     private Integer weightKg;
     private BigDecimal volumeM3;
+    private Long driverId;
+    private String driverName;
     private OrderStatus status;
     private Instant createdAt;
 
@@ -26,6 +28,8 @@ public class OrderResponse {
         response.setDeliveryLocationName(projection.getLocName());
         response.setWeightKg(projection.getWeightKg());
         response.setVolumeM3(projection.getVolumeM3());
+        response.setDriverId(projection.getDriverId());
+        response.setDriverName(projection.getDriverName());
         response.setStatus(OrderStatus.valueOf(projection.getStatus()));
         response.setCreatedAt(projection.getCreatedAt());
         return response;

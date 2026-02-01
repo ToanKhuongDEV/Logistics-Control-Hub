@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.geocoding.service;
 
+import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.geocoding.dto.Coordinates;
 import com.logistics.hub.feature.geocoding.dto.NominatimResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class OpenStreetMapService {
 
     public Coordinates geocode(String address) {
         if (address == null || address.trim().isEmpty()) {
-            throw new IllegalArgumentException("Address cannot be null or empty");
+            throw new ValidationException("Address cannot be null or empty");
         }
 
         try {

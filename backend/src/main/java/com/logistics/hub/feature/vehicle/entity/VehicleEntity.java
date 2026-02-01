@@ -41,8 +41,8 @@ public class VehicleEntity {
     @Column(length = 100)
     private String type;
 
-    @Column(length = 100)
-    private String driver;
+    @Column(name = "driver_id")
+    private Long driverId;
 
     @CreationTimestamp
     @Column(name = "created_at")

@@ -9,6 +9,7 @@ public final class VehicleConstant {
     public static final String VEHICLE_CODE_EXISTS = "Vehicle code already exists: ";
     public static final String VEHICLE_NOT_FOUND = "Vehicle not found with id: ";
     public static final String VEHICLE_IN_USE = "Vehicle is assigned to active routes and cannot be deleted";
+    public static final String DRIVER_ALREADY_ASSIGNED = "Driver is already assigned to another vehicle";
     
     public static final String VEHICLE_RETRIEVED_SUCCESS = "Vehicle retrieved successfully";
     public static final String VEHICLES_RETRIEVED_SUCCESS = "Vehicles retrieved successfully";

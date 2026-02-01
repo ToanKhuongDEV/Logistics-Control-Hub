@@ -1,7 +1,7 @@
 package com.logistics.hub.feature.order.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
-
+import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.location.service.LocationService;
 import com.logistics.hub.feature.order.constant.OrderConstant;
@@ -78,7 +78,7 @@ public class OrderServiceImpl implements OrderService {
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
             request.setCode(generateOrderCode());
         } else if (orderRepository.existsByCode(request.getCode())) {
-            throw new IllegalArgumentException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
+            throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
         }
 
         OrderEntity entity = orderMapper.toEntity(request);
@@ -97,7 +97,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
         
         if (!entity.getCode().equals(request.getCode()) && orderRepository.existsByCode(request.getCode())) {
-            throw new IllegalArgumentException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
+            throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
         }
 
         orderMapper.updateEntityFromRequest(request, entity);

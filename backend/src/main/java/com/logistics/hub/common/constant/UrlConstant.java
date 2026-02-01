@@ -43,4 +43,11 @@ public class UrlConstant {
 
         private Company() {}
     }
+
+    public static class Driver {
+        public static final String PREFIX = API_V1 + "/drivers";
+        public static final String BY_ID = "/{id}";
+
+        private Driver() {}
+    }
 }

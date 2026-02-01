@@ -20,6 +20,8 @@ public class OrderRequest {
     private Integer weightKg;
 
     private BigDecimal volumeM3;
+    
+    private Long driverId;
 
     private OrderStatus status;
 }

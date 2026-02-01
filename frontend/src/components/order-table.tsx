@@ -55,7 +55,7 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Thể tích (m³)</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Điểm giao hàng</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tài xế</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Trạng thái</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground min-w-[140px]">Trạng thái</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Ngày tạo</th>
 						<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>
 					</tr>

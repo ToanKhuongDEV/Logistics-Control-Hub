@@ -8,9 +8,10 @@ interface DriverFiltersProps {
 	searchQuery: string;
 	onSearchChange: (value: string) => void;
 	onClearFilters: () => void;
+	children?: React.ReactNode;
 }
 
-export function DriverFilters({ searchQuery, onSearchChange, onClearFilters }: DriverFiltersProps) {
+export function DriverFilters({ searchQuery, onSearchChange, onClearFilters, children }: DriverFiltersProps) {
 	const hasActiveFilters = searchQuery !== "";
 
 	return (
@@ -19,12 +20,15 @@ export function DriverFilters({ searchQuery, onSearchChange, onClearFilters }: D
 				<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
 				<Input type="text" placeholder="Tìm theo tên, số GPLX hoặc SĐT..." value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} className="pl-10" />
 			</div>
-			{hasActiveFilters && (
-				<Button onClick={onClearFilters} variant="outline" size="sm" className="gap-2">
-					<X className="w-4 h-4" />
-					Xóa bộ lọc
-				</Button>
-			)}
+			<div className="flex items-center gap-2">
+				{hasActiveFilters && (
+					<Button onClick={onClearFilters} variant="outline" size="sm" className="gap-2">
+						<X className="w-4 h-4" />
+						Xóa bộ lọc
+					</Button>
+				)}
+				{children}
+			</div>
 		</div>
 	);
 }

@@ -140,15 +140,13 @@ export default function DriversPage() {
 						<DriverStats statistics={statistics} />
 
 						{/* Filters */}
-						<DriverFilters searchQuery={searchQuery} onSearchChange={handleSearchChange} onClearFilters={handleClearFilters} />
-
-						{/* Actions */}
-						<div className="flex items-center justify-end">
+						{/* Filters and Actions */}
+						<DriverFilters searchQuery={searchQuery} onSearchChange={handleSearchChange} onClearFilters={handleClearFilters}>
 							<Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
 								<Plus className="w-4 h-4" />
 								Thêm tài xế mới
 							</Button>
-						</div>
+						</DriverFilters>
 
 						{/* Table and Pagination */}
 						<div className="space-y-4">

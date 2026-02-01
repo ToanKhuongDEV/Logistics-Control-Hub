@@ -21,4 +21,8 @@ public final class VehicleConstant {
     public static final String MAX_WEIGHT_POSITIVE = "Max weight must be positive";
     public static final String MAX_VOLUME_POSITIVE = "Max volume must be positive";
     public static final String COST_PER_KM_POSITIVE = "Cost per km must be positive";
+    
+    public static final String VEHICLE_CODE_LENGTH_EXCEEDED = "Vehicle code must not exceed 50 characters";
+    public static final String VEHICLE_TYPE_REQUIRED = "Vehicle type (brand/model) is required";
+    public static final String VEHICLE_TYPE_LENGTH_EXCEEDED = "Vehicle type must not exceed 100 characters";
 }

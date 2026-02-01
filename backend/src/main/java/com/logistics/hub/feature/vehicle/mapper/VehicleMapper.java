@@ -10,6 +10,7 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface VehicleMapper {
     
+    @Mapping(target = "driverName", ignore = true)
     VehicleResponse toResponse(VehicleEntity entity);
     
     @Mapping(target = "id", ignore = true)

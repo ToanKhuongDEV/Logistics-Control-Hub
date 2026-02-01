@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +73,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<DriverResponse> getAvailableDrivers(Long includeDriverId) {
+    public List<DriverResponse> getAvailableDrivers(Long includeDriverId) {
         return driverRepository.findAvailableDrivers(includeDriverId)
                 .stream()
                 .map(driverMapper::toResponse)
@@ -95,6 +96,21 @@ public class DriverServiceImpl implements DriverService {
         if (phoneExists) {
             throw new ValidationException(DriverConstant.PHONE_NUMBER_EXISTS);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse getStatistics() {
+        long total = driverRepository.count();
+        List<DriverEntity> availableDrivers = driverRepository.findAvailableDrivers(null);
+        long available = availableDrivers.size();
+        long assigned = total - available;
+        
+        return new com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse(
+            total,
+            available,
+            assigned
+        );
     }
 
 

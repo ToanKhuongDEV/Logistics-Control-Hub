@@ -3,8 +3,11 @@ package com.logistics.hub.feature.driver.service;
 import com.logistics.hub.feature.driver.dto.request.DriverRequest;
 import com.logistics.hub.feature.driver.dto.response.DriverResponse;
 
+import com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface DriverService {
 
@@ -18,5 +21,7 @@ public interface DriverService {
 
     void delete(Long id);
 
-    java.util.List<DriverResponse> getAvailableDrivers(Long includeDriverId);
+    List<DriverResponse> getAvailableDrivers(Long includeDriverId);
+
+    DriverStatisticsResponse getStatistics();
 }

@@ -3,6 +3,7 @@ package com.logistics.hub.feature.geocoding.service;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.geocoding.dto.Coordinates;
 import com.logistics.hub.feature.geocoding.dto.NominatimResponse;
+import com.logistics.hub.feature.geocoding.constant.GeocodingConstant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -24,7 +25,7 @@ public class OpenStreetMapService {
 
     public Coordinates geocode(String address) {
         if (address == null || address.trim().isEmpty()) {
-            throw new ValidationException("Address cannot be null or empty");
+            throw new ValidationException(GeocodingConstant.ADDRESS_REQUIRED);
         }
 
         try {
@@ -67,7 +68,7 @@ public class OpenStreetMapService {
 
         } catch (Exception e) {
             log.error("Error geocoding address: {}", address, e);
-            throw new RuntimeException("Failed to geocode address: " + address, e);
+            throw new RuntimeException(GeocodingConstant.GEOCODING_FAILED + address, e);
         }
     }
 }

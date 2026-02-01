@@ -4,17 +4,19 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
+import com.logistics.hub.feature.company.constant.CompanyConstant;
+
 @Data
 public class CompanyRequest {
 
-    @NotBlank(message = "Company Name is required")
+    @NotBlank(message = CompanyConstant.NAME_REQUIRED)
     private String name;
 
-    @NotBlank(message = "Address is required")
+    @NotBlank(message = CompanyConstant.ADDRESS_REQUIRED)
     private String address;
 
-    @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone must be 10-11 digits")
+    @NotBlank(message = CompanyConstant.PHONE_REQUIRED)
+    @Pattern(regexp = "^[0-9]{10,11}$", message = CompanyConstant.PHONE_INVALID_FORMAT)
     private String phone;
 
     private String email;

@@ -47,6 +47,10 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 			newErrors.costPerKm = "Chi phí km phải lớn hơn 0";
 		}
 
+		if (!formData.type?.trim()) {
+			newErrors.type = "Loại xe (Hãng/Model) là bắt buộc";
+		}
+
 		setErrors(newErrors);
 		return Object.keys(newErrors).length === 0;
 	};
@@ -159,9 +163,10 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 
 					<div className="space-y-2">
 						<Label htmlFor="type" className="text-foreground">
-							Loại xe (Hãng/Model)
+							Loại xe (Hãng/Model) <span className="text-red-500">*</span>
 						</Label>
-						<Input id="type" type="text" placeholder="VD: Hyundai Mighty, Isuzu FRR,..." value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="border-border" disabled={isSubmitting} />
+						<Input id="type" type="text" placeholder="VD: Hyundai Mighty, Isuzu FRR,..." value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className={errors.type ? "border-red-500" : "border-border"} disabled={isSubmitting} />
+						{errors.type && <p className="text-red-500 text-sm">{errors.type}</p>}
 					</div>
 
 					{/* TODO: Implement driver selection dropdown */}

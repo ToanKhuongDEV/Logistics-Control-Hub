@@ -10,6 +10,8 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
     
+    @Mapping(target = "deliveryLocationName", ignore = true)
+    @Mapping(target = "driverName", ignore = true)
     OrderResponse toResponse(OrderEntity entity);
     
     @Mapping(target = "id", ignore = true)

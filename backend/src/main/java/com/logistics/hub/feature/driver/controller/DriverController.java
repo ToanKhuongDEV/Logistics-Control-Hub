@@ -7,6 +7,7 @@ import com.logistics.hub.feature.driver.constant.DriverConstant;
 import com.logistics.hub.feature.driver.dto.request.DriverRequest;
 import com.logistics.hub.feature.driver.dto.response.DriverResponse;
 
+import com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse;
 import com.logistics.hub.feature.driver.service.DriverService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping(UrlConstant.Driver.PREFIX)
@@ -45,11 +47,11 @@ public class DriverController {
         return ResponseEntity.ok(ApiResponse.success(DriverConstant.DRIVERS_RETRIEVED_SUCCESS, response));
     }
 
-    @GetMapping("/available")
-    public ResponseEntity<ApiResponse<java.util.List<DriverResponse>>> getAvailableDrivers(
+    @GetMapping(UrlConstant.Driver.AVAILABLE)
+    public ResponseEntity<ApiResponse<List<DriverResponse>>> getAvailableDrivers(
             @RequestParam(required = false) Long includeDriverId
     ) {
-        java.util.List<DriverResponse> drivers = driverService.getAvailableDrivers(includeDriverId);
+        List<DriverResponse> drivers = driverService.getAvailableDrivers(includeDriverId);
         return ResponseEntity.ok(ApiResponse.success(DriverConstant.AVAILABLE_DRIVERS_RETRIEVED_SUCCESS, drivers));
     }
 
@@ -76,5 +78,11 @@ public class DriverController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         driverService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(DriverConstant.DRIVER_DELETED_SUCCESS, null));
+    }
+
+    @GetMapping(UrlConstant.Driver.STATISTICS)
+    public ResponseEntity<ApiResponse<DriverStatisticsResponse>> getStatistics() {
+        DriverStatisticsResponse statistics = driverService.getStatistics();
+        return ResponseEntity.ok(ApiResponse.success(DriverConstant.DRIVER_STATISTICS_RETRIEVED_SUCCESS, statistics));
     }
 }

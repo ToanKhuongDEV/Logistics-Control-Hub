@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface DriverRepository extends JpaRepository<DriverEntity, Long> {
@@ -27,6 +26,7 @@ public interface DriverRepository extends JpaRepository<DriverEntity, Long> {
     @Query("SELECT d FROM DriverEntity d WHERE " +
            "(:search IS NULL OR :search = '' OR " +
            "LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(d.licenseNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(d.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<DriverEntity> findBySearch(
         @Param("search") String search,

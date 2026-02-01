@@ -13,4 +13,12 @@ public class DriverConstant {
     public static final String PHONE_NUMBER_REQUIRED = "Phone number is required";
     public static final String PHONE_NUMBER_EXISTS = "Phone number already exists";
     public static final String NAME_REQUIRED = "Driver name is required";
+    public static final String DRIVER_STATISTICS_RETRIEVED_SUCCESS = "Driver statistics retrieved successfully";
+
+    public static final String NAME_LENGTH_EXCEEDED = "Driver name must not exceed 100 characters";
+    public static final String LICENSE_LENGTH_EXCEEDED = "License number must not exceed 50 characters";
+    public static final String PHONE_LENGTH_EXCEEDED = "Phone number must not exceed 20 characters";
+    public static final String PHONE_INVALID_FORMAT = "Phone number must be exactly 10 digits";
+    public static final String EMAIL_LENGTH_EXCEEDED = "Email must not exceed 255 characters";
+    public static final String EMAIL_INVALID_FORMAT = "Email should be valid";
 }

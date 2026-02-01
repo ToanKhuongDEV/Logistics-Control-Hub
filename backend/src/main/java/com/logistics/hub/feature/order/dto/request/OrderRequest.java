@@ -1,6 +1,7 @@
 package com.logistics.hub.feature.order.dto.request;
 
 import com.logistics.hub.feature.order.enums.OrderStatus;
+import com.logistics.hub.feature.order.constant.OrderConstant;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -13,7 +14,7 @@ public class OrderRequest {
     
     private String code;
 
-    @NotNull(message = "Delivery location details are required")
+    @NotNull(message = OrderConstant.DELIVERY_LOCATION_DETAILS_REQUIRED)
     @Valid
     private com.logistics.hub.feature.location.dto.request.LocationRequest deliveryLocation;
 

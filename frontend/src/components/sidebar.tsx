@@ -29,9 +29,9 @@ export function Sidebar() {
 			icon: Package,
 		},
 		{
-			name: "Báo cáo",
-			href: "/reports",
-			icon: BarChart3,
+			name: "Lái xe",
+			href: "/drivers",
+			icon: User,
 		},
 		{
 			name: "Cài đặt",

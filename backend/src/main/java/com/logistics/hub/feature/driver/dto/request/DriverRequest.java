@@ -10,17 +10,19 @@ import lombok.Data;
 public class DriverRequest {
 
     @NotBlank(message = DriverConstant.NAME_REQUIRED)
-    @Size(max = 100, message = "Driver name must not exceed 100 characters")
+    @Size(max = 100, message = DriverConstant.NAME_LENGTH_EXCEEDED)
     private String name;
 
     @NotBlank(message = DriverConstant.LICENSE_NUMBER_REQUIRED)
-    @Size(max = 50, message = "License number must not exceed 50 characters")
+    @Size(max = 50, message = DriverConstant.LICENSE_LENGTH_EXCEEDED)
     private String licenseNumber;
 
     @NotBlank(message = DriverConstant.PHONE_NUMBER_REQUIRED)
-    @Size(max = 20, message = "Phone number must not exceed 20 characters")
+    @Size(max = 20, message = DriverConstant.PHONE_LENGTH_EXCEEDED)
+    @jakarta.validation.constraints.Pattern(regexp = "^\\d{10}$", message = DriverConstant.PHONE_INVALID_FORMAT)
     private String phoneNumber;
 
-    @Size(max = 255, message = "Email must not exceed 255 characters")
+    @Size(max = 255, message = DriverConstant.EMAIL_LENGTH_EXCEEDED)
+    @jakarta.validation.constraints.Email(message = DriverConstant.EMAIL_INVALID_FORMAT)
     private String email;
 }

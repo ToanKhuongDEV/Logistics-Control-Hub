@@ -47,6 +47,8 @@ public class UrlConstant {
     public static class Driver {
         public static final String PREFIX = API_V1 + "/drivers";
         public static final String BY_ID = "/{id}";
+        public static final String AVAILABLE = "/available";
+        public static final String STATISTICS = "/statistics";
 
         private Driver() {}
     }

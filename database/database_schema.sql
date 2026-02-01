@@ -21,6 +21,17 @@ CREATE TABLE dispatchers (
     role VARCHAR(20) NOT NULL DEFAULT 'DISPATCHER'
 );
 
+-- 3. Drivers
+CREATE TABLE drivers (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    license_number VARCHAR(50) NOT NULL UNIQUE,
+    phone_number VARCHAR(20) NOT NULL UNIQUE,
+    email VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE
+);
+
 -- 3. Vehicles
 CREATE TABLE vehicles (
     id BIGSERIAL PRIMARY KEY,
@@ -33,9 +44,13 @@ CREATE TABLE vehicles (
 
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     type VARCHAR(100),
-    driver VARCHAR(100),
+    driver_id BIGINT,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_vehicles_driver
+        FOREIGN KEY (driver_id)
+        REFERENCES drivers(id)
 );
 
 -- 4. Locations (Coordinates only)
@@ -59,6 +74,7 @@ CREATE TABLE orders (
     delivery_location_id BIGINT NOT NULL,
     weight_kg INT,
     volume_m3 NUMERIC(6,2),
+    driver_id BIGINT,
 
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
 
@@ -66,7 +82,11 @@ CREATE TABLE orders (
 
     CONSTRAINT fk_orders_location
         FOREIGN KEY (delivery_location_id)
-        REFERENCES locations(id)
+        REFERENCES locations(id),
+    
+    CONSTRAINT fk_orders_driver
+        FOREIGN KEY (driver_id)
+        REFERENCES drivers(id)
 );
 
 -- 6. Routes (1 vehicle = 1 optimized route)
@@ -120,7 +140,9 @@ CREATE TABLE route_stops (
 
 -- 8. Indexes (minimal but useful)
 CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_driver ON orders(driver_id);
 CREATE INDEX idx_routes_vehicle ON routes(vehicle_id);
 CREATE INDEX idx_route_stops_route ON route_stops(route_id);
+CREATE INDEX idx_vehicles_driver ON vehicles(driver_id);
 
 -- END OF SCRIPT

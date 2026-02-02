@@ -41,8 +41,11 @@ public class VehicleEntity {
     @Column(length = 100)
     private String type;
 
-    @Column(name = "driver_id")
+    @Column(name = "driver_id", unique = true)
     private Long driverId;
+
+    @Column(name = "depot_id")
+    private Long depotId;
 
     @CreationTimestamp
     @Column(name = "created_at")

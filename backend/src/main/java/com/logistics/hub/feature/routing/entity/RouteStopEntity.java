@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 
 @Entity
@@ -22,8 +23,9 @@ public class RouteStopEntity {
     private Long id;
 
 
-    @Column(name = "route_id", nullable = false)
-    private Long routeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "route_id", nullable = false)
+    private RouteEntity route;
 
 
     @Column(name = "location_id", nullable = false)
@@ -41,4 +43,10 @@ public class RouteStopEntity {
 
     @Column(name = "duration_from_prev_min")
     private Integer durationFromPrevMin;
+
+    @Column(name = "arrival_time")
+    private Instant arrivalTime;
+
+    @Column(name = "departure_time")
+    private Instant departureTime;
 }

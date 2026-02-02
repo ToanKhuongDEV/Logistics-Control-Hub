@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 
 @Entity
@@ -25,6 +26,13 @@ public class RouteEntity {
 
     @Column(name = "vehicle_id", nullable = false)
     private Long vehicleId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "routing_run_id")
+    private RoutingRunEntity routingRun;
+
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<RouteStopEntity> stops;
 
     @Column(name = "total_distance_km", precision = 10, scale = 2)
     private BigDecimal totalDistanceKm;

@@ -32,27 +32,6 @@ CREATE TABLE drivers (
     updated_at TIMESTAMP WITHOUT TIME ZONE
 );
 
--- 3. Vehicles
-CREATE TABLE vehicles (
-    id BIGSERIAL PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
-
-    max_weight_kg INT,
-    max_volume_m3 NUMERIC(6,2),
-
-    cost_per_km NUMERIC(10,2),
-
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    type VARCHAR(100),
-    driver_id BIGINT,
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_vehicles_driver
-        FOREIGN KEY (driver_id)
-        REFERENCES drivers(id)
-);
-
 -- 4. Locations (Coordinates only)
 CREATE TABLE locations (
     id BIGSERIAL PRIMARY KEY,
@@ -65,7 +44,49 @@ CREATE TABLE locations (
         UNIQUE (latitude, longitude)
 );
 
--- 5. Orders (Each order has 1 delivery location)
+-- 5. Depots (Start locations for vehicles)
+CREATE TABLE depots (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+
+    location_id BIGINT NOT NULL,
+
+    description VARCHAR(500),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_depots_location
+        FOREIGN KEY (location_id)
+        REFERENCES locations(id)
+);
+
+-- 6. Vehicles
+CREATE TABLE vehicles (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+
+    max_weight_kg INT,
+    max_volume_m3 NUMERIC(6,2),
+
+    cost_per_km NUMERIC(10,2),
+
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    type VARCHAR(100),
+    driver_id BIGINT UNIQUE, -- QUAN TRỌNG
+    depot_id BIGINT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_vehicles_driver
+        FOREIGN KEY (driver_id)
+        REFERENCES drivers(id),
+
+    CONSTRAINT fk_vehicles_depot
+        FOREIGN KEY (depot_id)
+        REFERENCES depots(id)
+);
+
+-- 7. Orders (Each order has 1 delivery location)
 
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
@@ -89,11 +110,29 @@ CREATE TABLE orders (
         REFERENCES drivers(id)
 );
 
--- 6. Routes (1 vehicle = 1 optimized route)
+-- 8. Routing Runs (Optimization sessions)
+CREATE TABLE routing_runs (
+    id BIGSERIAL PRIMARY KEY,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+
+    total_distance_km NUMERIC(12,2),
+    total_cost NUMERIC(12,2),
+
+    configuration TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Routes (1 vehicle = 1 optimized route)
 CREATE TABLE routes (
     id BIGSERIAL PRIMARY KEY,
 
     vehicle_id BIGINT NOT NULL,
+    routing_run_id BIGINT,
 
     total_distance_km NUMERIC(10,2),
     total_duration_min INT,
@@ -105,10 +144,14 @@ CREATE TABLE routes (
 
     CONSTRAINT fk_routes_vehicle
         FOREIGN KEY (vehicle_id)
-        REFERENCES vehicles(id)
+        REFERENCES vehicles(id),
+
+    CONSTRAINT fk_routes_routing_run
+        FOREIGN KEY (routing_run_id)
+        REFERENCES routing_runs(id)
 );
 
--- 7. Route Stops (Ordered delivery sequence)
+-- 10. Route Stops (Ordered delivery sequence)
 CREATE TABLE route_stops (
     id BIGSERIAL PRIMARY KEY,
 
@@ -120,6 +163,9 @@ CREATE TABLE route_stops (
 
     distance_from_prev_km NUMERIC(10,2),
     duration_from_prev_min INT,
+
+    arrival_time TIMESTAMP,
+    departure_time TIMESTAMP,
 
     CONSTRAINT fk_route_stops_route
         FOREIGN KEY (route_id)
@@ -138,7 +184,7 @@ CREATE TABLE route_stops (
         UNIQUE (route_id, stop_sequence)
 );
 
--- 8. Indexes (minimal but useful)
+-- 11. Indexes (minimal but useful)
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_driver ON orders(driver_id);
 CREATE INDEX idx_routes_vehicle ON routes(vehicle_id);

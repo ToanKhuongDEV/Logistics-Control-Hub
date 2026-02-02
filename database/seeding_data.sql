@@ -36,22 +36,6 @@ VALUES
 ('Mai Van I', 'FC-008899', '0902222222', 'driver.i@logitower.vn');
 
 -- =====================================================
--- 3. Vehicles
--- =====================================================
-
-INSERT INTO vehicles (code, max_weight_kg, max_volume_m3, cost_per_km, status, type, driver_id)
-VALUES
-('LDT-001', 2500, 15.5, 5000, 'ACTIVE', 'Hyundai Mighty', 1),     
-('MDT-002', 3500, 18.0, 6500, 'ACTIVE', 'Isuzu FRR', 2),        
-('LDT-003', 2000, 12.0, 4500, 'MAINTENANCE', 'Kia K250', 3),     
-('LDT-004', 3000, 16.5, 5500, 'ACTIVE', 'Hino XZU', 4),           
-('MDT-005', 4000, 20.0, 7000, 'ACTIVE', 'Isuzu FVR', 5),           
-('LDT-006', 1800, 11.0, 4000, 'IDLE', 'Thaco Kia K200', NULL),    
-('LDT-007', 2800, 14.5, 5200, 'ACTIVE', 'Hyundai HD120S', 6),      
-('LDT-008', 3200, 17.0, 6000, 'ACTIVE', 'Hino FC', 7),            
-('LDT-009', 2200, 13.0, 4800, 'MAINTENANCE', 'Kia K250', 8),       
-('MDT-010', 3800, 19.5, 6800, 'ACTIVE', 'Isuzu FVR', 9);        
--- =====================================================
 -- 4. Locations
 -- =====================================================
 
@@ -63,7 +47,32 @@ VALUES
 ('Customer C', 10.751889, 106.670806);
 
 -- =====================================================
--- 5. Orders
+-- 5. Depots
+-- =====================================================
+
+INSERT INTO depots (name, location_id, description)
+VALUES
+('Kho Trung Tâm TP.HCM', 1, 'Kho chính tại TP.HCM - Điểm xuất phát cho các tuyến giao hàng');
+
+-- =====================================================
+-- 6. Vehicles
+-- =====================================================
+
+INSERT INTO vehicles (code, max_weight_kg, max_volume_m3, cost_per_km, status, type, driver_id, depot_id)
+VALUES
+('LDT-001', 2500, 15.5, 5000, 'ACTIVE', 'Hyundai Mighty', 1, 1),     
+('MDT-002', 3500, 18.0, 6500, 'ACTIVE', 'Isuzu FRR', 2, 1),        
+('LDT-003', 2000, 12.0, 4500, 'MAINTENANCE', 'Kia K250', 3, 1),     
+('LDT-004', 3000, 16.5, 5500, 'ACTIVE', 'Hino XZU', 4, 1),           
+('MDT-005', 4000, 20.0, 7000, 'ACTIVE', 'Isuzu FVR', 5, 1),           
+('LDT-006', 1800, 11.0, 4000, 'IDLE', 'Thaco Kia K200', NULL, 1),    
+('LDT-007', 2800, 14.5, 5200, 'ACTIVE', 'Hyundai HD120S', 6, 1),      
+('LDT-008', 3200, 17.0, 6000, 'ACTIVE', 'Hino FC', 7, 1),            
+('LDT-009', 2200, 13.0, 4800, 'MAINTENANCE', 'Kia K250', 8, 1),       
+('MDT-010', 3800, 19.5, 6800, 'ACTIVE', 'Isuzu FVR', 9, 1);        
+
+-- =====================================================
+-- 7. Orders
 -- =====================================================
 
 INSERT INTO orders (code, delivery_location_id, weight_kg, volume_m3, driver_id, status)
@@ -73,7 +82,7 @@ VALUES
 ('ORD-003', 4, 400, 2.0, NULL, 'CREATED');
 
 -- =====================================================
--- 6. Routes (SIMULATED OPTIMIZATION RESULT)
+-- 8. Routes (SIMULATED OPTIMIZATION RESULT)
 -- =====================================================
 
 INSERT INTO routes (
@@ -87,7 +96,7 @@ VALUES
 (1, 18.20, 42, 145600, 'CREATED');
 
 -- =====================================================
--- 7. Route Stops (Delivery Sequence)
+-- 9. Route Stops (Delivery Sequence)
 -- =====================================================
 
 INSERT INTO route_stops (
@@ -96,14 +105,16 @@ INSERT INTO route_stops (
     location_id,
     stop_sequence,
     distance_from_prev_km,
-    duration_from_prev_min
+    duration_from_prev_min,
+    arrival_time,
+    departure_time
 )
 VALUES
-(1, NULL, 1, 0, 0.00, 0),       -- Start at Depot
-(1, 1, 2, 1, 5.20, 12),
-(1, 2, 3, 2, 6.40, 15),
-(1, 3, 4, 3, 6.60, 15),
-(1, NULL, 1, 4, 5.50, 20);      -- Return to Depot
+(1, NULL, 1, 0, 0.00, 0, '2023-11-20 08:00:00', '2023-11-20 08:15:00'),       -- Start at Depot
+(1, 1, 2, 1, 5.20, 12, '2023-11-20 08:27:00', '2023-11-20 08:40:00'),
+(1, 2, 3, 2, 6.40, 15, '2023-11-20 08:55:00', '2023-11-20 09:10:00'),
+(1, 3, 4, 3, 6.60, 15, '2023-11-20 09:25:00', '2023-11-20 09:40:00'),
+(1, NULL, 1, 4, 5.50, 20, '2023-11-20 10:00:00', NULL);      -- Return to Depot
 
 -- =====================================================
 -- END OF SEED DATA

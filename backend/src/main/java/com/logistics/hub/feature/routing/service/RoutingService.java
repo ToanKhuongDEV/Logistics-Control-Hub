@@ -6,6 +6,10 @@ import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
 
 import java.util.List;
 
+import com.logistics.hub.feature.location.entity.LocationEntity;
+
 public interface RoutingService {
-    RoutingRunEntity optimizeRoutes(List<OrderEntity> orders, List<VehicleEntity> vehicles);
+    RoutingRunEntity optimizeRoutes(List<OrderEntity> orders, List<VehicleEntity> vehicles, List<LocationEntity> locations);
+
+    RoutingRunEntity executeRouting(List<Long> orderIds, List<Long> vehicleIds);
 }

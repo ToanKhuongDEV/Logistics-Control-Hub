@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 
 @Entity
@@ -42,7 +43,7 @@ public class RoutingRunEntity {
     private String configuration;
 
     @OneToMany(mappedBy = "routingRun", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private java.util.List<RouteEntity> routes;
+    private List<RouteEntity> routes;
 
     @CreationTimestamp
     @Column(name = "created_at")

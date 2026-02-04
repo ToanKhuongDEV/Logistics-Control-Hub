@@ -53,15 +53,13 @@ public class AuthController {
     public ResponseEntity<ApiResponse<DispatcherResponse>> getCurrentUser() {
         var authentication = org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication();
-        
+
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(401, AuthConstant.NOT_AUTHENTICATED));
         }
-        
+
         DispatcherResponse userData = authService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.USER_INFO_RETRIEVED_SUCCESS, userData));
     }
 }
-
-

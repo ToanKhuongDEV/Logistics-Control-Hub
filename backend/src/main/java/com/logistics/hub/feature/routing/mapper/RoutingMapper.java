@@ -11,23 +11,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Mapper class để convert Entity sang Response DTO
- * Sử dụng static methods để tránh dependency injection overhead
- */
 public final class RoutingMapper {
 
     private RoutingMapper() {
-        // Private constructor để prevent instantiation
     }
 
-    /**
-     * Convert RoutingRunEntity sang RoutingRunResponse
-     * Bao gồm tất cả nested routes và stops
-     * 
-     * @param entity RoutingRunEntity cần convert
-     * @return RoutingRunResponse DTO
-     */
     public static RoutingRunResponse toRoutingRunResponse(RoutingRunEntity entity) {
         if (entity == null) {
             return null;
@@ -43,8 +31,6 @@ public final class RoutingMapper {
         response.setConfiguration(entity.getConfiguration());
         response.setCreatedAt(entity.getCreatedAt());
 
-        // Convert routes nếu không null
-        // Sử dụng null-safe approach để tránh NullPointerException khi lazy loading
         if (entity.getRoutes() != null) {
             List<RouteResponse> routes = entity.getRoutes().stream()
                     .map(RoutingMapper::toRouteResponse)
@@ -57,13 +43,6 @@ public final class RoutingMapper {
         return response;
     }
 
-    /**
-     * Convert RouteEntity sang RouteResponse
-     * Bao gồm tất cả stops của route
-     * 
-     * @param entity RouteEntity cần convert
-     * @return RouteResponse DTO
-     */
     public static RouteResponse toRouteResponse(RouteEntity entity) {
         if (entity == null) {
             return null;
@@ -73,13 +52,13 @@ public final class RoutingMapper {
         response.setId(entity.getId());
         response.setVehicleId(entity.getVehicleId());
         response.setStatus(entity.getStatus() != null ? entity.getStatus().name() : null);
+        // address field will be handled by higher level or mapper if needed,
+        // using entity.getVehicle().getDepot().getAddress() if available
         response.setTotalDistanceKm(entity.getTotalDistanceKm());
         response.setTotalDurationMin(entity.getTotalDurationMin());
         response.setTotalCost(entity.getTotalCost());
         response.setPolyline(entity.getPolyline());
 
-        // Convert stops nếu không null
-        // Sử dụng null-safe approach để tránh NullPointerException khi lazy loading
         if (entity.getStops() != null) {
             List<RouteStopResponse> stops = entity.getStops().stream()
                     .map(RoutingMapper::toRouteStopResponse)
@@ -92,12 +71,6 @@ public final class RoutingMapper {
         return response;
     }
 
-    /**
-     * Convert RouteStopEntity sang RouteStopResponse
-     * 
-     * @param entity RouteStopEntity cần convert
-     * @return RouteStopResponse DTO
-     */
     public static RouteStopResponse toRouteStopResponse(RouteStopEntity entity) {
         if (entity == null) {
             return null;

@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -36,23 +35,23 @@ public class OrderServiceImpl implements OrderService {
     public Page<OrderResponse> findAll(Pageable pageable, OrderStatus status, String search) {
         String statusStr = status != null ? status.name() : null;
         String searchStr = (search != null && !search.isEmpty()) ? search : null;
-        
+
         return orderRepository.findAllWithLocationAndFilters(statusStr, searchStr, pageable)
                 .map(OrderResponse::fromProjection);
     }
-    
+
     @Override
     public OrderStatisticsResponse getStatistics() {
         List<OrderEntity> allOrders = orderRepository.findAll();
-        
+
         long activeCount = allOrders.stream()
                 .filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.CANCELLED)
                 .count();
-        
+
         long pending = allOrders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.CREATED)
                 .count();
-        
+
         long inTransit = allOrders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.IN_TRANSIT)
                 .count();
@@ -72,7 +71,6 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
     }
 
-    
     @Override
     public OrderResponse create(OrderRequest request) {
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
@@ -83,10 +81,10 @@ public class OrderServiceImpl implements OrderService {
 
         OrderEntity entity = orderMapper.toEntity(request);
         entity.setStatus(OrderStatus.CREATED);
-        
+
         LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
         entity.setDeliveryLocationId(location.getId());
-        
+
         OrderEntity saved = orderRepository.save(entity);
         return findById(saved.getId());
     }
@@ -95,13 +93,13 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse update(Long id, OrderRequest request) {
         OrderEntity entity = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
-        
+
         if (!entity.getCode().equals(request.getCode()) && orderRepository.existsByCode(request.getCode())) {
             throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
         }
 
         orderMapper.updateEntityFromRequest(request, entity);
-        
+
         if (request.getStatus() != null) {
             entity.setStatus(request.getStatus());
         }
@@ -110,7 +108,7 @@ public class OrderServiceImpl implements OrderService {
             LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
             entity.setDeliveryLocationId(location.getId());
         }
-        
+
         OrderEntity saved = orderRepository.save(entity);
         return findById(saved.getId());
     }
@@ -125,18 +123,18 @@ public class OrderServiceImpl implements OrderService {
 
     private String generateOrderCode() {
         return orderRepository.findTopByOrderByIdDesc()
-            .map(lastOrder -> {
-                String lastCode = lastOrder.getCode();
-                if (lastCode.startsWith("ORD-")) {
-                    try {
-                        int sequence = Integer.parseInt(lastCode.substring(4));
-                        return String.format("ORD-%03d", sequence + 1);
-                    } catch (NumberFormatException e) {
-                        return "ORD-001";
+                .map(lastOrder -> {
+                    String lastCode = lastOrder.getCode();
+                    if (lastCode.startsWith("ORD-")) {
+                        try {
+                            int sequence = Integer.parseInt(lastCode.substring(4));
+                            return String.format("ORD-%03d", sequence + 1);
+                        } catch (NumberFormatException e) {
+                            return "ORD-001";
+                        }
                     }
-                }
-                return "ORD-001";
-            })
-            .orElse("ORD-001");
+                    return "ORD-001";
+                })
+                .orElse("ORD-001");
     }
 }

@@ -3,6 +3,8 @@ package com.logistics.hub.feature.vehicle.service.impl;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.driver.repository.DriverRepository;
+import com.logistics.hub.feature.depot.repository.DepotRepository;
+import com.logistics.hub.feature.location.repository.LocationRepository;
 import com.logistics.hub.feature.vehicle.constant.VehicleConstant;
 import com.logistics.hub.feature.vehicle.dto.request.VehicleRequest;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleResponse;
@@ -30,12 +32,14 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
     private final DriverRepository driverRepository;
+    private final DepotRepository depotRepository;
+    private final LocationRepository locationRepository;
 
     @Override
     @Transactional(readOnly = true)
     public Page<VehicleResponse> findAll(Pageable pageable, VehicleStatus status, String search) {
         Page<VehicleEntity> vehiclePage = vehicleRepository.findByStatusAndSearch(status, search, pageable);
-        return vehiclePage.map(this::enrichWithDriverName);
+        return vehiclePage.map(this::enrichResponse);
     }
 
     @Override
@@ -43,7 +47,7 @@ public class VehicleServiceImpl implements VehicleService {
     public VehicleResponse findById(Long id) {
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
-        return enrichWithDriverName(entity);
+        return enrichResponse(entity);
     }
 
     @Override
@@ -53,14 +57,14 @@ public class VehicleServiceImpl implements VehicleService {
         } else if (vehicleRepository.existsByCode(request.getCode())) {
             throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
         }
-        
+
         if (request.getDriverId() != null && vehicleRepository.existsByDriverId(request.getDriverId())) {
             throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
         }
 
         VehicleEntity entity = vehicleMapper.toEntity(request);
         VehicleEntity saved = vehicleRepository.save(entity);
-        return enrichWithDriverName(saved);
+        return enrichResponse(saved);
     }
 
     private String generateVehicleCode(Integer weightKg) {
@@ -75,7 +79,7 @@ public class VehicleServiceImpl implements VehicleService {
 
         String latestCode = vehicleRepository.findLatestCodeByPrefix(prefix);
         int nextNumber = 1;
-        
+
         if (latestCode != null && !latestCode.isEmpty()) {
             try {
                 String numberPart = latestCode.substring(prefix.length() + 1);
@@ -92,18 +96,18 @@ public class VehicleServiceImpl implements VehicleService {
     public VehicleResponse update(Long id, VehicleRequest request) {
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
-        
+
         if (!entity.getCode().equals(request.getCode()) && vehicleRepository.existsByCode(request.getCode())) {
             throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
         }
-        
+
         if (request.getDriverId() != null && vehicleRepository.existsByDriverIdAndIdNot(request.getDriverId(), id)) {
             throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
         }
 
         vehicleMapper.updateEntityFromRequest(request, entity);
         VehicleEntity saved = vehicleRepository.save(entity);
-        return enrichWithDriverName(saved);
+        return enrichResponse(saved);
     }
 
     @Override
@@ -118,29 +122,29 @@ public class VehicleServiceImpl implements VehicleService {
     @Transactional(readOnly = true)
     public VehicleStatisticsResponse getStatistics() {
         List<VehicleEntity> allVehicles = vehicleRepository.findAll();
-        
+
         long total = allVehicles.size();
         long active = vehicleRepository.countByStatus(VehicleStatus.ACTIVE);
         long maintenance = vehicleRepository.countByStatus(VehicleStatus.MAINTENANCE);
         long idle = vehicleRepository.countByStatus(VehicleStatus.IDLE);
-        
+
         BigDecimal averageCostPerKm = allVehicles.stream()
                 .map(VehicleEntity::getCostPerKm)
                 .filter(cost -> cost != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .divide(BigDecimal.valueOf(total > 0 ? total : 1), 2, RoundingMode.HALF_UP);
-        
+
         Long totalCapacityKg = allVehicles.stream()
                 .map(VehicleEntity::getMaxWeightKg)
                 .filter(weight -> weight != null)
                 .mapToLong(Integer::longValue)
                 .sum();
-        
+
         BigDecimal totalCapacityM3 = allVehicles.stream()
                 .map(VehicleEntity::getMaxVolumeM3)
                 .filter(volume -> volume != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         return new VehicleStatisticsResponse(
                 total,
                 active,
@@ -148,15 +152,25 @@ public class VehicleServiceImpl implements VehicleService {
                 idle,
                 averageCostPerKm,
                 totalCapacityKg,
-                totalCapacityM3
-        );
+                totalCapacityM3);
     }
 
-    private VehicleResponse enrichWithDriverName(VehicleEntity entity) {
+    private VehicleResponse enrichResponse(VehicleEntity entity) {
         VehicleResponse response = vehicleMapper.toResponse(entity);
         if (entity.getDriverId() != null) {
             driverRepository.findById(entity.getDriverId())
                     .ifPresent(driver -> response.setDriverName(driver.getName()));
+        }
+        if (entity.getDepotId() != null) {
+            depotRepository.findById(entity.getDepotId())
+                    .ifPresent(depot -> {
+                        response.setDepotName(depot.getName());
+                        response.setLocationId(depot.getLocationId());
+                        if (depot.getLocationId() != null) {
+                            locationRepository.findById(depot.getLocationId())
+                                    .ifPresent(location -> response.setAddress(location.getName()));
+                        }
+                    });
         }
         return response;
     }

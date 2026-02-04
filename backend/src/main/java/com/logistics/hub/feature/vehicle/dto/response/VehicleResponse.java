@@ -17,5 +17,9 @@ public class VehicleResponse {
     private String type;
     private Long driverId;
     private String driverName;
+    private Long depotId;
+    private String depotName;
+    private Long locationId;
+    private String address;
     private Instant createdAt;
 }

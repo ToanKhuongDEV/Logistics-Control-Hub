@@ -19,7 +19,7 @@ import org.springframework.web.client.RestTemplate;
 public class OpenStreetMapService {
 
     private final RestTemplate restTemplate;
-    
+
     private static final String NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
     private static final String USER_AGENT = "LogisticsControlHub/1.0 (contact@logistics-hub.com)";
 
@@ -32,14 +32,13 @@ public class OpenStreetMapService {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("Rate limiting sleep interrupted", e);
         }
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("User-Agent", USER_AGENT);
 
-        String url = String.format("%s?q=%s&format=json&limit=1", 
-                NOMINATIM_URL, 
+        String url = String.format("%s?q=%s&format=json&limit=1",
+                NOMINATIM_URL,
                 address.replace(" ", "+"));
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -49,13 +48,11 @@ public class OpenStreetMapService {
                     url,
                     HttpMethod.GET,
                     entity,
-                    NominatimResponse[].class
-            );
+                    NominatimResponse[].class);
 
             NominatimResponse[] results = response.getBody();
-            
+
             if (results == null || results.length == 0) {
-                log.warn("No coordinates found for address: {}", address);
                 return null;
             }
 
@@ -67,7 +64,6 @@ public class OpenStreetMapService {
             return new Coordinates(lat, lon);
 
         } catch (Exception e) {
-            log.error("Error geocoding address: {}", address, e);
             throw new RuntimeException(GeocodingConstant.GEOCODING_FAILED + address, e);
         }
     }

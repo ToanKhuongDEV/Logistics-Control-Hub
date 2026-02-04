@@ -9,10 +9,13 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface VehicleMapper {
-    
+
     @Mapping(target = "driverName", ignore = true)
+    @Mapping(target = "depotName", ignore = true)
+    @Mapping(target = "locationId", ignore = true)
+    @Mapping(target = "address", ignore = true)
     VehicleResponse toResponse(VehicleEntity entity);
-    
+
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     VehicleEntity toEntity(VehicleRequest request);

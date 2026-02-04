@@ -11,37 +11,42 @@ public class UrlConstant {
         public static final String LOGIN = "/login";
         public static final String REFRESH = "/refresh";
         public static final String ME = "/me";
-        
-        private Auth() {}
+
+        private Auth() {
+        }
     }
 
     public static class Order {
         public static final String PREFIX = API_V1 + "/orders";
         public static final String BY_ID = "/{id}";
         public static final String STATISTICS = "/statistics";
-        
-        private Order() {}
+
+        private Order() {
+        }
     }
-    
+
     public static class Location {
         public static final String PREFIX = API_V1 + "/locations";
         public static final String BY_ID = "/{id}";
-        
-        private Location() {}
+
+        private Location() {
+        }
     }
-    
+
     public static class Vehicle {
         public static final String PREFIX = API_V1 + "/vehicles";
         public static final String BY_ID = "/{id}";
         public static final String STATISTICS = "/statistics";
-        
-        private Vehicle() {}
+
+        private Vehicle() {
+        }
     }
 
     public static class Company {
         public static final String PREFIX = API_V1 + "/company";
 
-        private Company() {}
+        private Company() {
+        }
     }
 
     public static class Driver {
@@ -50,7 +55,16 @@ public class UrlConstant {
         public static final String AVAILABLE = "/available";
         public static final String STATISTICS = "/statistics";
 
-        private Driver() {}
+        private Driver() {
+        }
+    }
+
+    public static class Depot {
+        public static final String PREFIX = API_V1 + "/depots";
+        public static final String BY_ID = "/{id}";
+
+        private Depot() {
+        }
     }
 
     public static class Routing {
@@ -58,7 +72,8 @@ public class UrlConstant {
         public static final String OPTIMIZE = "/optimize";
         public static final String RUNS = "/runs";
         public static final String RUN_BY_ID = "/runs/{id}";
-        
-        private Routing() {}
+
+        private Routing() {
+        }
     }
 }

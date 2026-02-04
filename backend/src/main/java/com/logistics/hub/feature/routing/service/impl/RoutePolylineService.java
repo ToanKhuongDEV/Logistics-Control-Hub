@@ -23,7 +23,8 @@ public class RoutePolylineService {
     /**
      * Lấy polyline cho toàn bộ route từ depot → stops → depot
      * 
-     * @param routeLocations Danh sách locations theo thứ tự: depot, stop1, stop2, ..., depot
+     * @param routeLocations Danh sách locations theo thứ tự: depot, stop1, stop2,
+     *                       ..., depot
      * @return Encoded polyline string hoặc null nếu fail
      */
     public String getRoutePolyline(List<LocationEntity> routeLocations) {
@@ -33,20 +34,20 @@ public class RoutePolylineService {
 
         try {
             // Call OSRM với tất cả waypoints
-            // Tạm thời aggregate từng đoạn - có thể optimize sau bằng 1 call OSRM với multi-waypoints
+            // Tạm thời aggregate từng đoạn - có thể optimize sau bằng 1 call OSRM với
+            // multi-waypoints
             List<String> segmentPolylines = new ArrayList<>();
-            
+
             for (int i = 0; i < routeLocations.size() - 1; i++) {
                 DistanceResult result = osrmDistanceService.getDistanceWithDuration(
-                    routeLocations.get(i), 
-                    routeLocations.get(i + 1)
-                );
-                
+                        routeLocations.get(i),
+                        routeLocations.get(i + 1));
+
                 if (result.getPolyline() != null) {
                     segmentPolylines.add(result.getPolyline());
                 }
             }
-            
+
             // Nếu tất cả segments đều có polyline, merge chúng
             // Đơn giản nhất: return polyline đầu tiên (hoặc có thể merge sau)
             if (!segmentPolylines.isEmpty()) {
@@ -54,11 +55,11 @@ public class RoutePolylineService {
                 // For now, return the concatenated polylines separated by |
                 return String.join("|", segmentPolylines);
             }
-            
+
         } catch (Exception e) {
             log.warn("Failed to get route polyline: {}", e.getMessage());
         }
-        
+
         return null;
     }
 }

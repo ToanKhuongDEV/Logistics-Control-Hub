@@ -8,6 +8,8 @@ import com.logistics.hub.feature.vehicle.dto.response.VehicleResponse;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleStatisticsResponse;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.service.VehicleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,39 +23,41 @@ import com.logistics.hub.common.constant.UrlConstant;
 @RestController
 @RequestMapping(UrlConstant.Vehicle.PREFIX)
 @RequiredArgsConstructor
+@Tag(name = "Vehicle", description = "APIs for managing fleet vehicles")
 public class VehicleController {
 
     private final VehicleService vehicleService;
 
     @GetMapping
+    @Operation(summary = "Get all vehicles", description = "Returns a paginated list of vehicles with optional filtering by status and search term")
     public ResponseEntity<ApiResponse<PaginatedResponse<VehicleResponse>>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) VehicleStatus status,
-            @RequestParam(required = false) String search
-    ) {
+            @RequestParam(required = false) String search) {
         Pageable pageable = PageRequest.of(page, size);
         Page<VehicleResponse> vehiclePage = vehicleService.findAll(pageable, status, search);
-        
+
         PaginatedResponse<VehicleResponse> response = new PaginatedResponse<>();
         response.setData(vehiclePage.getContent());
         response.setPagination(new PaginatedResponse.PaginationInfo(
                 vehiclePage.getNumber(),
                 vehiclePage.getSize(),
                 vehiclePage.getTotalElements(),
-                vehiclePage.getTotalPages()
-        ));
-        
+                vehiclePage.getTotalPages()));
+
         return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLES_RETRIEVED_SUCCESS, response));
     }
 
     @GetMapping(UrlConstant.Vehicle.BY_ID)
+    @Operation(summary = "Get vehicle by ID", description = "Returns detailed information of a single vehicle")
     public ResponseEntity<ApiResponse<?>> findById(@PathVariable Long id) {
         VehicleResponse vehicle = vehicleService.findById(id);
         return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLE_RETRIEVED_SUCCESS, vehicle));
     }
 
     @PostMapping
+    @Operation(summary = "Create new vehicle", description = "Adds a new vehicle to the fleet")
     public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody VehicleRequest request) {
         VehicleResponse createdVehicle = vehicleService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -61,18 +65,21 @@ public class VehicleController {
     }
 
     @PutMapping(UrlConstant.Vehicle.BY_ID)
+    @Operation(summary = "Update vehicle", description = "Updates an existing vehicle's information")
     public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody VehicleRequest request) {
         VehicleResponse updatedVehicle = vehicleService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLE_UPDATED_SUCCESS, updatedVehicle));
     }
 
     @DeleteMapping(UrlConstant.Vehicle.BY_ID)
+    @Operation(summary = "Delete vehicle", description = "Removes a vehicle from the system by its ID")
     public ResponseEntity<ApiResponse<?>> delete(@PathVariable Long id) {
         vehicleService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLE_DELETED_SUCCESS, null));
     }
 
     @GetMapping(UrlConstant.Vehicle.STATISTICS)
+    @Operation(summary = "Get vehicle statistics", description = "Returns overall statistics about the vehicle fleet")
     public ResponseEntity<ApiResponse<?>> getStatistics() {
         VehicleStatisticsResponse statistics = vehicleService.getStatistics();
         return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLE_STATISTICS_RETRIEVED_SUCCESS, statistics));

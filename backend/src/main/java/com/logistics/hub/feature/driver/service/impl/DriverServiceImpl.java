@@ -1,6 +1,5 @@
 package com.logistics.hub.feature.driver.service.impl;
 
-
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.driver.constant.DriverConstant;
@@ -54,9 +53,9 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponse update(Long id, DriverRequest request) {
         DriverEntity driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
-        
+
         validateDriverRequest(request, id);
-        
+
         driverMapper.updateEntityFromRequest(request, driver);
         DriverEntity updatedDriver = driverRepository.save(driver);
         return driverMapper.toResponse(updatedDriver);
@@ -81,18 +80,16 @@ public class DriverServiceImpl implements DriverService {
     }
 
     private void validateDriverRequest(DriverRequest request, Long id) {
-        boolean licenseExists = (id == null) ? 
-                driverRepository.existsByLicenseNumber(request.getLicenseNumber()) : 
-                driverRepository.existsByLicenseNumberAndIdNot(request.getLicenseNumber(), id);
-                
+        boolean licenseExists = (id == null) ? driverRepository.existsByLicenseNumber(request.getLicenseNumber())
+                : driverRepository.existsByLicenseNumberAndIdNot(request.getLicenseNumber(), id);
+
         if (licenseExists) {
             throw new ValidationException(DriverConstant.LICENSE_NUMBER_EXISTS);
         }
 
-        boolean phoneExists = (id == null) ? 
-                driverRepository.existsByPhoneNumber(request.getPhoneNumber()) : 
-                driverRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), id);
-                
+        boolean phoneExists = (id == null) ? driverRepository.existsByPhoneNumber(request.getPhoneNumber())
+                : driverRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), id);
+
         if (phoneExists) {
             throw new ValidationException(DriverConstant.PHONE_NUMBER_EXISTS);
         }
@@ -105,13 +102,11 @@ public class DriverServiceImpl implements DriverService {
         List<DriverEntity> availableDrivers = driverRepository.findAvailableDrivers(null);
         long available = availableDrivers.size();
         long assigned = total - available;
-        
-        return new com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse(
-            total,
-            available,
-            assigned
-        );
-    }
 
+        return new com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse(
+                total,
+                available,
+                assigned);
+    }
 
 }

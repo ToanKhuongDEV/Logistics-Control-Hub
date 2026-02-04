@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 
-
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -25,13 +24,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         DispatcherEntity dispatcher = dispatcherRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-
-
-
         return new User(
                 dispatcher.getUsername(),
                 dispatcher.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + dispatcher.getRole()))
-        );
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + dispatcher.getRole())));
     }
 }

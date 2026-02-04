@@ -1,6 +1,7 @@
 "use client";
 
 import { LayoutGrid, Truck, Package, BarChart3, Settings, LogOut, User } from "lucide-react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -55,9 +56,20 @@ export function Sidebar() {
 						const isActive = pathname === item.href;
 
 						return (
-							<Link key={item.href} href={item.href} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200", isActive ? "bg-primary text-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent hover:bg-opacity-10")}>
-								<Icon className="w-5 h-5" />
-								<span className="font-medium">{item.name}</span>
+							<Link key={item.href} href={item.href} className={cn("relative flex items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200", isActive ? "text-primary-foreground" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:bg-opacity-10")}>
+								{isActive && (
+									<motion.div
+										layoutId="active-nav-item"
+										className="absolute inset-0 bg-primary rounded-lg shadow-md -z-10"
+										transition={{
+											type: "spring",
+											stiffness: 300,
+											damping: 30,
+										}}
+									/>
+								)}
+								<Icon className={cn("w-5 h-5 transition-all z-10", isActive && "w-6 h-6")} />
+								<span className={cn("font-medium transition-all z-10", isActive && "text-lg font-bold")}>{item.name}</span>
 							</Link>
 						);
 					})}

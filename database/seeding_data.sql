@@ -82,21 +82,31 @@ VALUES
 ('ORD-003', 4, 400, 2.0, NULL, 'CREATED');
 
 -- =====================================================
--- 8. Routes (SIMULATED OPTIMIZATION RESULT)
+-- 8. Routing Runs (Optimization sessions)
+-- =====================================================
+
+INSERT INTO routing_runs (status, start_time, end_time, total_distance_km, total_cost, configuration)
+VALUES
+('COMPLETED', '2023-11-20 07:55:00', '2023-11-20 07:56:30', 18.20, 145600, 'Solver: GUIDED_LOCAL_SEARCH | Manual Seed');
+
+-- =====================================================
+-- 9. Routes (1 vehicle = 1 optimized route)
 -- =====================================================
 
 INSERT INTO routes (
     vehicle_id,
+    routing_run_id,
     total_distance_km,
     total_duration_min,
     total_cost,
-    status
+    status,
+    polyline
 )
 VALUES
-(1, 18.20, 42, 145600, 'CREATED');
+(1, 1, 18.20, 42, 145600, 'CREATED', 'u~l~Fdvf~Cj@`@_@r@m@v@y@x@aAbAaBfBeCfCcDfDgEhEiFfFmGfG');
 
 -- =====================================================
--- 9. Route Stops (Delivery Sequence)
+-- 10. Route Stops (Delivery Sequence)
 -- =====================================================
 
 INSERT INTO route_stops (

@@ -8,9 +8,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
-
 
 @Entity
 @Table(name = "routes")
@@ -22,7 +21,6 @@ public class RouteEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
 
     @Column(name = "vehicle_id", nullable = false)
     private Long vehicleId;
@@ -47,7 +45,10 @@ public class RouteEntity {
     @Column(nullable = false, length = 30)
     private RouteStatus status = RouteStatus.CREATED;
 
+    @Column(columnDefinition = "TEXT")
+    private String polyline;
+
     @CreationTimestamp
     @Column(name = "created_at")
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 }

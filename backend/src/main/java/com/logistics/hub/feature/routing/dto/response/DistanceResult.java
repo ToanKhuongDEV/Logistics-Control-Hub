@@ -12,4 +12,5 @@ import java.math.BigDecimal;
 public class DistanceResult {
     private BigDecimal distanceKm;
     private Integer durationMinutes;
+    private String polyline; // Encoded route geometry from OSRM
 }

@@ -8,9 +8,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
-
 
 @Entity
 @Table(name = "routing_runs")
@@ -28,10 +27,10 @@ public class RoutingRunEntity {
     private RoutingRunStatus status = RoutingRunStatus.PENDING;
 
     @Column(name = "start_time")
-    private Instant startTime;
+    private LocalDateTime startTime;
 
     @Column(name = "end_time")
-    private Instant endTime;
+    private LocalDateTime endTime;
 
     @Column(name = "total_distance_km", precision = 12, scale = 2)
     private BigDecimal totalDistanceKm;
@@ -47,5 +46,5 @@ public class RoutingRunEntity {
 
     @CreationTimestamp
     @Column(name = "created_at")
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 }

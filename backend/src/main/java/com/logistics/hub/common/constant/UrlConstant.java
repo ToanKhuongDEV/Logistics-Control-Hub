@@ -52,4 +52,13 @@ public class UrlConstant {
 
         private Driver() {}
     }
+
+    public static class Routing {
+        public static final String PREFIX = API_V1 + "/routing";
+        public static final String OPTIMIZE = "/optimize";
+        public static final String RUNS = "/runs";
+        public static final String RUN_BY_ID = "/runs/{id}";
+        
+        private Routing() {}
+    }
 }

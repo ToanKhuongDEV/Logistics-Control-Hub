@@ -8,7 +8,7 @@ CREATE TABLE companies (
     website VARCHAR(255),
     tax_id VARCHAR(50),
     description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITHOUT TIME ZONE
 );
 
@@ -28,7 +28,7 @@ CREATE TABLE drivers (
     license_number VARCHAR(50) NOT NULL UNIQUE,
     phone_number VARCHAR(20) NOT NULL UNIQUE,
     email VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITHOUT TIME ZONE
 );
 
@@ -53,7 +53,7 @@ CREATE TABLE depots (
 
     description VARCHAR(500),
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_depots_location
         FOREIGN KEY (location_id)
@@ -75,7 +75,7 @@ CREATE TABLE vehicles (
     driver_id BIGINT UNIQUE, -- QUAN TRỌNG
     depot_id BIGINT,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_vehicles_driver
         FOREIGN KEY (driver_id)
@@ -99,7 +99,7 @@ CREATE TABLE orders (
 
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_orders_location
         FOREIGN KEY (delivery_location_id)
@@ -116,15 +116,15 @@ CREATE TABLE routing_runs (
 
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
 
-    start_time TIMESTAMP,
-    end_time TIMESTAMP,
+    start_time TIMESTAMP WITHOUT TIME ZONE,
+    end_time TIMESTAMP WITHOUT TIME ZONE,
 
     total_distance_km NUMERIC(12,2),
     total_cost NUMERIC(12,2),
 
     configuration TEXT,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 9. Routes (1 vehicle = 1 optimized route)
@@ -140,7 +140,9 @@ CREATE TABLE routes (
 
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    polyline TEXT, --(for map display)
+
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_routes_vehicle
         FOREIGN KEY (vehicle_id)
@@ -164,8 +166,8 @@ CREATE TABLE route_stops (
     distance_from_prev_km NUMERIC(10,2),
     duration_from_prev_min INT,
 
-    arrival_time TIMESTAMP,
-    departure_time TIMESTAMP,
+    arrival_time TIMESTAMP WITHOUT TIME ZONE,
+    departure_time TIMESTAMP WITHOUT TIME ZONE,
 
     CONSTRAINT fk_route_stops_route
         FOREIGN KEY (route_id)

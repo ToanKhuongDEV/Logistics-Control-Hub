@@ -6,12 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "route_stops", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"route_id", "stop_sequence"})
+        @UniqueConstraint(columnNames = { "route_id", "stop_sequence" })
 })
 @Data
 @NoArgsConstructor
@@ -22,15 +21,12 @@ public class RouteStopEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id", nullable = false)
     private RouteEntity route;
 
-
     @Column(name = "location_id", nullable = false)
     private Long locationId;
-
 
     @Column(name = "order_id")
     private Long orderId;
@@ -45,8 +41,8 @@ public class RouteStopEntity {
     private Integer durationFromPrevMin;
 
     @Column(name = "arrival_time")
-    private Instant arrivalTime;
+    private LocalDateTime arrivalTime;
 
     @Column(name = "departure_time")
-    private Instant departureTime;
+    private LocalDateTime departureTime;
 }

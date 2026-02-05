@@ -10,5 +10,6 @@ public class DepotResponse {
   private Long locationId;
   private String address;
   private String description;
+  private Boolean isActive;
   private LocalDateTime createdAt;
 }

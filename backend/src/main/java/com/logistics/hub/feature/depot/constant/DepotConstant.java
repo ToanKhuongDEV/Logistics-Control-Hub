@@ -17,4 +17,6 @@ public final class DepotConstant {
   public static final String DEPOT_NAME_LENGTH_EXCEEDED = "Tên kho hàng không được vượt quá 255 ký tự";
   public static final String DEPOT_DESCRIPTION_LENGTH_EXCEEDED = "Mô tả kho hàng không được vượt quá 500 ký tự";
   public static final String DEPOT_LOCATION_EXISTS = "Vị trí này đã được gán cho một kho hàng khác";
+  public static final String DEPOT_STATISTICS_RETRIEVED_SUCCESS = "Lấy thống kê kho hàng thành công";
+  public static final String DEPOT_HAS_VEHICLES = "Không thể xóa kho vì vẫn còn xe đang trực thuộc. Vui lòng chuyển xe sang kho khác hoặc đóng cửa kho thay vì xóa.";
 }

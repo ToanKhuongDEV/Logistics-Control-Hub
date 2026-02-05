@@ -62,6 +62,7 @@ public class UrlConstant {
     public static class Depot {
         public static final String PREFIX = API_V1 + "/depots";
         public static final String BY_ID = "/{id}";
+        public static final String STATISTICS = "/statistics";
 
         private Depot() {
         }

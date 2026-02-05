@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Entity
 @Table(name = "locations")
 @Data
@@ -21,8 +20,17 @@ public class LocationEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 255)
-    private String name;
+    @Column(nullable = false, length = 255)
+    @NotNull(message = "Street is required")
+    private String street;
+
+    @Column(nullable = false, length = 100)
+    @NotNull(message = "City is required")
+    private String city;
+
+    @Column(nullable = false, length = 100)
+    @NotNull(message = "Country is required")
+    private String country;
 
     @Min(value = -90, message = LocationConstant.LATITUDE_RANGE)
     @Max(value = 90, message = LocationConstant.LATITUDE_RANGE)

@@ -5,15 +5,32 @@ import java.time.Instant;
 
 public interface OrderProjection {
     Long getId();
+
     String getCode();
+
     Long getDeliveryLocationId();
+
     Integer getWeightKg();
+
     BigDecimal getVolumeM3();
+
     String getStatus();
+
     Instant getCreatedAt();
-    
+
     Long getLocId();
-    String getLocName();
+
+    String getLocStreet();
+
+    String getLocCity();
+
+    String getLocCountry();
+
+    Double getLocLat();
+
+    Double getLocLng();
+
     Long getDriverId();
+
     String getDriverName();
 }

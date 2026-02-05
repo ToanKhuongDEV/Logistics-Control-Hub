@@ -2,7 +2,11 @@ package com.logistics.hub.feature.routing.service.impl;
 
 import com.google.ortools.Loader;
 import com.google.ortools.constraintsolver.*;
+import com.google.protobuf.Duration;
+import com.logistics.hub.feature.depot.entity.DepotEntity;
+import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.location.entity.LocationEntity;
+import com.logistics.hub.feature.location.repository.LocationRepository;
 import com.logistics.hub.feature.order.entity.OrderEntity;
 import com.logistics.hub.feature.order.repository.OrderRepository;
 import com.logistics.hub.feature.routing.config.RoutingConfig;
@@ -12,9 +16,6 @@ import com.logistics.hub.feature.routing.entity.RouteStopEntity;
 import com.logistics.hub.feature.routing.entity.RoutingRunEntity;
 import com.logistics.hub.feature.routing.enums.RouteStatus;
 import com.logistics.hub.feature.routing.enums.RoutingRunStatus;
-import com.logistics.hub.feature.location.repository.LocationRepository;
-import com.logistics.hub.feature.depot.entity.DepotEntity;
-import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.routing.repository.RoutingRunRepository;
 import com.logistics.hub.feature.routing.service.RoutingService;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
@@ -26,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -187,15 +187,14 @@ public class RoutingServiceImpl implements RoutingService {
                 .toBuilder()
                 .setFirstSolutionStrategy(FirstSolutionStrategy.Value.PATH_CHEAPEST_ARC)
                 .setLocalSearchMetaheuristic(LocalSearchMetaheuristic.Value.GUIDED_LOCAL_SEARCH)
-                .setTimeLimit(com.google.protobuf.Duration.newBuilder().setSeconds(timeLimitSeconds).build())
+                .setTimeLimit(Duration.newBuilder().setSeconds(timeLimitSeconds).build())
                 .build();
 
         log.info("Starting OR-Tools solver...");
         LocalDateTime solveStart = LocalDateTime.now();
         Assignment solution = routing.solveWithParameters(searchParameters);
         LocalDateTime solveEnd = LocalDateTime.now();
-        long solveTimeMs = Duration.between(solveStart, solveEnd)
-                .toMillis();
+        long solveTimeMs = java.time.Duration.between(solveStart, solveEnd).toMillis();
         log.info("Solver completed in {} ms", solveTimeMs);
 
         RoutingRunEntity runEntity = new RoutingRunEntity();
@@ -205,7 +204,6 @@ public class RoutingServiceImpl implements RoutingService {
             runEntity.setStatus(RoutingRunStatus.COMPLETED);
             List<RouteEntity> routes = new ArrayList<>();
             long totalRunDistanceMeters = 0;
-            int totalRunDurationMinutes = 0;
             BigDecimal totalRunCost = BigDecimal.ZERO;
 
             for (int i = 0; i < vehicleCount; i++) {
@@ -290,7 +288,6 @@ public class RoutingServiceImpl implements RoutingService {
                 routes.add(route);
 
                 totalRunDistanceMeters += routeDistanceMeters;
-                totalRunDurationMinutes += routeDurationMinutes;
 
                 log.info("Route {}: Vehicle {}, {} stops, {} km, {} min, polyline: {}",
                         routes.size(), vehicle.getCode(), stops.size(),

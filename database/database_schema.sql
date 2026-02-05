@@ -32,16 +32,18 @@ CREATE TABLE drivers (
     updated_at TIMESTAMP WITHOUT TIME ZONE
 );
 
--- 4. Locations (Coordinates only)
+-- 4. Locations (With separated address fields)
 CREATE TABLE locations (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    street VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    country VARCHAR(100) NOT NULL DEFAULT 'Việt Nam',
 
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
     
-    CONSTRAINT uq_locations_lat_lng
-        UNIQUE (latitude, longitude)
+    CONSTRAINT uq_locations_address_coords
+        UNIQUE (street, city, country, latitude, longitude)
 );
 
 -- 5. Depots (Start locations for vehicles)
@@ -52,6 +54,7 @@ CREATE TABLE depots (
     location_id BIGINT NOT NULL,
 
     description VARCHAR(500),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 

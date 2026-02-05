@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -69,25 +70,30 @@ public class OsrmDistanceService implements DistanceService {
                             .setScale(2, RoundingMode.HALF_UP);
                     int durationMinutes = (int) Math.ceil(durationSeconds / 60.0);
 
-                    log.debug("OSRM: {} -> {} = {} km, {} min, polyline: {}",
-                            origin.getName(), destination.getName(), distanceKm, durationMinutes,
+                    log.debug("OSRM: {}, {} -> {}, {} = {} km, {} min, polyline: {}",
+                            origin.getStreet(), origin.getCity(),
+                            destination.getStreet(), destination.getCity(),
+                            distanceKm, durationMinutes,
                             polyline != null ? "present" : "null");
 
                     return new DistanceResult(distanceKm, durationMinutes, polyline);
                 }
             }
         } catch (Exception e) {
-            log.warn("OSRM API failed for {} -> {}, falling back to Haversine: {}",
-                    origin.getName(), destination.getName(), e.getMessage());
+            log.warn("OSRM API failed for {}, {} -> {}, {}, falling back to Haversine: {}",
+                    origin.getStreet(), origin.getCity(),
+                    destination.getStreet(), destination.getCity(),
+                    e.getMessage());
             return haversineDistanceService.calculateDistance(origin, destination);
         }
 
-        log.warn("OSRM returned no routes for {} -> {}, using Haversine fallback",
-                origin.getName(), destination.getName());
+        log.warn("OSRM returned no routes for {}, {} -> {}, {}, using Haversine fallback",
+                origin.getStreet(), origin.getCity(),
+                destination.getStreet(), destination.getCity());
         return haversineDistanceService.calculateDistance(origin, destination);
     }
 
-    public MatrixResult getMatrix(java.util.List<LocationEntity> locations) {
+    public MatrixResult getMatrix(List<LocationEntity> locations) {
         if (locations == null || locations.isEmpty()) {
             throw new IllegalArgumentException("Locations list must not be empty");
         }
@@ -154,7 +160,7 @@ public class OsrmDistanceService implements DistanceService {
         return calculateMatrixIteratively(locations);
     }
 
-    private MatrixResult calculateMatrixIteratively(java.util.List<LocationEntity> locations) {
+    private MatrixResult calculateMatrixIteratively(List<LocationEntity> locations) {
         int size = locations.size();
         MatrixResult result = new MatrixResult(new long[size][size], new int[size][size]);
 

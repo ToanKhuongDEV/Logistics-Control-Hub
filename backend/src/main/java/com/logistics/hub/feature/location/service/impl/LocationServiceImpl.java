@@ -27,15 +27,13 @@ public class LocationServiceImpl implements LocationService {
     private final LocationMapper locationMapper;
     private final OpenStreetMapService openStreetMapService;
 
-
-   @Override
+    @Override
     public LocationEntity getOrCreateLocation(LocationRequest request) {
         String fullAddress = String.format(
-            "%s, %s, %s",
-            request.getStreet(),
-            request.getCity(),
-            request.getCountry()
-        );
+                "%s, %s, %s",
+                request.getStreet(),
+                request.getCity(),
+                request.getCountry());
 
         Coordinates coords = openStreetMapService.geocode(fullAddress);
         if (coords == null) {
@@ -45,15 +43,16 @@ public class LocationServiceImpl implements LocationService {
         double latitude = Math.round(coords.getLatitude() * 1000000.0) / 1000000.0;
         double longitude = Math.round(coords.getLongitude() * 1000000.0) / 1000000.0;
 
-        Optional<LocationEntity> existing =
-            locationRepository.findByLatitudeAndLongitude(latitude, longitude);
+        Optional<LocationEntity> existing = locationRepository.findByLatitudeAndLongitude(latitude, longitude);
 
         if (existing.isPresent()) {
             return existing.get();
         }
 
         LocationEntity loc = new LocationEntity();
-        loc.setName(fullAddress);
+        loc.setStreet(request.getStreet());
+        loc.setCity(request.getCity());
+        loc.setCountry(request.getCountry());
         loc.setLatitude(latitude);
         loc.setLongitude(longitude);
 
@@ -61,15 +60,11 @@ public class LocationServiceImpl implements LocationService {
             return locationRepository.save(loc);
         } catch (DataIntegrityViolationException ex) {
             return locationRepository
-                .findByLatitudeAndLongitude(latitude, longitude)
-                .orElseThrow(() ->
-                    new IllegalStateException(
-                        LocationConstant.LOCATION_RETRIEVAL_ERROR, ex
-                    )
-                );
+                    .findByLatitudeAndLongitude(latitude, longitude)
+                    .orElseThrow(() -> new IllegalStateException(
+                            LocationConstant.LOCATION_RETRIEVAL_ERROR, ex));
         }
     }
-
 
     @Override
     public LocationResponse create(LocationRequest request) {

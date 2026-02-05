@@ -22,4 +22,6 @@ public class DepotRequest {
 
   @Size(max = 500, message = DepotConstant.DEPOT_DESCRIPTION_LENGTH_EXCEEDED)
   private String description;
+
+  private Boolean isActive = true;
 }

@@ -1,13 +1,11 @@
 package com.logistics.hub.feature.order.dto.response;
 
-
 import com.logistics.hub.feature.order.dto.projection.OrderProjection;
 import com.logistics.hub.feature.order.enums.OrderStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-
 
 @Data
 public class OrderResponse {
@@ -25,7 +23,16 @@ public class OrderResponse {
         OrderResponse response = new OrderResponse();
         response.setId(projection.getId());
         response.setCode(projection.getCode());
-        response.setDeliveryLocationName(projection.getLocName());
+
+        // Construct address from street, city, country
+        if (projection.getLocStreet() != null) {
+            String deliveryLocation = String.format("%s, %s, %s",
+                    projection.getLocStreet(),
+                    projection.getLocCity(),
+                    projection.getLocCountry());
+            response.setDeliveryLocationName(deliveryLocation);
+        }
+
         response.setWeightKg(projection.getWeightKg());
         response.setVolumeM3(projection.getVolumeM3());
         response.setDriverId(projection.getDriverId());

@@ -47,8 +47,10 @@ public class HaversineDistanceService {
 
         BigDecimal distance = BigDecimal.valueOf(distanceKm).setScale(2, RoundingMode.HALF_UP);
 
-        log.debug("Haversine: {} -> {} = {} km, {} min",
-                origin.getName(), destination.getName(), distance, durationMinutes);
+        log.debug("Haversine: {}, {} -> {}, {} = {} km, {} min",
+                origin.getStreet(), origin.getCity(),
+                destination.getStreet(), destination.getCity(),
+                distance, durationMinutes);
 
         return new DistanceResult(distance, durationMinutes, null);
     }

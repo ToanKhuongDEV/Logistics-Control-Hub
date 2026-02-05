@@ -168,7 +168,13 @@ public class VehicleServiceImpl implements VehicleService {
                         response.setLocationId(depot.getLocationId());
                         if (depot.getLocationId() != null) {
                             locationRepository.findById(depot.getLocationId())
-                                    .ifPresent(location -> response.setAddress(location.getName()));
+                                    .ifPresent(location -> {
+                                        String fullAddress = String.format("%s, %s, %s",
+                                                location.getStreet(),
+                                                location.getCity(),
+                                                location.getCountry());
+                                        response.setAddress(fullAddress);
+                                    });
                         }
                     });
         }

@@ -6,6 +6,7 @@ import com.logistics.hub.common.constant.UrlConstant;
 import com.logistics.hub.feature.depot.constant.DepotConstant;
 import com.logistics.hub.feature.depot.dto.request.DepotRequest;
 import com.logistics.hub.feature.depot.dto.response.DepotResponse;
+import com.logistics.hub.feature.depot.dto.response.DepotStatisticsResponse;
 import com.logistics.hub.feature.depot.service.DepotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,10 +30,11 @@ public class DepotController {
   @GetMapping
   @Operation(summary = "Get all depots", description = "Returns a paginated list of depots")
   public ResponseEntity<ApiResponse<PaginatedResponse<DepotResponse>>> findAll(
+      @RequestParam(required = false) String search,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size) {
     Pageable pageable = PageRequest.of(page, size);
-    Page<DepotResponse> depotPage = depotService.findAll(pageable);
+    Page<DepotResponse> depotPage = depotService.findAll(search, pageable);
 
     PaginatedResponse<DepotResponse> response = new PaginatedResponse<>();
     response.setData(depotPage.getContent());
@@ -72,5 +74,12 @@ public class DepotController {
   public ResponseEntity<ApiResponse<?>> delete(@PathVariable Long id) {
     depotService.delete(id);
     return ResponseEntity.ok(ApiResponse.success(DepotConstant.DEPOT_DELETED_SUCCESS, null));
+  }
+
+  @GetMapping(UrlConstant.Depot.STATISTICS)
+  @Operation(summary = "Get depot statistics", description = "Returns statistics about all depots")
+  public ResponseEntity<ApiResponse<DepotStatisticsResponse>> getStatistics() {
+    DepotStatisticsResponse statistics = depotService.getStatistics();
+    return ResponseEntity.ok(ApiResponse.success(DepotConstant.DEPOT_STATISTICS_RETRIEVED_SUCCESS, statistics));
   }
 }

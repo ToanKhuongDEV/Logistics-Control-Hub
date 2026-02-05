@@ -28,6 +28,9 @@ public class DepotEntity {
   @Column(length = 500)
   private String description;
 
+  @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+  private Boolean isActive = true;
+
   @CreationTimestamp
   @Column(name = "created_at")
   private LocalDateTime createdAt;

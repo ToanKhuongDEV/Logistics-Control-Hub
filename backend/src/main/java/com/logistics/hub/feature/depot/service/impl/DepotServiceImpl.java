@@ -5,6 +5,7 @@ import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.depot.constant.DepotConstant;
 import com.logistics.hub.feature.depot.dto.request.DepotRequest;
 import com.logistics.hub.feature.depot.dto.response.DepotResponse;
+import com.logistics.hub.feature.depot.dto.response.DepotStatisticsResponse;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.mapper.DepotMapper;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
@@ -12,9 +13,13 @@ import com.logistics.hub.feature.depot.service.DepotService;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.location.repository.LocationRepository;
 import com.logistics.hub.feature.location.service.LocationService;
+import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +32,25 @@ public class DepotServiceImpl implements DepotService {
   private final DepotMapper depotMapper;
   private final LocationRepository locationRepository;
   private final LocationService locationService;
+  private final VehicleRepository vehicleRepository;
 
   @Override
   @Transactional(readOnly = true)
-  public Page<DepotResponse> findAll(Pageable pageable) {
-    Page<DepotEntity> depotPage = depotRepository.findAll(pageable);
+  public Page<DepotResponse> findAll(String search, Pageable pageable) {
+    Sort sort = Sort.by(
+        Sort.Order.desc("isActive"),
+        Sort.Order.asc("id"));
+    Pageable sortedPageable = PageRequest.of(
+        pageable.getPageNumber(),
+        pageable.getPageSize(),
+        sort);
+
+    Page<DepotEntity> depotPage;
+    if (search != null && !search.trim().isEmpty()) {
+      depotPage = depotRepository.searchDepots(search, sortedPageable);
+    } else {
+      depotPage = depotRepository.findAll(sortedPageable);
+    }
     return depotPage.map(this::enrichResponse);
   }
 
@@ -83,14 +102,39 @@ public class DepotServiceImpl implements DepotService {
     if (!depotRepository.existsById(id)) {
       throw new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id);
     }
-    depotRepository.deleteById(id);
+
+    if (vehicleRepository.existsByDepotId(id)) {
+      throw new ValidationException(DepotConstant.DEPOT_HAS_VEHICLES);
+    }
+
+    try {
+      depotRepository.deleteById(id);
+    } catch (DataIntegrityViolationException e) {
+      throw new ValidationException(DepotConstant.DEPOT_HAS_VEHICLES);
+    }
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public DepotStatisticsResponse getStatistics() {
+    long total = depotRepository.count();
+    long active = depotRepository.countByIsActive(true);
+    long inactive = depotRepository.countByIsActive(false);
+
+    return new DepotStatisticsResponse(total, active, inactive);
   }
 
   private DepotResponse enrichResponse(DepotEntity entity) {
     DepotResponse response = depotMapper.toResponse(entity);
     if (entity.getLocationId() != null) {
       locationRepository.findById(entity.getLocationId())
-          .ifPresent(location -> response.setAddress(location.getName()));
+          .ifPresent(location -> {
+            String fullAddress = String.format("%s, %s, %s",
+                location.getStreet(),
+                location.getCity(),
+                location.getCountry());
+            response.setAddress(fullAddress);
+          });
     }
     return response;
   }

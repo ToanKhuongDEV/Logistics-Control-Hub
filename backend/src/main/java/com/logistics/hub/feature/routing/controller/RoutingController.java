@@ -29,13 +29,10 @@ public class RoutingController {
 	private final RoutingRunRepository routingRunRepository;
 
 	@PostMapping(UrlConstant.Routing.OPTIMIZE)
-	@Operation(summary = "Optimize routes", description = "Calculates optimized delivery routes for orders and vehicles using Google OR-Tools")
-	public ResponseEntity<ApiResponse<RoutingRunResponse>> optimizeRouting(
-			@Valid @RequestBody OptimizeRoutingRequest request) {
+	@Operation(summary = "Optimize routes", description = "Automatically optimizes delivery routes for all CREATED orders using ACTIVE vehicles with assigned drivers")
+	public ResponseEntity<ApiResponse<RoutingRunResponse>> optimizeRouting() {
 
-		RoutingRunEntity runEntity = routingService.executeRouting(
-				request.getOrderIds(),
-				request.getVehicleIds());
+		RoutingRunEntity runEntity = routingService.executeAutoRouting();
 
 		RoutingRunResponse response = RoutingMapper.toRoutingRunResponse(runEntity);
 

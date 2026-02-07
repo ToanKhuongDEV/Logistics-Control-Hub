@@ -43,7 +43,7 @@ export function FleetTable({ vehicles, onEdit, onDelete, isLoading = false }: Fl
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Loại xe</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tải trọng (kg)</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Thể tích (m³)</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Chi phí/km (₫)</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Kho trực thuộc</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Trạng thái</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tài xế</th>
 						<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>
@@ -66,7 +66,7 @@ export function FleetTable({ vehicles, onEdit, onDelete, isLoading = false }: Fl
 								<td className="px-6 py-4 text-sm text-foreground">{vehicle.type || "-"}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{formatNumber(vehicle.maxWeightKg)}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{Number(vehicle.maxVolumeM3).toFixed(2)}</td>
-								<td className="px-6 py-4 text-sm text-foreground">{formatNumber(Number(vehicle.costPerKm))}</td>
+								<td className="px-6 py-4 text-sm text-foreground">{vehicle.depotName || "Chưa gán"}</td>
 								<td className="px-6 py-4">
 									<span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>{statusConfig.label}</span>
 								</td>

@@ -22,6 +22,18 @@ interface VehicleLocation {
 	driver?: string;
 }
 
+interface RouteData {
+	id: number;
+	vehicleId: number;
+	polyline: string;
+	totalDistanceKm: number;
+	totalDurationMin: number;
+}
+
+interface LeafletMapProps {
+	routes?: RouteData[];
+}
+
 // Sample vehicle locations across Vietnam
 const vehicleLocations: VehicleLocation[] = [
 	{ id: 1, code: "VH001", lat: 21.0285, lng: 105.8542, status: "ACTIVE", city: "Hà Nội", driver: "Nguyễn Văn A" },
@@ -36,10 +48,50 @@ const vehicleLocations: VehicleLocation[] = [
 	{ id: 10, code: "VH010", lat: 10.371, lng: 107.0924, status: "ACTIVE", city: "Vũng Tàu", driver: "Mai Văn I" },
 ];
 
-export function LeafletMap() {
+// Decode polyline from encoded string
+function decodePolyline(encoded: string): [number, number][] {
+	const poly: [number, number][] = [];
+	let index = 0;
+	let lat = 0;
+	let lng = 0;
+
+	while (index < encoded.length) {
+		let shift = 0;
+		let result = 0;
+		let byte;
+
+		do {
+			byte = encoded.charCodeAt(index++) - 63;
+			result |= (byte & 0x1f) << shift;
+			shift += 5;
+		} while (byte >= 0x20);
+
+		const deltaLat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+		lat += deltaLat;
+
+		shift = 0;
+		result = 0;
+
+		do {
+			byte = encoded.charCodeAt(index++) - 63;
+			result |= (byte & 0x1f) << shift;
+			shift += 5;
+		} while (byte >= 0x20);
+
+		const deltaLng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+		lng += deltaLng;
+
+		poly.push([lat / 1e5, lng / 1e5]);
+	}
+
+	return poly;
+}
+
+export function LeafletMap({ routes }: LeafletMapProps) {
 	const mapContainer = useRef<HTMLDivElement>(null);
 	const map = useRef<L.Map | null>(null);
 	const markersRef = useRef<L.Marker[]>([]);
+	const polylinesRef = useRef<L.Polyline[]>([]);
 
 	useEffect(() => {
 		if (!mapContainer.current || map.current) return;
@@ -104,11 +156,55 @@ export function LeafletMap() {
 			if (map.current) {
 				markersRef.current.forEach((marker) => map.current?.removeLayer(marker));
 				markersRef.current = [];
+				polylinesRef.current.forEach((polyline) => map.current?.removeLayer(polyline));
+				polylinesRef.current = [];
 				map.current.remove();
 				map.current = null;
 			}
 		};
 	}, []);
+
+	// Update routes when prop changes
+	useEffect(() => {
+		if (!map.current || !routes || routes.length === 0) return;
+
+		// Clear existing polylines
+		polylinesRef.current.forEach((polyline) => map.current?.removeLayer(polyline));
+		polylinesRef.current = [];
+
+		// Route colors for differentiation
+		const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
+
+		routes.forEach((route, index) => {
+			if (!route.polyline) return;
+
+			const color = colors[index % colors.length];
+			const coordinates = decodePolyline(route.polyline);
+
+			const polyline = L.polyline(coordinates, {
+				color,
+				weight: 4,
+				opacity: 0.7,
+			})
+				.bindPopup(
+					`<div style="padding: 8px; font-size: 12px;">
+            <strong>Route ${index + 1}</strong><br>
+            Xe: ${route.vehicleId}<br>
+            Khoảng cách: ${route.totalDistanceKm.toFixed(2)} km<br>
+            Thời gian: ${route.totalDurationMin} phút
+          </div>`,
+				)
+				.addTo(map.current!);
+
+			polylinesRef.current.push(polyline);
+		});
+
+		// Fit map bounds to show all routes
+		if (polylinesRef.current.length > 0) {
+			const group = L.featureGroup(polylinesRef.current);
+			map.current.fitBounds(group.getBounds(), { padding: [50, 50] });
+		}
+	}, [routes]);
 
 	return (
 		<div className="relative w-full h-96 bg-card rounded-xl border border-border overflow-hidden">

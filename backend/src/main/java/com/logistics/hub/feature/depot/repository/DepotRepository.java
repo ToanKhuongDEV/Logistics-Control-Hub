@@ -13,7 +13,7 @@ public interface DepotRepository extends JpaRepository<DepotEntity, Long> {
 
     boolean existsByLocationIdAndIdNot(Long locationId, Long id);
 
-    long countByIsActive(Boolean isActive);
+    Long countByIsActive(boolean isActive);
 
     @Query("SELECT d FROM DepotEntity d JOIN LocationEntity l ON d.locationId = l.id "
             + "WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) "

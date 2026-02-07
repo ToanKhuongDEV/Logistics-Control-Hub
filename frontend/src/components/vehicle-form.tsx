@@ -10,6 +10,8 @@ import { X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VehicleStatus, Vehicle, VehicleRequest } from "@/types/vehicle-types";
 import { driverApi, Driver } from "@/lib/driver-api";
+import { depotApi } from "@/lib/depot-api";
+import { Depot } from "@/types/depot-types";
 
 interface VehicleFormProps {
 	vehicle?: Vehicle;
@@ -27,16 +29,15 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 		status: vehicle?.status || VehicleStatus.ACTIVE,
 		type: vehicle?.type || "",
 		driverId: vehicle?.driverId ?? null,
+		depotId: vehicle?.depotId || "",
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [drivers, setDrivers] = useState<Driver[]>([]);
+	const [depots, setDepots] = useState<Depot[]>([]);
 
 	const validateForm = () => {
 		const newErrors: Record<string, string> = {};
 
-		// if (!formData.code.trim()) {
-		// 	newErrors.code = "Mã xe là bắt buộc";
-		// }
 		if (!formData.maxWeightKg || Number(formData.maxWeightKg) <= 0) {
 			newErrors.maxWeightKg = "Tải trọng phải lớn hơn 0";
 		}
@@ -51,6 +52,10 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 			newErrors.type = "Loại xe (Hãng/Model) là bắt buộc";
 		}
 
+		if (!formData.depotId) {
+			newErrors.depotId = "Kho trực thuộc là bắt buộc";
+		}
+
 		setErrors(newErrors);
 		return Object.keys(newErrors).length === 0;
 	};
@@ -58,14 +63,24 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 	useEffect(() => {
 		const fetchDrivers = async () => {
 			try {
-				// Only fetch available drivers + current driver (if editing)
 				const data = await driverApi.getAvailable(vehicle?.driverId);
 				setDrivers(data);
 			} catch (error) {
 				console.error("Failed to fetch drivers:", error);
 			}
 		};
+
+		const fetchDepots = async () => {
+			try {
+				const response = await depotApi.getDepots({ page: 0, size: 100 });
+				setDepots(response.data);
+			} catch (error) {
+				console.error("Failed to fetch depots:", error);
+			}
+		};
+
 		fetchDrivers();
+		fetchDepots();
 	}, [vehicle?.driverId]);
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -80,6 +95,7 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 			status: formData.status as VehicleStatus,
 			type: formData.type || undefined,
 			driverId: formData.driverId ?? null,
+			depotId: Number(formData.depotId),
 		});
 	};
 
@@ -167,6 +183,26 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 						</Label>
 						<Input id="type" type="text" placeholder="VD: Hyundai Mighty, Isuzu FRR,..." value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className={errors.type ? "border-red-500" : "border-border"} disabled={isSubmitting} />
 						{errors.type && <p className="text-red-500 text-sm">{errors.type}</p>}
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="depot" className="text-foreground">
+							Kho trực thuộc <span className="text-red-500">*</span>
+						</Label>
+						<Select value={formData.depotId?.toString() || ""} onValueChange={(value) => setFormData({ ...formData, depotId: value })} disabled={isSubmitting}>
+							<SelectTrigger id="depot" className={errors.depotId ? "border-red-500" : "border-border"}>
+								<SelectValue placeholder="Chọn kho" />
+							</SelectTrigger>
+							<SelectContent>
+								{Array.isArray(depots) &&
+									depots.map((depot) => (
+										<SelectItem key={depot.id} value={depot.id.toString()}>
+											{depot.name}
+										</SelectItem>
+									))}
+							</SelectContent>
+						</Select>
+						{errors.depotId && <p className="text-red-500 text-sm">{errors.depotId}</p>}
 					</div>
 
 					{/* TODO: Implement driver selection dropdown */}

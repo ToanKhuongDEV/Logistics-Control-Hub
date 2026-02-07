@@ -2,6 +2,8 @@ package com.logistics.hub.feature.order.repository;
 
 import com.logistics.hub.feature.order.dto.projection.OrderProjection;
 import com.logistics.hub.feature.order.entity.OrderEntity;
+import com.logistics.hub.feature.order.enums.OrderStatus;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -49,4 +52,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
         boolean existsByDriverId(Long driverId);
 
         boolean existsByDeliveryLocationId(Long locationId);
+
+        Long countByStatus(OrderStatus status);
+
+        List<OrderEntity> findByStatus(OrderStatus status);
 }

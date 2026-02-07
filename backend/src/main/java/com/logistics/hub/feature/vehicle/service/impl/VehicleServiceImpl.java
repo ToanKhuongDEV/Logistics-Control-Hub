@@ -105,6 +105,10 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
         }
 
+        if (request.getDepotId() != null && !depotRepository.existsById(request.getDepotId())) {
+            throw new ResourceNotFoundException("Không tìm thấy kho hàng với id: " + request.getDepotId());
+        }
+
         vehicleMapper.updateEntityFromRequest(request, entity);
         VehicleEntity saved = vehicleRepository.save(entity);
         return enrichResponse(saved);

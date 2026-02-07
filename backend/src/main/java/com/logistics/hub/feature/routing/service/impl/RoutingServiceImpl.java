@@ -3,12 +3,16 @@ package com.logistics.hub.feature.routing.service.impl;
 import com.google.ortools.Loader;
 import com.google.ortools.constraintsolver.*;
 import com.google.protobuf.Duration;
+import com.logistics.hub.common.exception.ResourceNotFoundException;
+import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.location.repository.LocationRepository;
 import com.logistics.hub.feature.order.entity.OrderEntity;
+import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.repository.OrderRepository;
+import com.logistics.hub.feature.routing.constant.RoutingConstant;
 import com.logistics.hub.feature.routing.config.RoutingConfig;
 import com.logistics.hub.feature.routing.dto.response.DistanceResult;
 import com.logistics.hub.feature.routing.entity.RouteEntity;
@@ -19,6 +23,7 @@ import com.logistics.hub.feature.routing.enums.RoutingRunStatus;
 import com.logistics.hub.feature.routing.repository.RoutingRunRepository;
 import com.logistics.hub.feature.routing.service.RoutingService;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
+import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +65,7 @@ public class RoutingServiceImpl implements RoutingService {
         Long depotId = vehicles.get(0).getDepotId();
 
         DepotEntity depot = depotRepository.findById(depotId)
-                .orElseThrow(() -> new IllegalStateException("Depot not found: " + depotId));
+                .orElseThrow(() -> new ResourceNotFoundException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
         Long locationId = depot.getLocationId();
 
         Map<Long, LocationEntity> locationMap = locations.stream()
@@ -68,8 +73,8 @@ public class RoutingServiceImpl implements RoutingService {
 
         LocationEntity depotLocation = locationMap.get(locationId);
         if (depotLocation == null) {
-            throw new IllegalStateException(
-                    "Depot location not found for depot " + depotId + " (Location ID: " + locationId + ")");
+            throw new ResourceNotFoundException(
+                    RoutingConstant.DEPOT_LOCATION_NOT_FOUND + depotId + " (Location ID: " + locationId + ")");
         }
 
         Map<Long, List<OrderEntity>> ordersByLocation = orders.stream()
@@ -84,7 +89,8 @@ public class RoutingServiceImpl implements RoutingService {
         for (Map.Entry<Long, List<OrderEntity>> entry : ordersByLocation.entrySet()) {
             LocationEntity loc = locationMap.get(entry.getKey());
             if (loc == null) {
-                throw new IllegalStateException("Location not found for delivery location ID: " + entry.getKey());
+                throw new ResourceNotFoundException(
+                        RoutingConstant.DELIVERY_LOCATION_NOT_FOUND + entry.getKey());
             }
             nodeLocations.add(loc);
             orderGroupsByNode.add(entry.getValue());
@@ -327,7 +333,7 @@ public class RoutingServiceImpl implements RoutingService {
         List<VehicleEntity> vehicles = vehicleRepository.findAllById(vehicleIds);
 
         if (orders.isEmpty() || vehicles.isEmpty()) {
-            throw new IllegalArgumentException("Orders and Vehicles must not be empty");
+            throw new ValidationException(RoutingConstant.ORDER_IDS_EMPTY);
         }
 
         if (orders.size() != orderIds.size()) {
@@ -336,7 +342,7 @@ public class RoutingServiceImpl implements RoutingService {
 
         Long depotId = vehicles.get(0).getDepotId();
         if (depotId == null) {
-            throw new IllegalArgumentException("Vehicle must have a depot assigned");
+            throw new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED);
         }
 
         boolean multipleDepots = vehicles.stream()
@@ -344,12 +350,11 @@ public class RoutingServiceImpl implements RoutingService {
                 .anyMatch(id -> !Objects.equals(id, depotId));
 
         if (multipleDepots) {
-            throw new IllegalArgumentException(
-                    "All vehicles in a single optimization run must belong to the same depot");
+            throw new ValidationException(RoutingConstant.MULTIPLE_DEPOTS_ERROR);
         }
 
         DepotEntity depot = depotRepository.findById(depotId)
-                .orElseThrow(() -> new IllegalArgumentException("Depot not found: " + depotId));
+                .orElseThrow(() -> new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
         Long locationId = depot.getLocationId();
 
         Set<Long> locationIds = new HashSet<>();
@@ -359,13 +364,42 @@ public class RoutingServiceImpl implements RoutingService {
         List<LocationEntity> locations = locationRepository.findAllById(locationIds);
 
         if (locations.size() != locationIds.size()) {
-            throw new IllegalStateException("Not all locations (Depot + Delivery Points) could be found. Expected: "
-                    + locationIds.size() + ", Found: " + locations.size());
+            throw new ValidationException(RoutingConstant.LOCATIONS_NOT_FOUND);
         }
 
         RoutingRunEntity result = optimizeRoutes(orders, vehicles, locations);
 
+        if (result.getStatus() == RoutingRunStatus.COMPLETED) {
+            orders.forEach(order -> order.setStatus(OrderStatus.IN_TRANSIT));
+            orderRepository.saveAll(orders);
+            log.info("Updated {} orders to IN_TRANSIT status", orders.size());
+        }
+
         return routingRunRepository.save(result);
+    }
+
+    @Override
+    @Transactional
+    public RoutingRunEntity executeAutoRouting() {
+        log.info("Executing auto-routing: fetching available orders and vehicles");
+
+        List<OrderEntity> orders = orderRepository.findByStatus(OrderStatus.CREATED);
+        List<VehicleEntity> vehicles = vehicleRepository.findByStatusAndDriverIdNotNull(VehicleStatus.ACTIVE);
+
+        if (orders.isEmpty()) {
+            throw new ValidationException(RoutingConstant.ORDERS_NOT_FOUND);
+        }
+
+        if (vehicles.isEmpty()) {
+            throw new ValidationException(RoutingConstant.VEHICLES_NOT_FOUND);
+        }
+
+        log.info("Found {} CREATED orders and {} ACTIVE vehicles with drivers", orders.size(), vehicles.size());
+
+        List<Long> orderIds = orders.stream().map(OrderEntity::getId).collect(Collectors.toList());
+        List<Long> vehicleIds = vehicles.stream().map(VehicleEntity::getId).collect(Collectors.toList());
+
+        return executeRouting(orderIds, vehicleIds);
     }
 
     private int count(List<?> list) {

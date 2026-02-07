@@ -14,6 +14,8 @@ export interface Vehicle {
 	type?: string;
 	driverId?: number;
 	driverName?: string;
+	depotId?: number;
+	depotName?: string;
 	createdAt?: string;
 }
 
@@ -25,6 +27,7 @@ export interface VehicleRequest {
 	status: VehicleStatus;
 	type?: string;
 	driverId?: number | null;
+	depotId: number;
 }
 
 export interface VehicleStatistics {

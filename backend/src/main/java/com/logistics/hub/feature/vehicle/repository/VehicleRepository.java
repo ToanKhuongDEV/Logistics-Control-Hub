@@ -9,32 +9,36 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
 
-    Optional<VehicleEntity> findByCode(String code);
+        Optional<VehicleEntity> findByCode(String code);
 
-    boolean existsByCode(String code);
+        boolean existsByCode(String code);
 
-    @Query("SELECT v FROM VehicleEntity v WHERE " +
-            "(:status IS NULL OR v.status = :status) AND " +
-            "(:search IS NULL OR :search = '' OR " +
-            "LOWER(v.code) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<VehicleEntity> findByStatusAndSearch(
-            @Param("status") VehicleStatus status,
-            @Param("search") String search,
-            Pageable pageable);
+        @Query("SELECT v FROM VehicleEntity v WHERE " +
+                        "(:status IS NULL OR v.status = :status) AND " +
+                        "(:search IS NULL OR :search = '' OR " +
+                        "LOWER(v.code) LIKE LOWER(CONCAT('%', :search, '%')))")
+        Page<VehicleEntity> findByStatusAndSearch(
+                        @Param("status") VehicleStatus status,
+                        @Param("search") String search,
+                        Pageable pageable);
 
-    @Query("SELECT v.code FROM VehicleEntity v WHERE v.code LIKE CONCAT(:prefix, '%') ORDER BY v.code DESC LIMIT 1")
-    String findLatestCodeByPrefix(@Param("prefix") String prefix);
+        @Query("SELECT v.code FROM VehicleEntity v WHERE v.code LIKE CONCAT(:prefix, '%') ORDER BY v.code DESC LIMIT 1")
+        String findLatestCodeByPrefix(@Param("prefix") String prefix);
 
-    long countByStatus(VehicleStatus status);
+        long countByStatus(VehicleStatus status);
 
-    boolean existsByDriverId(Long driverId);
+        boolean existsByDriverId(Long driverId);
 
-    boolean existsByDriverIdAndIdNot(Long driverId, Long id);
+        boolean existsByDriverIdAndIdNot(Long driverId, Long id);
 
-    boolean existsByDepotId(Long depotId);
+        boolean existsByDepotId(Long depotId);
+
+        @Query("SELECT v FROM VehicleEntity v WHERE v.status = :status AND v.driverId IS NOT NULL")
+        List<VehicleEntity> findByStatusAndDriverIdNotNull(@Param("status") VehicleStatus status);
 }

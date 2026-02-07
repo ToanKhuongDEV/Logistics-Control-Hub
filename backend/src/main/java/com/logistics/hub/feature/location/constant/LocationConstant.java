@@ -20,4 +20,7 @@ public final class LocationConstant {
     public static final String GEOCODE_ERROR = "Không thể lấy tọa độ địa chỉ: ";
     public static final String LOCATION_NOT_FOUND = "Không tìm thấy địa điểm với id: ";
     public static final String LOCATION_RETRIEVAL_ERROR = "Địa điểm tồn tại nhưng không thể truy xuất";
+
+    public static final String LOCATION_IN_USE_BY_DEPOT = "Không thể xóa địa điểm vì đang được sử dụng bởi kho hàng";
+    public static final String LOCATION_IN_USE_BY_ORDERS = "Không thể xóa địa điểm vì đang được sử dụng bởi đơn hàng";
 }

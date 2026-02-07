@@ -21,4 +21,7 @@ public class DriverConstant {
     public static final String PHONE_INVALID_FORMAT = "Số điện thoại phải có đúng 10 chữ số";
     public static final String EMAIL_LENGTH_EXCEEDED = "Email không được vượt quá 255 ký tự";
     public static final String EMAIL_INVALID_FORMAT = "Email không hợp lệ";
+
+    public static final String DRIVER_HAS_VEHICLE = "Không thể xóa tài xế vì đang được gán cho phương tiện";
+    public static final String DRIVER_HAS_ORDERS = "Không thể xóa tài xế vì đang có đơn hàng được gán";
 }

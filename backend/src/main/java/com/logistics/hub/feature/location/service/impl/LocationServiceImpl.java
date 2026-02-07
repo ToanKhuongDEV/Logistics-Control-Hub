@@ -11,6 +11,8 @@ import com.logistics.hub.feature.location.service.LocationService;
 import com.logistics.hub.common.exception.GeocodingException;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.feature.location.dto.response.LocationResponse;
+import com.logistics.hub.feature.depot.repository.DepotRepository;
+import com.logistics.hub.feature.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,8 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepository locationRepository;
     private final LocationMapper locationMapper;
     private final OpenStreetMapService openStreetMapService;
+    private final DepotRepository depotRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     public LocationEntity getOrCreateLocation(LocationRequest request) {
@@ -77,6 +81,21 @@ public class LocationServiceImpl implements LocationService {
         if (!locationRepository.existsById(id)) {
             throw new ResourceNotFoundException(LocationConstant.LOCATION_NOT_FOUND + id);
         }
-        locationRepository.deleteById(id);
+
+        if (depotRepository.existsByLocationId(id)) {
+            throw new com.logistics.hub.common.exception.ValidationException(LocationConstant.LOCATION_IN_USE_BY_DEPOT);
+        }
+
+        if (orderRepository.existsByDeliveryLocationId(id)) {
+            throw new com.logistics.hub.common.exception.ValidationException(
+                    LocationConstant.LOCATION_IN_USE_BY_ORDERS);
+        }
+
+        try {
+            locationRepository.deleteById(id);
+        } catch (DataIntegrityViolationException ex) {
+            throw new com.logistics.hub.common.exception.ValidationException(
+                    LocationConstant.LOCATION_IN_USE_BY_DEPOT);
+        }
     }
 }

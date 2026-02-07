@@ -149,7 +149,8 @@ CREATE TABLE routes (
 
     CONSTRAINT fk_routes_vehicle
         FOREIGN KEY (vehicle_id)
-        REFERENCES vehicles(id),
+        REFERENCES vehicles(id)
+        ON DELETE CASCADE,
 
     CONSTRAINT fk_routes_routing_run
         FOREIGN KEY (routing_run_id)
@@ -179,7 +180,8 @@ CREATE TABLE route_stops (
 
     CONSTRAINT fk_route_stops_order
         FOREIGN KEY (order_id)
-        REFERENCES orders(id),
+        REFERENCES orders(id)
+        ON DELETE CASCADE,
 
     CONSTRAINT fk_route_stops_location
         FOREIGN KEY (location_id)

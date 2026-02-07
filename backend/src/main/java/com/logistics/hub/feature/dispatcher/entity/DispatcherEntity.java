@@ -1,6 +1,7 @@
 package com.logistics.hub.feature.dispatcher.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,6 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class DispatcherEntity {
 
     @Id
@@ -27,11 +29,4 @@ public class DispatcherEntity {
 
     @Column(nullable = false, length = 20)
     private String role;
-
-    public DispatcherEntity(String username, String password, String fullName, String role) {
-        this.username = username;
-        this.password = password;
-        this.fullName = fullName;
-        this.role = role;
-    }
 }

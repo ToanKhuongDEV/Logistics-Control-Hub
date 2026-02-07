@@ -10,7 +10,10 @@ import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.driver.mapper.DriverMapper;
 import com.logistics.hub.feature.driver.repository.DriverRepository;
 import com.logistics.hub.feature.driver.service.DriverService;
+import com.logistics.hub.feature.order.repository.OrderRepository;
+import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,8 @@ public class DriverServiceImpl implements DriverService {
 
     private final DriverRepository driverRepository;
     private final DriverMapper driverMapper;
+    private final VehicleRepository vehicleRepository;
+    private final OrderRepository orderRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -67,7 +72,20 @@ public class DriverServiceImpl implements DriverService {
         if (!driverRepository.existsById(id)) {
             throw new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND);
         }
-        driverRepository.deleteById(id);
+
+        if (vehicleRepository.existsByDriverId(id)) {
+            throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
+        }
+
+        if (orderRepository.existsByDriverId(id)) {
+            throw new ValidationException(DriverConstant.DRIVER_HAS_ORDERS);
+        }
+
+        try {
+            driverRepository.deleteById(id);
+        } catch (DataIntegrityViolationException e) {
+            throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
+        }
     }
 
     @Override

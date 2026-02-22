@@ -23,8 +23,8 @@ public class RoutingRunEntity {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private RoutingRunStatus status = RoutingRunStatus.PENDING;
+    @Column(name = "status", nullable = false)
+    private RoutingRunStatus status;
 
     @Column(name = "start_time")
     private LocalDateTime startTime;

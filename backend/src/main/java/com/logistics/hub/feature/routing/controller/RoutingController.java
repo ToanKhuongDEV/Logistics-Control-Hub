@@ -3,7 +3,6 @@ package com.logistics.hub.feature.routing.controller;
 import com.logistics.hub.common.base.ApiResponse;
 import com.logistics.hub.common.constant.UrlConstant;
 import com.logistics.hub.feature.routing.constant.RoutingConstant;
-import com.logistics.hub.feature.routing.dto.request.OptimizeRoutingRequest;
 import com.logistics.hub.feature.routing.dto.response.RoutingRunResponse;
 import com.logistics.hub.feature.routing.entity.RoutingRunEntity;
 import com.logistics.hub.feature.routing.mapper.RoutingMapper;
@@ -11,7 +10,6 @@ import com.logistics.hub.feature.routing.repository.RoutingRunRepository;
 import com.logistics.hub.feature.routing.service.RoutingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,7 +29,6 @@ public class RoutingController {
 	@PostMapping(UrlConstant.Routing.OPTIMIZE)
 	@Operation(summary = "Optimize routes", description = "Automatically optimizes delivery routes for all CREATED orders using ACTIVE vehicles with assigned drivers")
 	public ResponseEntity<ApiResponse<RoutingRunResponse>> optimizeRouting() {
-
 		RoutingRunEntity runEntity = routingService.executeAutoRouting();
 
 		RoutingRunResponse response = RoutingMapper.toRoutingRunResponse(runEntity);
@@ -46,7 +43,8 @@ public class RoutingController {
 		log.info("Fetching routing run with id: {}", id);
 
 		RoutingRunEntity runEntity = routingRunRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException(RoutingConstant.ROUTING_RUN_NOT_FOUND + id));
+				.orElseThrow(() -> new com.logistics.hub.common.exception.ResourceNotFoundException(
+						RoutingConstant.ROUTING_RUN_NOT_FOUND + id));
 
 		RoutingRunResponse response = RoutingMapper.toRoutingRunResponse(runEntity);
 

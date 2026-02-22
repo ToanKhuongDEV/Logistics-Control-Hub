@@ -105,7 +105,7 @@ osrm:
 routing:
   solver:
     time-limit-seconds: 5 # Thời gian giới hạn cho solver (giây)
-    vehicle-fixed-cost: 1000000 # Chi phí cố định cho mỗi xe (để khuyến khích dùng ít xe)
+    vehicle-fixed-cost: 50000 # Chi phí cố định cho mỗi xe (giảm để solver dễ tìm giải pháp)
     volume-scaling-factor: 1000 # Hệ số scale cho volume (1 m³ = 1000 units)
   distance:
     average-speed-kmh: 50.0 # Tốc độ trung bình cho Haversine fallback (km/h)

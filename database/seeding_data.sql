@@ -58,71 +58,80 @@ VALUES
 ('Lý Thị Mai', 'FC-005544', '0908877665', 'driver.mai@logitower.vn');
 
 -- =====================================================
--- 4. Locations (Only 2 as requested)
+-- 4. Locations (11 unique locations - one for each depot)
 -- =====================================================
 
 INSERT INTO locations (street, city, country, latitude, longitude)
 VALUES
-('388 Trần Phú', 'Từ Sơn', 'Bắc Ninh', 21.120556, 105.973056),
-('147 Nguyễn Huệ', 'Quận 1', 'Hồ Chí Minh', 10.776889, 106.700806);
+('123 Nguyễn Huệ', 'Quận 1', 'Hồ Chí Minh', 10.776889, 106.700806),  -- Kho Trung Tâm TP.HCM
+('388 Trần Phú', 'Từ Sơn', 'Bắc Ninh', 21.120556, 105.973056),         -- Kho Miền Bắc
+('456 Hoàng Văn Thụ', 'Tân Bình', 'Hồ Chí Minh', 10.799889, 106.653889), -- Kho Tân Bình
+('789 Đại lộ Bình Dương', 'Thủ Dầu Một', 'Bình Dương', 10.980889, 106.650806), -- Kho Bình Dương
+('234 Quốc lộ 1A', 'Biên Hòa', 'Đồng Nai', 10.947889, 106.817806), -- Kho Đồng Nai
+('567 Lê Hồng Phong', 'Ngô Quyền', 'Hải Phòng', 20.865889, 106.682306), -- Kho Hải Phòng
+('890 Nguyễn Văn Linh', 'Hải Châu', 'Đà Nẵng', 16.047889, 108.206806), -- Kho Đà Nẵng
+('345 Mậu Thân', 'Ninh Kiều', 'Cần Thơ', 10.033889, 105.787806), -- Kho Cần Thơ
+('678 Trần Phú', 'Nha Trang', 'Khánh Hòa', 12.238889, 109.196806), -- Kho Nha Trang
+('901 Trần Hưng Đạo', 'Vũng Tàu', 'Bà Rịa-Vũng Tàu', 10.345889, 107.084306), -- Kho Vũng Tàu
+('123 Quốc lộ 62', 'Tân An', 'Long An', 10.536389, 106.415806); -- Kho Long An
 
 -- =====================================================
--- 5. Depots
+-- 5. Depots (Each depot has unique location)
 -- =====================================================
 
 INSERT INTO depots (name, location_id, description, is_active)
 VALUES
-('Kho Trung Tâm TP.HCM', 2, 'Kho chính tại TP.HCM - Điểm xuất phát cho các tuyến giao hàng', TRUE),
-('Kho Miền Bắc', 1, 'Kho phân phối miền Bắc - Bắc Ninh', TRUE),
-('Kho Tân Bình', 2, 'Kho tại Tân Bình - TP.HCM', TRUE),
-('Kho Bình Dương', 2, 'Kho công nghiệp Bình Dương', TRUE),
-('Kho Đồng Nai', 2, 'Kho khu công nghiệp Đồng Nai', TRUE),
-('Kho Hải Phòng', 1, 'Kho cảng Hải Phòng', FALSE),
-('Kho Đà Nẵng', 2, 'Kho miền Trung - Đà Nẵng', TRUE),
-('Kho Cần Thơ', 2, 'Kho miền Tây - Cần Thơ', TRUE),
-('Kho Nha Trang', 2, 'Kho ven biển Nha Trang', TRUE),
-('Kho Vũng Tàu', 2, 'Kho cảng Vũng Tàu', FALSE),
-('Kho Long An', 2, 'Kho Long An - cửa khẩu biên giới', TRUE);
+('Kho Trung Tâm TP.HCM', 1, 'Kho chính tại TP.HCM - Điểm xuất phát cho các tuyến giao hàng', TRUE),
+('Kho Miền Bắc', 2, 'Kho phân phối miền Bắc - Bắc Ninh', TRUE),
+('Kho Tân Bình', 3, 'Kho tại Tân Bình - TP.HCM', TRUE),
+('Kho Bình Dương', 4, 'Kho công nghiệp Bình Dương', TRUE),
+('Kho Đồng Nai', 5, 'Kho khu công nghiệp Đồng Nai', TRUE),
+('Kho Hải Phòng', 6, 'Kho cảng Hải Phòng', FALSE),
+('Kho Đà Nẵng', 7, 'Kho miền Trung - Đà Nẵng', TRUE),
+('Kho Cần Thơ', 8, 'Kho miền Tây - Cần Thơ', TRUE),
+('Kho Nha Trang', 9, 'Kho ven biển Nha Trang', TRUE),
+('Kho Vũng Tàu', 10, 'Kho cảng Vũng Tàu', FALSE),
+('Kho Long An', 11, 'Kho Long An - cửa khẩu biên giới', TRUE);
 
 -- =====================================================
--- 6. Vehicles
+-- 6. Vehicles (All vehicles at Depot 1 - Kho Trung Tâm TP.HCM)
 -- =====================================================
 
 INSERT INTO vehicles (code, max_weight_kg, max_volume_m3, cost_per_km, status, type, driver_id, depot_id)
 VALUES
 ('LDT-001', 2500, 15.5, 5000, 'ACTIVE', 'Hyundai Mighty', 1, 1),     
 ('MDT-002', 3500, 18.0, 6500, 'ACTIVE', 'Isuzu FRR', 2, 1),        
-('LDT-003', 2000, 12.0, 4500, 'MAINTENANCE', 'Kia K250', 3, 2),     
+('LDT-003', 2000, 12.0, 4500, 'MAINTENANCE', 'Kia K250', 3, 1),     
 ('LDT-004', 3000, 16.5, 5500, 'ACTIVE', 'Hino XZU', 4, 1),           
-('MDT-005', 4000, 20.0, 7000, 'ACTIVE', 'Isuzu FVR', 5, 3),           
-('LDT-006', 1800, 11.0, 4000, 'IDLE', 'Thaco Kia K200', NULL, 4),    
-('LDT-007', 2800, 14.5, 5200, 'ACTIVE', 'Hyundai HD120S', 6, 5),      
+('MDT-005', 4000, 20.0, 7000, 'ACTIVE', 'Isuzu FVR', 5, 1),           
+('LDT-006', 1800, 11.0, 4000, 'IDLE', 'Thaco Kia K200', NULL, 1),    
+('LDT-007', 2800, 14.5, 5200, 'ACTIVE', 'Hyundai HD120S', 6, 1),      
 ('LDT-008', 3200, 17.0, 6000, 'ACTIVE', 'Hino FC', 7, 1),            
-('LDT-009', 2200, 13.0, 4800, 'MAINTENANCE', 'Kia K250', 8, 7),       
-('MDT-010', 3800, 19.5, 6800, 'ACTIVE', 'Isuzu FVR', 9, 8),
-('LDT-011', 2600, 15.0, 5100, 'ACTIVE', 'Hyundai Porter', 10, 9),
-('LDT-012', 2900, 16.0, 5400, 'IDLE', 'Kia Frontier', NULL, 11),
+('LDT-009', 2200, 13.0, 4800, 'MAINTENANCE', 'Kia K250', 8, 1),       
+('MDT-010', 3800, 19.5, 6800, 'ACTIVE', 'Isuzu FVR', 9, 1),
+('LDT-011', 2600, 15.0, 5100, 'ACTIVE', 'Hyundai Porter', 10, 1),
+('LDT-012', 2900, 16.0, 5400, 'IDLE', 'Kia Frontier', NULL, 1),
 ('MDT-013', 4200, 21.0, 7200, 'ACTIVE', 'Hino FL', 11, 1),
-('LDT-014', 2400, 14.0, 4900, 'MAINTENANCE', 'Thaco Ollin', 12, 2);
+('LDT-014', 2400, 14.0, 4900, 'MAINTENANCE', 'Thaco Ollin', 12, 1);
 
 -- =====================================================
--- 7. Orders
+-- 7. Orders (Delivery to first 2 locations)
 -- =====================================================
 
 INSERT INTO orders (code, delivery_location_id, weight_kg, volume_m3, driver_id, status)
 VALUES
-('ORD-001', 2, 200, 1.2, 1, 'CREATED'),
-('ORD-002', 1, 300, 1.5, 2, 'CREATED'),
-('ORD-003', 2, 400, 2.0, NULL, 'CREATED'),
-('ORD-004', 1, 150, 1.0, 3, 'IN_TRANSIT'),
-('ORD-005', 2, 250, 1.3, 4, 'CREATED'),
-('ORD-006', 1, 350, 1.8, NULL, 'CREATED'),
-('ORD-007', 2, 180, 1.1, 5, 'DELIVERED'),
-('ORD-008', 1, 220, 1.4, 6, 'CREATED'),
-('ORD-009', 2, 280, 1.6, NULL, 'CREATED'),
-('ORD-010', 1, 320, 1.7, 7, 'IN_TRANSIT'),
-('ORD-011', 2, 190, 1.2, 8, 'CREATED'),
-('ORD-012', 1, 380, 1.9, NULL, 'CREATED');
+('ORD-001', 1, 200, 1.2, 1, 'CREATED'),
+('ORD-002', 2, 300, 1.5, 2, 'CREATED'),
+('ORD-003', 1, 400, 2.0, NULL, 'CREATED'),
+('ORD-004', 2, 150, 1.0, 3, 'IN_TRANSIT'),
+('ORD-005', 1, 250, 1.3, 4, 'CREATED'),
+('ORD-006', 2, 350, 1.8, NULL, 'CREATED'),
+('ORD-007', 1, 180, 1.1, 5, 'DELIVERED'),
+('ORD-008', 2, 220, 1.4, 6, 'CREATED'),
+('ORD-009', 1, 280, 1.6, NULL, 'CREATED'),
+('ORD-010', 2, 320, 1.7, 7, 'IN_TRANSIT'),
+('ORD-011', 1, 190, 1.2, 8, 'CREATED'),
+('ORD-012', 2, 380, 1.9, NULL, 'CREATED');
 
 -- =====================================================
 -- 8. Routing Runs (Optimization sessions)
@@ -183,23 +192,23 @@ INSERT INTO route_stops (
     departure_time
 )
 VALUES
--- Route 1 (vehicle 1, run 1)
-(1, NULL, 2, 0, 0.00, 0, '2024-01-15 08:00:00', '2024-01-15 08:15:00'),
-(1, 1, 2, 1, 5.20, 12, '2024-01-15 08:27:00', '2024-01-15 08:40:00'),
-(1, 2, 1, 2, 6.40, 15, '2024-01-15 08:55:00', '2024-01-15 09:10:00'),
-(1, 3, 2, 3, 6.60, 15, '2024-01-15 09:25:00', '2024-01-15 09:40:00'),
-(1, NULL, 2, 4, 5.50, 20, '2024-01-15 10:00:00', NULL),
+-- Route 1 (vehicle 1, run 1) - Depot at location 1
+(1, NULL, 1, 0, 0.00, 0, '2024-01-15 08:00:00', '2024-01-15 08:15:00'),
+(1, 1, 1, 1, 5.20, 12, '2024-01-15 08:27:00', '2024-01-15 08:40:00'),
+(1, 2, 2, 2, 6.40, 15, '2024-01-15 08:55:00', '2024-01-15 09:10:00'),
+(1, 3, 1, 3, 6.60, 15, '2024-01-15 09:25:00', '2024-01-15 09:40:00'),
+(1, NULL, 1, 4, 5.50, 20, '2024-01-15 10:00:00', NULL),
 
--- Route 2 (vehicle 2, run 2)
-(2, NULL, 2, 0, 0.00, 0, '2024-01-16 08:00:00', '2024-01-16 08:10:00'),
-(2, 4, 1, 1, 7.50, 18, '2024-01-16 08:28:00', '2024-01-16 08:45:00'),
-(2, 5, 2, 2, 8.00, 19, '2024-01-16 09:04:00', '2024-01-16 09:20:00'),
-(2, NULL, 2, 3, 7.00, 18, '2024-01-16 09:38:00', NULL),
+-- Route 2 (vehicle 2, run 2) - Depot at location 1
+(2, NULL, 1, 0, 0.00, 0, '2024-01-16 08:00:00', '2024-01-16 08:10:00'),
+(2, 4, 2, 1, 7.50, 18, '2024-01-16 08:28:00', '2024-01-16 08:45:00'),
+(2, 5, 1, 2, 8.00, 19, '2024-01-16 09:04:00', '2024-01-16 09:20:00'),
+(2, NULL, 1, 3, 7.00, 18, '2024-01-16 09:38:00', NULL),
 
--- Route 3 (vehicle 4, run 4)
-(3, NULL, 2, 0, 0.00, 0, '2024-01-18 07:45:00', '2024-01-18 08:00:00'),
-(3, 6, 1, 1, 5.80, 14, '2024-01-18 08:14:00', '2024-01-18 08:30:00'),
-(3, NULL, 2, 2, 10.00, 24, '2024-01-18 08:54:00', NULL);
+-- Route 3 (vehicle 4, run 4) - Depot at location 1
+(3, NULL, 1, 0, 0.00, 0, '2024-01-18 07:45:00', '2024-01-18 08:00:00'),
+(3, 6, 2, 1, 5.80, 14, '2024-01-18 08:14:00', '2024-01-18 08:30:00'),
+(3, NULL, 1, 2, 10.00, 24, '2024-01-18 08:54:00', NULL);
 
 -- =====================================================
 -- END OF SEED DATA

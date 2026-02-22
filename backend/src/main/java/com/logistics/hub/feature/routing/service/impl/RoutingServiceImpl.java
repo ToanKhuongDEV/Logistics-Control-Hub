@@ -97,7 +97,6 @@ public class RoutingServiceImpl implements RoutingService {
         }
 
         int nodeCount = nodeLocations.size();
-        int vehicleCount = vehicles.size();
 
         log.info("Building distance matrix for {} nodes (1 depot + {} delivery locations)",
                 nodeCount, nodeCount - 1);
@@ -141,23 +140,45 @@ public class RoutingServiceImpl implements RoutingService {
             demandsVolume[i] = totalVolume.multiply(BigDecimal.valueOf(volumeScale)).longValue();
         }
 
-        long[] vehicleWeightCaps = vehicles.stream()
-                .mapToLong(v -> v.getMaxWeightKg() != null ? v.getMaxWeightKg() : Long.MAX_VALUE)
-                .toArray();
-
         int volumeScalingFactor = routingConfig.getSolver().getVolumeScalingFactor();
-        long[] vehicleVolumeCaps = vehicles.stream()
-                .mapToLong(v -> v.getMaxVolumeM3() != null
-                        ? v.getMaxVolumeM3().multiply(BigDecimal.valueOf(volumeScalingFactor)).longValue()
-                        : Long.MAX_VALUE)
-                .toArray();
 
-        RoutingIndexManager manager = new RoutingIndexManager(nodeCount, vehicleCount, 0);
+        int maxTripsPerVehicle = 3;
+        int physicalVehicleCount = vehicles.size();
+        int totalVirtualVehicles = physicalVehicleCount * maxTripsPerVehicle;
+
+        long[] vehicleWeightCaps = new long[totalVirtualVehicles];
+        long[] vehicleVolumeCaps = new long[totalVirtualVehicles];
+        long[] vehicleFixedCosts = new long[totalVirtualVehicles];
+
+        long baseFixedCost = routingConfig.getSolver().getVehicleFixedCost();
+
+        for (int v = 0; v < physicalVehicleCount; v++) {
+            VehicleEntity vehicle = vehicles.get(v);
+            long weightCap = vehicle.getMaxWeightKg() != null ? vehicle.getMaxWeightKg() : Long.MAX_VALUE;
+            long volumeCap = vehicle.getMaxVolumeM3() != null
+                    ? vehicle.getMaxVolumeM3().multiply(BigDecimal.valueOf(volumeScalingFactor)).longValue()
+                    : Long.MAX_VALUE;
+
+            for (int trip = 0; trip < maxTripsPerVehicle; trip++) {
+                int virtualIdx = (trip * physicalVehicleCount) + v;
+                vehicleWeightCaps[virtualIdx] = weightCap;
+                vehicleVolumeCaps[virtualIdx] = volumeCap;
+
+                long tieredBase = baseFixedCost;
+                if (trip == 1)
+                    tieredBase = baseFixedCost * 10;
+                else if (trip == 2)
+                    tieredBase = baseFixedCost * 50;
+
+                vehicleFixedCosts[virtualIdx] = tieredBase;
+            }
+        }
+
+        RoutingIndexManager manager = new RoutingIndexManager(nodeCount, totalVirtualVehicles, 0);
         RoutingModel routing = new RoutingModel(manager);
 
-        long vehicleFixedCost = routingConfig.getSolver().getVehicleFixedCost();
-        for (int i = 0; i < vehicleCount; i++) {
-            routing.setFixedCostOfVehicle(vehicleFixedCost, i);
+        for (int i = 0; i < totalVirtualVehicles; i++) {
+            routing.setFixedCostOfVehicle(vehicleFixedCosts[i], i);
         }
 
         final int transitCallbackIndex = routing.registerTransitCallback((long fromIndex, long toIndex) -> {
@@ -187,6 +208,13 @@ public class RoutingServiceImpl implements RoutingService {
                 true,
                 "Volume");
 
+        log.info("Routing problem setup:");
+        log.info("  - Nodes: {} (1 depot + {} deliveries)", nodeCount, nodeCount - 1);
+        log.info("  - Physical Vehicles: {}", physicalVehicleCount);
+        log.info("  - Total Virtual Vehicles (Trips): {}", totalVirtualVehicles);
+        log.info("  - Node weight demands: {}", Arrays.toString(demandsWeight));
+        log.info("  - Node volume demands: {}", Arrays.toString(demandsVolume));
+
         int timeLimitSeconds = routingConfig.getSolver().getTimeLimitSeconds();
 
         RoutingSearchParameters searchParameters = main.defaultRoutingSearchParameters()
@@ -212,14 +240,16 @@ public class RoutingServiceImpl implements RoutingService {
             long totalRunDistanceMeters = 0;
             BigDecimal totalRunCost = BigDecimal.ZERO;
 
-            for (int i = 0; i < vehicleCount; i++) {
+            for (int i = 0; i < totalVirtualVehicles; i++) {
                 long index = routing.start(i);
 
                 if (routing.isEnd(solution.value(routing.nextVar(index)))) {
                     continue;
                 }
 
-                VehicleEntity vehicle = vehicles.get(i);
+                int physicalIdx = i % physicalVehicleCount;
+
+                VehicleEntity vehicle = vehicles.get(physicalIdx);
                 RouteEntity route = new RouteEntity();
                 route.setRoutingRun(runEntity);
                 route.setVehicleId(vehicle.getId());
@@ -262,6 +292,10 @@ public class RoutingServiceImpl implements RoutingService {
                         stop.setDurationFromPrevMin(legDurationMinutes);
 
                         stops.add(stop);
+
+                        if (vehicle.getDriverId() != null) {
+                            order.setDriverId(vehicle.getDriverId());
+                        }
                     }
 
                     prevIndex = index;
@@ -307,8 +341,8 @@ public class RoutingServiceImpl implements RoutingService {
 
             String config = String.format(
                     "Solver: GUIDED_LOCAL_SEARCH | Strategy: PATH_CHEAPEST_ARC | TimeLimit: %ds | " +
-                            "SolveTime: %dms | VehiclesProvided: %d | VehiclesUsed: %d | FixedCost: %d",
-                    timeLimitSeconds, solveTimeMs, vehicleCount, routes.size(),
+                            "SolveTime: %dms | PhysicalVehicles: %d | VirtualVehicles: %d | RoutesUsed: %d | FixedCost: %d",
+                    timeLimitSeconds, solveTimeMs, physicalVehicleCount, totalVirtualVehicles, routes.size(),
                     routingConfig.getSolver().getVehicleFixedCost());
             runEntity.setConfiguration(config);
 

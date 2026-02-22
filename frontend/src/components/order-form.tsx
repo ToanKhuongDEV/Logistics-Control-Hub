@@ -9,8 +9,6 @@ import { X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrderStatus, Order, OrderRequest } from "@/types/order-types";
 
-import { driverApi, Driver } from "@/lib/driver-api";
-
 interface OrderFormProps {
 	order?: Order;
 	onSubmit: (data: OrderRequest) => void;
@@ -19,35 +17,17 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: OrderFormProps) {
-	const [drivers, setDrivers] = useState<Driver[]>([]);
-
 	const [formData, setFormData] = useState(() => {
-		const addressParts = order?.deliveryLocationName?.split(", ") || [];
-
 		return {
 			code: order?.code || "",
 			weightKg: order?.weightKg?.toString() || "",
 			volumeM3: order?.volumeM3?.toString() || "",
 			status: order?.status || OrderStatus.CREATED,
-			locationStreet: addressParts[0] || "",
-			locationCity: addressParts[1] || "",
-			locationCountry: "Việt Nam",
-			driverId: order?.driverId ?? null,
+			locationStreet: order?.deliveryStreet || "",
+			locationCity: order?.deliveryCity || "",
+			locationCountry: order?.deliveryCountry || "Việt Nam",
 		};
 	});
-
-	// Fetch drivers logic
-	React.useEffect(() => {
-		const fetchDrivers = async () => {
-			try {
-				const data = await driverApi.getAll();
-				setDrivers(data);
-			} catch (error) {
-				console.error("Failed to fetch drivers", error);
-			}
-		};
-		fetchDrivers();
-	}, []);
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
 	const validateForm = () => {
@@ -87,7 +67,6 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 			weightKg: formData.weightKg ? Number(formData.weightKg) : undefined,
 			volumeM3: formData.volumeM3 ? Number(formData.volumeM3) : undefined,
 			status: formData.status as OrderStatus,
-			driverId: formData.driverId,
 		});
 	};
 
@@ -135,7 +114,6 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value={OrderStatus.CREATED}>Đã tạo</SelectItem>
-								<SelectItem value={OrderStatus.ASSIGNED}>Đã phân công</SelectItem>
 								<SelectItem value={OrderStatus.IN_TRANSIT}>Đang vận chuyển</SelectItem>
 								<SelectItem value={OrderStatus.DELIVERED}>Đã giao</SelectItem>
 								<SelectItem value={OrderStatus.CANCELLED}>Đã hủy</SelectItem>
@@ -163,26 +141,6 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 								{errors.locationCity && <p className="text-red-500 text-sm">{errors.locationCity}</p>}
 							</div>
 						</div>
-					</div>
-
-					<div className="space-y-2">
-						<Label htmlFor="driver" className="text-foreground">
-							Tài xế (Tùy chọn)
-						</Label>
-						<Select value={formData.driverId?.toString() ?? "null"} onValueChange={(value) => setFormData({ ...formData, driverId: value === "null" ? null : Number(value) })} disabled={isSubmitting}>
-							<SelectTrigger id="driver" className="border-border">
-								<SelectValue placeholder="Chọn tài xế" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="null">Không gán tài xế</SelectItem>
-								{Array.isArray(drivers) &&
-									drivers.map((driver) => (
-										<SelectItem key={driver.id} value={driver.id.toString()}>
-											{driver.name} - {driver.licenseNumber}
-										</SelectItem>
-									))}
-							</SelectContent>
-						</Select>
 					</div>
 
 					<div className="flex gap-3 pt-6">

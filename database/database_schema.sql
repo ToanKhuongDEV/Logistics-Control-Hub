@@ -51,7 +51,7 @@ CREATE TABLE depots (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
 
-    location_id BIGINT NOT NULL,
+    location_id BIGINT NOT NULL UNIQUE,
 
     description VARCHAR(500),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,

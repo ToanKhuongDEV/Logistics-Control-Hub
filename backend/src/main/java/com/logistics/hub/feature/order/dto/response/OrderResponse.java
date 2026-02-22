@@ -12,6 +12,9 @@ public class OrderResponse {
     private Long id;
     private String code;
     private String deliveryLocationName;
+    private String deliveryStreet;
+    private String deliveryCity;
+    private String deliveryCountry;
     private Integer weightKg;
     private BigDecimal volumeM3;
     private Long driverId;
@@ -32,6 +35,11 @@ public class OrderResponse {
                     projection.getLocCountry());
             response.setDeliveryLocationName(deliveryLocation);
         }
+
+        // Set individual location fields for form editing
+        response.setDeliveryStreet(projection.getLocStreet());
+        response.setDeliveryCity(projection.getLocCity());
+        response.setDeliveryCountry(projection.getLocCountry());
 
         response.setWeightKg(projection.getWeightKg());
         response.setVolumeM3(projection.getVolumeM3());

@@ -1,6 +1,5 @@
 export enum OrderStatus {
 	CREATED = "CREATED",
-	ASSIGNED = "ASSIGNED",
 	IN_TRANSIT = "IN_TRANSIT",
 	DELIVERED = "DELIVERED",
 	CANCELLED = "CANCELLED",
@@ -17,6 +16,9 @@ export interface Order {
 	id: number;
 	code: string;
 	deliveryLocationName: string;
+	deliveryStreet?: string;
+	deliveryCity?: string;
+	deliveryCountry?: string;
 	weightKg: number;
 	volumeM3: number;
 	driverId?: number;
@@ -37,7 +39,6 @@ export interface OrderRequest {
 	weightKg?: number;
 	volumeM3?: number;
 	status?: OrderStatus;
-	driverId?: number | null;
 }
 
 export interface OrderStatistics {

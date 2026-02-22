@@ -29,7 +29,6 @@ export function OrderFilters({ searchQuery, onSearchChange, status, onStatusChan
 				<SelectContent>
 					<SelectItem value="all">Tất cả trạng thái</SelectItem>
 					<SelectItem value={OrderStatus.CREATED}>Đã tạo</SelectItem>
-					<SelectItem value={OrderStatus.ASSIGNED}>Đã phân công</SelectItem>
 					<SelectItem value={OrderStatus.IN_TRANSIT}>Đang giao</SelectItem>
 					<SelectItem value={OrderStatus.DELIVERED}>Đã giao</SelectItem>
 					<SelectItem value={OrderStatus.CANCELLED}>Đã hủy</SelectItem>

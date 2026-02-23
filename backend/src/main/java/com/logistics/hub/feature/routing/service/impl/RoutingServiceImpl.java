@@ -43,7 +43,6 @@ public class RoutingServiceImpl implements RoutingService {
 
     private final RoutingConfig routingConfig;
     private final OsrmDistanceService osrmDistanceService;
-    private final RoutePolylineService routePolylineService;
     private final OrderRepository orderRepository;
     private final VehicleRepository vehicleRepository;
     private final LocationRepository locationRepository;
@@ -103,17 +102,20 @@ public class RoutingServiceImpl implements RoutingService {
 
         long[][] distanceMatrix = new long[nodeCount][nodeCount];
         int[][] durationMatrix = new int[nodeCount][nodeCount];
+        String[][] polylineMatrix = new String[nodeCount][nodeCount];
 
         for (int i = 0; i < nodeCount; i++) {
             for (int j = 0; j < nodeCount; j++) {
                 if (i == j) {
                     distanceMatrix[i][j] = 0;
                     durationMatrix[i][j] = 0;
+                    polylineMatrix[i][j] = null;
                 } else {
                     DistanceResult result = osrmDistanceService.getDistanceWithDuration(
                             nodeLocations.get(i), nodeLocations.get(j));
                     distanceMatrix[i][j] = result.getDistanceKm().multiply(BigDecimal.valueOf(1000)).longValue();
                     durationMatrix[i][j] = result.getDurationMinutes();
+                    polylineMatrix[i][j] = result.getPolyline();
                 }
             }
         }
@@ -256,13 +258,11 @@ public class RoutingServiceImpl implements RoutingService {
                 route.setStatus(RouteStatus.CREATED);
 
                 List<RouteStopEntity> stops = new ArrayList<>();
-                List<LocationEntity> routeSequence = new ArrayList<>();
+                List<String> routePolylines = new ArrayList<>();
 
                 int sequence = 1;
                 long routeDistanceMeters = 0;
                 int routeDurationMinutes = 0;
-
-                routeSequence.add(depotLocation);
 
                 long prevIndex = index;
                 index = solution.value(routing.nextVar(index));
@@ -274,13 +274,15 @@ public class RoutingServiceImpl implements RoutingService {
                     List<OrderEntity> ordersAtThisStop = orderGroupsByNode.get(nodeIndex);
                     LocationEntity stopLocation = nodeLocations.get(nodeIndex);
 
-                    routeSequence.add(stopLocation);
-
                     long legDistanceMeters = distanceMatrix[prevNodeIndex][nodeIndex];
                     int legDurationMinutes = durationMatrix[prevNodeIndex][nodeIndex];
+                    String legPolyline = polylineMatrix[prevNodeIndex][nodeIndex];
 
                     routeDistanceMeters += legDistanceMeters;
                     routeDurationMinutes += legDurationMinutes;
+                    if (legPolyline != null) {
+                        routePolylines.add(legPolyline);
+                    }
 
                     for (OrderEntity order : ordersAtThisStop) {
                         RouteStopEntity stop = new RouteStopEntity();
@@ -308,9 +310,13 @@ public class RoutingServiceImpl implements RoutingService {
                 routeDistanceMeters += returnDistance;
                 routeDurationMinutes += returnDuration;
 
-                routeSequence.add(depotLocation);
+                // Add return-to-depot leg polyline
+                String returnPolyline = polylineMatrix[prevNodeIndex][0];
+                if (returnPolyline != null) {
+                    routePolylines.add(returnPolyline);
+                }
 
-                String routePolyline = routePolylineService.getRoutePolyline(routeSequence);
+                String routePolyline = routePolylines.isEmpty() ? null : String.join("|", routePolylines);
                 route.setPolyline(routePolyline);
 
                 route.setTotalDistanceKm(BigDecimal.valueOf(routeDistanceMeters / 1000.0));

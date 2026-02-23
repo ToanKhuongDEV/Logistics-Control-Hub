@@ -37,3 +37,4 @@ DOCKER_GUIDE.md
 docker-compose.yml
 # PLAN.md
 **/AI_generate
+osrm-data/data

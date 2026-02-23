@@ -56,10 +56,8 @@ server:
     include-binding-errors: always
 logging:
   level:
-    # Mặc định: chỉ log WARNING trở lên
     root: ERROR
 
-    # Chỉ log code của bạn
     com.logistics.hub: INFO
 
     # Spring core
@@ -68,7 +66,7 @@ logging:
     # Spring Boot startup
     org.springframework.boot: ERROR
 
-    # Spring Security (rất ồn)
+    # Spring Security
     org.springframework.security: ERROR
     org.springframework.security.config: ERROR
 
@@ -99,14 +97,14 @@ springdoc:
 
 # OSRM Configuration
 osrm:
-  url: http://router.project-osrm.org
+  url: http://localhost:5000
 
 # Routing Optimization Configuration
 routing:
   solver:
-    time-limit-seconds: 5 # Thời gian giới hạn cho solver (giây)
-    vehicle-fixed-cost: 50000 # Chi phí cố định cho mỗi xe (giảm để solver dễ tìm giải pháp)
-    volume-scaling-factor: 1000 # Hệ số scale cho volume (1 m³ = 1000 units)
+    time-limit-seconds: 5
+    vehicle-fixed-cost: 50000
+    volume-scaling-factor: 1000
   distance:
-    average-speed-kmh: 50.0 # Tốc độ trung bình cho Haversine fallback (km/h)
-    earth-radius-km: 6371.0 # Bán kính trái đất (km)
+    average-speed-kmh: 50.0
+    earth-radius-km: 6371.0

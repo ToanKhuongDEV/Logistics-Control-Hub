@@ -106,7 +106,7 @@ public class VehicleServiceImpl implements VehicleService {
         }
 
         if (request.getDepotId() != null && !depotRepository.existsById(request.getDepotId())) {
-            throw new ResourceNotFoundException("Không tìm thấy kho hàng với id: " + request.getDepotId());
+            throw new ResourceNotFoundException("Depot not found with id: " + request.getDepotId());
         }
 
         vehicleMapper.updateEntityFromRequest(request, entity);

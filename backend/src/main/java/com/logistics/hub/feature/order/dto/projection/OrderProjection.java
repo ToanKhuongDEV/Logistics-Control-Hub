@@ -33,4 +33,8 @@ public interface OrderProjection {
     Long getDriverId();
 
     String getDriverName();
+
+    Long getDepotId();
+
+    String getDepotName();
 }

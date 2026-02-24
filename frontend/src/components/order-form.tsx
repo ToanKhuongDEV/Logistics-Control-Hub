@@ -1,13 +1,15 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrderStatus, Order, OrderRequest } from "@/types/order-types";
+import { depotApi } from "@/lib/depot-api";
+import { Depot } from "@/types/depot-types";
 
 interface OrderFormProps {
 	order?: Order;
@@ -17,35 +19,51 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: OrderFormProps) {
-	const [formData, setFormData] = useState(() => {
+	const [depots, setDepots] = useState<Depot[]>([]);
+	const [formData, setFormData] = useState<OrderRequest>(() => {
 		return {
 			code: order?.code || "",
-			weightKg: order?.weightKg?.toString() || "",
-			volumeM3: order?.volumeM3?.toString() || "",
+			deliveryLocation: {
+				street: order?.deliveryStreet || "",
+				city: order?.deliveryCity || "",
+				country: order?.deliveryCountry || "Việt Nam",
+			},
+			weightKg: order?.weightKg || undefined,
+			volumeM3: order?.volumeM3 || undefined,
+			depotId: order?.depotId || undefined,
 			status: order?.status || OrderStatus.CREATED,
-			locationStreet: order?.deliveryStreet || "",
-			locationCity: order?.deliveryCity || "",
-			locationCountry: order?.deliveryCountry || "Việt Nam",
 		};
 	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
 
+	useEffect(() => {
+		const fetchDepots = async () => {
+			try {
+				const response = await depotApi.getDepots({ size: 100 });
+				setDepots(response.data);
+			} catch (error) {
+				console.error("Error fetching depots:", error);
+			}
+		};
+		fetchDepots();
+	}, []);
+
 	const validateForm = () => {
 		const newErrors: Record<string, string> = {};
 
-		if (!formData.locationStreet.trim()) {
-			newErrors.locationStreet = "Địa chỉ là bắt buộc";
+		if (!formData.deliveryLocation.street.trim()) {
+			newErrors.street = "Địa chỉ là bắt buộc";
 		}
-		if (!formData.locationCity.trim()) {
-			newErrors.locationCity = "Thành phố là bắt buộc";
+		if (!formData.deliveryLocation.city.trim()) {
+			newErrors.city = "Thành phố là bắt buộc";
 		}
-		if (!formData.locationCountry.trim()) {
-			newErrors.locationCountry = "Quốc gia là bắt buộc";
+		if (!formData.deliveryLocation.country.trim()) {
+			newErrors.country = "Quốc gia là bắt buộc";
 		}
-		if (formData.weightKg && Number(formData.weightKg) <= 0) {
+		if (formData.weightKg !== undefined && formData.weightKg <= 0) {
 			newErrors.weightKg = "Khối lượng phải lớn hơn 0";
 		}
-		if (formData.volumeM3 && Number(formData.volumeM3) <= 0) {
+		if (formData.volumeM3 !== undefined && formData.volumeM3 <= 0) {
 			newErrors.volumeM3 = "Thể tích phải lớn hơn 0";
 		}
 
@@ -53,21 +71,31 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 		return Object.keys(newErrors).length === 0;
 	};
 
+	const handleChange = (field: string, value: any) => {
+		if (field === "street" || field === "city" || field === "country") {
+			setFormData((prev) => ({
+				...prev,
+				deliveryLocation: {
+					...prev.deliveryLocation,
+					[field]: value,
+				},
+			}));
+		} else {
+			setFormData((prev) => ({
+				...prev,
+				[field]: value,
+			}));
+		}
+		if (errors[field]) {
+			setErrors((prev) => ({ ...prev, [field]: "" }));
+		}
+	};
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!validateForm()) return;
 
-		onSubmit({
-			code: formData.code,
-			deliveryLocation: {
-				street: formData.locationStreet,
-				city: formData.locationCity,
-				country: formData.locationCountry,
-			},
-			weightKg: formData.weightKg ? Number(formData.weightKg) : undefined,
-			volumeM3: formData.volumeM3 ? Number(formData.volumeM3) : undefined,
-			status: formData.status as OrderStatus,
-		});
+		onSubmit(formData);
 	};
 
 	return (
@@ -89,10 +117,28 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 					</div>
 
 					<div className="space-y-2">
+						<Label htmlFor="depotId" className="text-foreground">
+							Kho bãi
+						</Label>
+						<Select value={formData.depotId?.toString()} onValueChange={(value) => handleChange("depotId", Number(value))} disabled={isSubmitting}>
+							<SelectTrigger id="depotId" className="border-border">
+								<SelectValue placeholder="Chọn kho bãi" />
+							</SelectTrigger>
+							<SelectContent>
+								{depots.map((depot) => (
+									<SelectItem key={depot.id} value={depot.id.toString()}>
+										{depot.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div className="space-y-2">
 						<Label htmlFor="weightKg" className="text-foreground">
 							Khối lượng (kg)
 						</Label>
-						<Input id="weightKg" type="number" placeholder="100" value={formData.weightKg} onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })} className="border-border" disabled={isSubmitting} />
+						<Input id="weightKg" type="number" placeholder="100" value={formData.weightKg || ""} onChange={(e) => handleChange("weightKg", e.target.value ? Number(e.target.value) : undefined)} className="border-border" disabled={isSubmitting} />
 						{errors.weightKg && <p className="text-red-500 text-sm">{errors.weightKg}</p>}
 					</div>
 
@@ -100,7 +146,7 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 						<Label htmlFor="volumeM3" className="text-foreground">
 							Thể tích (m³)
 						</Label>
-						<Input id="volumeM3" type="number" placeholder="1.5" step="0.01" value={formData.volumeM3} onChange={(e) => setFormData({ ...formData, volumeM3: e.target.value })} className="border-border" disabled={isSubmitting} />
+						<Input id="volumeM3" type="number" placeholder="1.5" step="0.01" value={formData.volumeM3 || ""} onChange={(e) => handleChange("volumeM3", e.target.value ? Number(e.target.value) : undefined)} className="border-border" disabled={isSubmitting} />
 						{errors.volumeM3 && <p className="text-red-500 text-sm">{errors.volumeM3}</p>}
 					</div>
 
@@ -108,7 +154,7 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 						<Label htmlFor="status" className="text-foreground">
 							Trạng thái <span className="text-red-500">*</span>
 						</Label>
-						<Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value as OrderStatus })} disabled={isSubmitting}>
+						<Select value={formData.status} onValueChange={(value) => handleChange("status", value as OrderStatus)} disabled={isSubmitting}>
 							<SelectTrigger id="status" className="border-border">
 								<SelectValue placeholder="Chọn trạng thái" />
 							</SelectTrigger>
@@ -126,19 +172,27 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 
 						<div className="space-y-4">
 							<div className="space-y-2">
-								<Label htmlFor="locationStreet" className="text-foreground">
+								<Label htmlFor="street" className="text-foreground">
 									Địa chỉ <span className="text-red-500">*</span>
 								</Label>
-								<Input id="locationStreet" placeholder="VD: 123 Nguyễn Huệ" value={formData.locationStreet} onChange={(e) => setFormData({ ...formData, locationStreet: e.target.value })} className="border-border" disabled={isSubmitting} />
-								{errors.locationStreet && <p className="text-red-500 text-sm">{errors.locationStreet}</p>}
+								<Input id="street" placeholder="VD: 123 Nguyễn Huệ" value={formData.deliveryLocation.street} onChange={(e) => handleChange("street", e.target.value)} className="border-border" disabled={isSubmitting} />
+								{errors.street && <p className="text-red-500 text-sm">{errors.street}</p>}
 							</div>
 
 							<div className="space-y-2">
-								<Label htmlFor="locationCity" className="text-foreground">
+								<Label htmlFor="city" className="text-foreground">
 									Thành phố <span className="text-red-500">*</span>
 								</Label>
-								<Input id="locationCity" placeholder="VD: Hồ Chí Minh" value={formData.locationCity} onChange={(e) => setFormData({ ...formData, locationCity: e.target.value })} className="border-border" disabled={isSubmitting} />
-								{errors.locationCity && <p className="text-red-500 text-sm">{errors.locationCity}</p>}
+								<Input id="city" placeholder="VD: Hồ Chí Minh" value={formData.deliveryLocation.city} onChange={(e) => handleChange("city", e.target.value)} className="border-border" disabled={isSubmitting} />
+								{errors.city && <p className="text-red-500 text-sm">{errors.city}</p>}
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="country" className="text-foreground">
+									Quốc gia <span className="text-red-500">*</span>
+								</Label>
+								<Input id="country" placeholder="VD: Việt Nam" value={formData.deliveryLocation.country} onChange={(e) => handleChange("country", e.target.value)} className="border-border" disabled={isSubmitting} />
+								{errors.country && <p className="text-red-500 text-sm">{errors.country}</p>}
 							</div>
 						</div>
 					</div>
@@ -156,5 +210,3 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 		</div>
 	);
 }
-
-export { OrderStatus, type Order, type OrderRequest };

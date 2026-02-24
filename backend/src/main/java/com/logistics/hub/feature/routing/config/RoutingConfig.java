@@ -17,6 +17,7 @@ public class RoutingConfig {
         private int timeLimitSeconds = 5;
         private long vehicleFixedCost = 1_000_000L;
         private int volumeScalingFactor = 1000;
+        private int maxTripsPerVehicle = 3;
     }
 
     @Data

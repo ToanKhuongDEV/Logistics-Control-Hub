@@ -1,6 +1,5 @@
 package com.logistics.hub.feature.location.dto.request;
 
-
 import com.logistics.hub.feature.location.constant.LocationConstant;
 
 import jakarta.validation.constraints.NotBlank;
@@ -16,5 +15,4 @@ public class LocationRequest {
 
     @NotBlank(message = LocationConstant.COUNTRY_REQUIRED)
     private String country;
-
 }

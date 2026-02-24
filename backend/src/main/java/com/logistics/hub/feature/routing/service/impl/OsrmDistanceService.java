@@ -179,4 +179,38 @@ public class OsrmDistanceService implements DistanceService {
         }
         return result;
     }
+
+    public String getRoutePolyline(List<LocationEntity> waypoints) {
+        if (waypoints == null || waypoints.size() < 2) {
+            return null;
+        }
+
+        try {
+            StringBuilder coordinates = new StringBuilder();
+            for (LocationEntity loc : waypoints) {
+                if (coordinates.length() > 0) {
+                    coordinates.append(";");
+                }
+                coordinates.append(String.format(Locale.US, "%f,%f",
+                        loc.getLongitude(), loc.getLatitude()));
+            }
+
+            String url = String.format("%s/route/v1/driving/%s?overview=full&geometries=polyline",
+                    osrmUrl, coordinates.toString());
+
+            log.debug("Calling OSRM Route API for polyline: {}", url);
+            String response = restTemplate.getForObject(url, String.class);
+
+            if (response != null) {
+                JsonNode root = objectMapper.readTree(response);
+                JsonNode routes = root.path("routes");
+                if (routes.isArray() && routes.size() > 0) {
+                    return routes.get(0).path("geometry").asText(null);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get route polyline from OSRM: {}", e.getMessage());
+        }
+        return null;
+    }
 }

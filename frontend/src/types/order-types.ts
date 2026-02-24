@@ -25,6 +25,10 @@ export interface Order {
 	volumeM3: number;
 	driverId?: number;
 	driverName?: string;
+	depotId?: number;
+	depotName?: string;
+	latitude?: number;
+	longitude?: number;
 	status: OrderStatus;
 	createdAt: string;
 }
@@ -40,6 +44,7 @@ export interface OrderRequest {
 	deliveryLocation: LocationRequest;
 	weightKg?: number;
 	volumeM3?: number;
+	depotId?: number;
 	status?: OrderStatus;
 }
 

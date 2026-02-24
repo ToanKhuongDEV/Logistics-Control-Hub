@@ -14,7 +14,6 @@ import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.repository.OrderRepository;
 import com.logistics.hub.feature.routing.constant.RoutingConstant;
 import com.logistics.hub.feature.routing.config.RoutingConfig;
-import com.logistics.hub.feature.routing.dto.response.DistanceResult;
 import com.logistics.hub.feature.routing.entity.RouteEntity;
 import com.logistics.hub.feature.routing.entity.RouteStopEntity;
 import com.logistics.hub.feature.routing.entity.RoutingRunEntity;
@@ -101,25 +100,10 @@ public class RoutingServiceImpl implements RoutingService {
         log.info("Building distance matrix for {} nodes (1 depot + {} delivery locations)",
                 nodeCount, nodeCount - 1);
 
-        long[][] distanceMatrix = new long[nodeCount][nodeCount];
-        int[][] durationMatrix = new int[nodeCount][nodeCount];
-        String[][] polylineMatrix = new String[nodeCount][nodeCount];
-
-        for (int i = 0; i < nodeCount; i++) {
-            for (int j = 0; j < nodeCount; j++) {
-                if (i == j) {
-                    distanceMatrix[i][j] = 0;
-                    durationMatrix[i][j] = 0;
-                    polylineMatrix[i][j] = null;
-                } else {
-                    DistanceResult result = osrmDistanceService.getDistanceWithDuration(
-                            nodeLocations.get(i), nodeLocations.get(j));
-                    distanceMatrix[i][j] = result.getDistanceKm().multiply(BigDecimal.valueOf(1000)).longValue();
-                    durationMatrix[i][j] = result.getDurationMinutes();
-                    polylineMatrix[i][j] = result.getPolyline();
-                }
-            }
-        }
+        com.logistics.hub.feature.routing.dto.response.MatrixResult matrixResult = osrmDistanceService
+                .getMatrix(nodeLocations);
+        long[][] distanceMatrix = matrixResult.getDistanceMatrix();
+        int[][] durationMatrix = matrixResult.getDurationMatrix();
 
         long[] demandsWeight = new long[nodeCount];
         long[] demandsVolume = new long[nodeCount];
@@ -145,7 +129,7 @@ public class RoutingServiceImpl implements RoutingService {
 
         int volumeScalingFactor = routingConfig.getSolver().getVolumeScalingFactor();
 
-        int maxTripsPerVehicle = 3;
+        int maxTripsPerVehicle = routingConfig.getSolver().getMaxTripsPerVehicle();
         int physicalVehicleCount = vehicles.size();
         int totalVirtualVehicles = physicalVehicleCount * maxTripsPerVehicle;
 
@@ -259,7 +243,8 @@ public class RoutingServiceImpl implements RoutingService {
                 route.setStatus(RouteStatus.CREATED);
 
                 List<RouteStopEntity> stops = new ArrayList<>();
-                List<String> routePolylines = new ArrayList<>();
+                List<LocationEntity> routeWaypoints = new ArrayList<>();
+                routeWaypoints.add(depotLocation);
 
                 int sequence = 1;
                 long routeDistanceMeters = 0;
@@ -274,16 +259,13 @@ public class RoutingServiceImpl implements RoutingService {
 
                     List<OrderEntity> ordersAtThisStop = orderGroupsByNode.get(nodeIndex);
                     LocationEntity stopLocation = nodeLocations.get(nodeIndex);
+                    routeWaypoints.add(stopLocation);
 
                     long legDistanceMeters = distanceMatrix[prevNodeIndex][nodeIndex];
                     int legDurationMinutes = durationMatrix[prevNodeIndex][nodeIndex];
-                    String legPolyline = polylineMatrix[prevNodeIndex][nodeIndex];
 
                     routeDistanceMeters += legDistanceMeters;
                     routeDurationMinutes += legDurationMinutes;
-                    if (legPolyline != null) {
-                        routePolylines.add(legPolyline);
-                    }
 
                     for (OrderEntity order : ordersAtThisStop) {
                         RouteStopEntity stop = new RouteStopEntity();
@@ -305,19 +287,12 @@ public class RoutingServiceImpl implements RoutingService {
                     index = solution.value(routing.nextVar(index));
                 }
 
-                int prevNodeIndex = manager.indexToNode(prevIndex);
-                long returnDistance = distanceMatrix[prevNodeIndex][0];
-                int returnDuration = durationMatrix[prevNodeIndex][0];
-                routeDistanceMeters += returnDistance;
-                routeDurationMinutes += returnDuration;
+                int lastNodeIndex = manager.indexToNode(prevIndex);
+                routeDistanceMeters += distanceMatrix[lastNodeIndex][0];
+                routeDurationMinutes += durationMatrix[lastNodeIndex][0];
+                routeWaypoints.add(depotLocation);
 
-                // Add return-to-depot leg polyline
-                String returnPolyline = polylineMatrix[prevNodeIndex][0];
-                if (returnPolyline != null) {
-                    routePolylines.add(returnPolyline);
-                }
-
-                String routePolyline = routePolylines.isEmpty() ? null : String.join("|", routePolylines);
+                String routePolyline = osrmDistanceService.getRoutePolyline(routeWaypoints);
                 route.setPolyline(routePolyline);
 
                 route.setTotalDistanceKm(BigDecimal.valueOf(routeDistanceMeters / 1000.0));
@@ -377,10 +352,6 @@ public class RoutingServiceImpl implements RoutingService {
             throw new ValidationException(RoutingConstant.ORDER_IDS_EMPTY);
         }
 
-        if (orders.size() != orderIds.size()) {
-            log.warn("Some orders were not found. Requested: {}, Found: {}", orderIds.size(), orders.size());
-        }
-
         Long depotId = vehicles.get(0).getDepot() != null ? vehicles.get(0).getDepot().getId() : null;
         if (depotId == null) {
             throw new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED);
@@ -392,6 +363,15 @@ public class RoutingServiceImpl implements RoutingService {
 
         if (multipleDepots) {
             throw new ValidationException(RoutingConstant.MULTIPLE_DEPOTS_ERROR);
+        }
+
+        // Verify all orders are assigned to this depot
+        boolean wrongDepot = orders.stream()
+                .map(o -> o.getDepot() != null ? o.getDepot().getId() : null)
+                .anyMatch(id -> id != null && !Objects.equals(id, depotId));
+
+        if (wrongDepot) {
+            throw new ValidationException("Một số đơn hàng được gán cho kho khác với kho của đội xe.");
         }
 
         DepotEntity depot = depotRepository.findById(depotId)
@@ -424,18 +404,31 @@ public class RoutingServiceImpl implements RoutingService {
     public RoutingRunEntity executeAutoRouting() {
         log.info("Executing auto-routing: fetching available orders and vehicles");
 
-        List<OrderEntity> orders = orderRepository.findByStatus(OrderStatus.CREATED);
-        List<VehicleEntity> vehicles = vehicleRepository.findByStatusAndDriverIdNotNull(VehicleStatus.ACTIVE);
-
-        if (orders.isEmpty()) {
-            throw new ValidationException(RoutingConstant.ORDERS_NOT_FOUND);
-        }
-
-        if (vehicles.isEmpty()) {
+        // For auto-routing, we pick the first depot with active vehicles and created
+        // orders
+        List<VehicleEntity> activeVehicles = vehicleRepository.findByStatusAndDriverIdNotNull(VehicleStatus.ACTIVE);
+        if (activeVehicles.isEmpty()) {
             throw new ValidationException(RoutingConstant.VEHICLES_NOT_FOUND);
         }
 
-        log.info("Found {} CREATED orders and {} ACTIVE vehicles with drivers", orders.size(), vehicles.size());
+        Long depotId = activeVehicles.get(0).getDepot() != null ? activeVehicles.get(0).getDepot().getId() : null;
+        if (depotId == null) {
+            throw new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED);
+        }
+
+        List<VehicleEntity> vehicles = activeVehicles.stream()
+                .filter(v -> v.getDepot() != null && Objects.equals(v.getDepot().getId(), depotId))
+                .collect(Collectors.toList());
+
+        List<OrderEntity> orders = orderRepository.findByStatus(OrderStatus.CREATED).stream()
+                .filter(o -> o.getDepot() != null && Objects.equals(o.getDepot().getId(), depotId))
+                .collect(Collectors.toList());
+
+        if (orders.isEmpty()) {
+            throw new ValidationException("Không tìm thấy đơn hàng CREATED nào được gán cho kho ID: " + depotId);
+        }
+
+        log.info("Found {} orders and {} vehicles for depot ID: {}", orders.size(), vehicles.size(), depotId);
 
         List<Long> orderIds = orders.stream().map(OrderEntity::getId).collect(Collectors.toList());
         List<Long> vehicleIds = vehicles.stream().map(VehicleEntity::getId).collect(Collectors.toList());

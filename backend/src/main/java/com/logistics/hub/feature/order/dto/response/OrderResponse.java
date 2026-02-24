@@ -19,6 +19,10 @@ public class OrderResponse {
     private BigDecimal volumeM3;
     private Long driverId;
     private String driverName;
+    private Long depotId;
+    private String depotName;
+    private Double latitude;
+    private Double longitude;
     private OrderStatus status;
     private Instant createdAt;
 
@@ -45,6 +49,10 @@ public class OrderResponse {
         response.setVolumeM3(projection.getVolumeM3());
         response.setDriverId(projection.getDriverId());
         response.setDriverName(projection.getDriverName());
+        response.setDepotId(projection.getDepotId());
+        response.setDepotName(projection.getDepotName());
+        response.setLatitude(projection.getLocLat());
+        response.setLongitude(projection.getLocLng());
         response.setStatus(OrderStatus.valueOf(projection.getStatus()));
         response.setCreatedAt(projection.getCreatedAt());
         return response;

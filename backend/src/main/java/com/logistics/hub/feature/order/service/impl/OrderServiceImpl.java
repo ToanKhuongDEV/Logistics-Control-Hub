@@ -13,7 +13,11 @@ import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.mapper.OrderMapper;
 import com.logistics.hub.feature.order.repository.OrderRepository;
 import com.logistics.hub.feature.order.service.OrderService;
+import com.logistics.hub.feature.depot.entity.DepotEntity;
+import com.logistics.hub.feature.depot.repository.DepotRepository;
+import com.logistics.hub.feature.routing.service.impl.HaversineDistanceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,11 +28,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final LocationService locationService;
+    private final DepotRepository depotRepository;
+    private final HaversineDistanceService haversineDistanceService;
 
     @Override
     @Transactional(readOnly = true)
@@ -85,6 +92,15 @@ public class OrderServiceImpl implements OrderService {
         LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
         entity.setDeliveryLocation(location);
 
+        if (request.getDepotId() == null) {
+            assignNearestDepot(entity);
+        } else {
+            DepotEntity depot = depotRepository.findById(request.getDepotId())
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+            entity.setDepot(depot);
+        }
+
         OrderEntity saved = orderRepository.save(entity);
         return findById(saved.getId());
     }
@@ -107,10 +123,61 @@ public class OrderServiceImpl implements OrderService {
         if (request.getDeliveryLocation() != null) {
             LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
             entity.setDeliveryLocation(location);
+
+            if (request.getDepotId() == null) {
+                assignNearestDepot(entity);
+            }
+        }
+
+        if (request.getDepotId() != null) {
+            DepotEntity depot = depotRepository.findById(request.getDepotId())
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+            entity.setDepot(depot);
         }
 
         OrderEntity saved = orderRepository.save(entity);
         return findById(saved.getId());
+    }
+
+    private void assignNearestDepot(OrderEntity order) {
+        if (order.getDeliveryLocation() == null) {
+            return;
+        }
+
+        List<DepotEntity> activeDepots = depotRepository.findAll().stream()
+                .filter(DepotEntity::getIsActive)
+                .toList();
+
+        if (activeDepots.isEmpty()) {
+            log.warn("No active depots found to assign to order {}", order.getCode());
+            return;
+        }
+
+        DepotEntity nearestDepot = null;
+        double minDistance = Double.MAX_VALUE;
+
+        for (DepotEntity depot : activeDepots) {
+            try {
+                double distance = haversineDistanceService.calculateDistance(
+                        order.getDeliveryLocation(),
+                        depot.getLocation()).getDistanceKm().doubleValue();
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestDepot = depot;
+                }
+            } catch (Exception e) {
+                log.error("Error calculating distance between order {} and depot {}: {}",
+                        order.getCode(), depot.getName(), e.getMessage());
+            }
+        }
+
+        if (nearestDepot != null) {
+            order.setDepot(nearestDepot);
+            log.info("Automatically assigned depot {} to order {} (Distance: {} km)",
+                    nearestDepot.getName(), order.getCode(), minDistance);
+        }
     }
 
     @Override

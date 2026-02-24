@@ -16,6 +16,10 @@ public interface OrderMapper {
     @Mapping(target = "deliveryCity", ignore = true)
     @Mapping(target = "deliveryCountry", ignore = true)
     @Mapping(target = "driverId", ignore = true)
+    @Mapping(target = "depotId", source = "depot.id")
+    @Mapping(target = "depotName", source = "depot.name")
+    @Mapping(target = "latitude", source = "deliveryLocation.latitude")
+    @Mapping(target = "longitude", source = "deliveryLocation.longitude")
     OrderResponse toResponse(OrderEntity entity);
 
     @Mapping(target = "id", ignore = true)
@@ -23,6 +27,7 @@ public interface OrderMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "deliveryLocation", ignore = true)
     @Mapping(target = "driver", ignore = true)
+    @Mapping(target = "depot", ignore = true)
     OrderEntity toEntity(OrderRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -30,5 +35,6 @@ public interface OrderMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "deliveryLocation", ignore = true)
     @Mapping(target = "driver", ignore = true)
+    @Mapping(target = "depot", ignore = true)
     void updateEntityFromRequest(OrderRequest request, @MappingTarget OrderEntity entity);
 }

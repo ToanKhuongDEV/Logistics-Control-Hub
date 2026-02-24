@@ -22,5 +22,7 @@ public class OrderRequest {
 
     private BigDecimal volumeM3;
 
+    private Long depotId;
+
     private OrderStatus status;
 }

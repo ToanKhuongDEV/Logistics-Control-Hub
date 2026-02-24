@@ -80,6 +80,11 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
 							</div>
 
 							<div>
+								<p className="text-sm text-muted-foreground mb-1">Kho bãi</p>
+								<p className="text-lg font-medium text-foreground">{order.depotName || "-"}</p>
+							</div>
+
+							<div>
 								<p className="text-sm text-muted-foreground mb-1">Ngày tạo</p>
 								<p className="text-lg font-medium text-foreground">{formatDate(order.createdAt)}</p>
 							</div>
@@ -87,11 +92,21 @@ export function OrderDetailModal({ order, onClose }: OrderDetailModalProps) {
 					</div>
 
 					{/* Delivery Location */}
-					<div className="pt-4 border-t border-border">
-						<h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-3">Địa điểm giao hàng</h3>
+					<div className="pt-4 border-t border-border space-y-4">
+						<h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Địa điểm giao hàng</h3>
 						<div className="bg-muted/50 rounded-lg p-4">
 							<p className="text-base text-foreground">{order.deliveryLocationName}</p>
 						</div>
+						{order.latitude && order.longitude && (
+							<div className="flex gap-4 text-sm text-muted-foreground">
+								<div>
+									<span className="font-semibold">Vĩ độ:</span> {order.latitude}
+								</div>
+								<div>
+									<span className="font-semibold">Kinh độ:</span> {order.longitude}
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 

@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.order.entity;
 
+import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.order.enums.OrderStatus;
@@ -39,6 +40,10 @@ public class OrderEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "driver_id")
     private DriverEntity driver;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "depot_id")
+    private DepotEntity depot;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

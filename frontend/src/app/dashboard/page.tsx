@@ -2,15 +2,16 @@
 
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { KPICard } from "@/components/kpi-card";
-// import { LeafletMap } from "@/components/leaflet-map";
 import { ShipmentList } from "@/components/shipment-list";
-import { Truck, Package, TrendingUp, Route as RouteIcon } from "lucide-react";
+import { Truck, Package, TrendingUp, Route as RouteIcon, Warehouse } from "lucide-react";
 import { ProtectedRoute } from "@/components/protected-route";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { routingApi, Route } from "@/lib/routing-api";
 import { dashboardApi } from "@/lib/dashboard-api";
+import { depotApi } from "@/lib/depot-api";
 import { DashboardStatistics } from "@/types/dashboard-types";
+import { Depot } from "@/types/depot-types";
 
 const LeafletMap = dynamic(() => import("@/components/leaflet-map").then((mod) => mod.LeafletMap), {
 	ssr: false,
@@ -75,17 +76,28 @@ export default function DashboardPage() {
 	const [error, setError] = useState<string | null>(null);
 	const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
 	const [isLoadingStats, setIsLoadingStats] = useState(true);
+	const [depots, setDepots] = useState<Depot[]>([]);
+	const [selectedDepotId, setSelectedDepotId] = useState<number | null>(null);
+	const [isLoadingDepots, setIsLoadingDepots] = useState(true);
 
 	const handleOptimizeRoutes = async () => {
+		if (selectedDepotId === null) {
+			setError("Vui lòng chọn kho trước khi tối ưu tuyến đường.");
+			return;
+		}
+
 		setIsOptimizing(true);
 		setError(null);
 		setOptimizationResult(null);
 
 		try {
-			const result = await routingApi.optimize();
+			const result = await routingApi.optimize(selectedDepotId);
 
 			setRoutes(result.routes);
-			setOptimizationResult(`Tối ưu thành công! Tạo ${result.routes.length} tuyến đường, tổng ${result.totalDistanceKm.toFixed(2)} km, chi phí ${result.totalCost.toFixed(0)} VND`);
+
+			const totalKm = result.totalDistanceKm ?? result.routes.reduce((sum, r) => sum + (r.totalDistanceKm ?? 0), 0);
+			const totalCost = result.totalCost ?? result.routes.reduce((sum, r) => sum + (r.totalCost ?? 0), 0);
+			setOptimizationResult(`Tối ưu thành công! Tạo ${result.routes.length} tuyến đường, tổng ${totalKm.toFixed(2)} km, chi phí ${totalCost.toFixed(0)} VND`);
 		} catch (err: any) {
 			console.error("Optimization error:", err);
 			setError(err.response?.data?.message || "Không thể tối ưu tuyến đường. Vui lòng thử lại.");
@@ -106,7 +118,19 @@ export default function DashboardPage() {
 			}
 		};
 
+		const fetchDepots = async () => {
+			try {
+				const result = await depotApi.getDepots({ size: 100 });
+				setDepots(result.data.filter((d) => d.isActive));
+			} catch (error) {
+				console.error("Failed to fetch depots:", error);
+			} finally {
+				setIsLoadingDepots(false);
+			}
+		};
+
 		fetchStatistics();
+		fetchDepots();
 	}, []);
 
 	return (
@@ -114,14 +138,34 @@ export default function DashboardPage() {
 			<DashboardLayout>
 				<div className="p-8 space-y-6">
 					{/* Header */}
-					<div className="flex justify-between items-center">
+					<div className="flex justify-between items-center flex-wrap gap-4">
 						<h1 className="text-3xl font-bold text-foreground">Tổng quan</h1>
 
-						{/* Optimize Routes Button */}
-						<button onClick={handleOptimizeRoutes} disabled={isOptimizing} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-							<RouteIcon className="w-5 h-5" />
-							{isOptimizing ? "Đang tối ưu..." : "Tối ưu tuyến đường"}
-						</button>
+						{/* Depot selector + Optimize Button */}
+						<div className="flex items-center gap-3">
+							<div className="flex items-center gap-2">
+								<Warehouse className="w-4 h-4 text-muted-foreground" />
+								<select
+									id="depot-select"
+									value={selectedDepotId ?? ""}
+									onChange={(e) => setSelectedDepotId(e.target.value ? Number(e.target.value) : null)}
+									disabled={isLoadingDepots}
+									className="border border-input bg-background text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+								>
+									<option value="">-- Chọn kho --</option>
+									{depots.map((depot) => (
+										<option key={depot.id} value={depot.id}>
+											{depot.name}
+										</option>
+									))}
+								</select>
+							</div>
+
+							<button onClick={handleOptimizeRoutes} disabled={isOptimizing || selectedDepotId === null} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+								<RouteIcon className="w-5 h-5" />
+								{isOptimizing ? "Đang tối ưu..." : "Tối ưu tuyến đường"}
+							</button>
+						</div>
 					</div>
 
 					{/* Notification Messages */}

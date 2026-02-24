@@ -47,8 +47,8 @@ interface ApiResponse<T> {
 
 // API methods
 export const routingApi = {
-	async optimize(): Promise<RoutingRun> {
-		const response = await apiClient.post<ApiResponse<RoutingRun>>(`${ROUTING_API_BASE}/optimize`);
+	async optimize(depotId: number): Promise<RoutingRun> {
+		const response = await apiClient.post<ApiResponse<RoutingRun>>(`${ROUTING_API_BASE}/optimize?depotId=${depotId}`);
 		return response.data.data;
 	},
 

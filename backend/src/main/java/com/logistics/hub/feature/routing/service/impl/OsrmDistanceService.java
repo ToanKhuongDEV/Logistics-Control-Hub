@@ -152,32 +152,12 @@ public class OsrmDistanceService implements DistanceService {
                 return result;
             }
         } catch (Exception e) {
-            log.error("OSRM Table API failed", e);
-            log.warn("Falling back to iterative calculation due to Table API failure");
-            return calculateMatrixIteratively(locations);
+            log.error(
+                    "OSRM Table API failed (Connection refused or timeout). Falling back to Haversine matrix calculation. Error: {}",
+                    e.getMessage());
+            return haversineDistanceService.calculateMatrix(locations);
         }
-
-        return calculateMatrixIteratively(locations);
-    }
-
-    private MatrixResult calculateMatrixIteratively(List<LocationEntity> locations) {
-        int size = locations.size();
-        MatrixResult result = new MatrixResult(new long[size][size], new int[size][size]);
-
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                if (i == j) {
-                    result.getDistanceMatrix()[i][j] = 0;
-                    result.getDurationMatrix()[i][j] = 0;
-                } else {
-                    DistanceResult dist = getDistanceWithDuration(locations.get(i), locations.get(j));
-                    result.getDistanceMatrix()[i][j] = dist.getDistanceKm().multiply(BigDecimal.valueOf(1000))
-                            .longValue();
-                    result.getDurationMatrix()[i][j] = dist.getDurationMinutes();
-                }
-            }
-        }
-        return result;
+        return haversineDistanceService.calculateMatrix(locations);
     }
 
     public String getRoutePolyline(List<LocationEntity> waypoints) {

@@ -41,4 +41,8 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
 
         @Query("SELECT v FROM VehicleEntity v WHERE v.status = :status AND v.driver IS NOT NULL")
         List<VehicleEntity> findByStatusAndDriverIdNotNull(@Param("status") VehicleStatus status);
+
+        @Query("SELECT v FROM VehicleEntity v WHERE v.status = :status AND v.driver IS NOT NULL AND v.depot.id = :depotId")
+        List<VehicleEntity> findByStatusAndDriverIdNotNullAndDepotId(@Param("status") VehicleStatus status,
+                        @Param("depotId") Long depotId);
 }

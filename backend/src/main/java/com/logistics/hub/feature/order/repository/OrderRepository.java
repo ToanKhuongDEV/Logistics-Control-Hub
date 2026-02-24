@@ -60,4 +60,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
         Long countByStatus(OrderStatus status);
 
         List<OrderEntity> findByStatus(OrderStatus status);
+
+        List<OrderEntity> findByStatusAndDepotId(OrderStatus status, Long depotId);
 }

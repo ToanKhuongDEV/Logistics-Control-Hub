@@ -27,9 +27,9 @@ public class RoutingController {
 	private final RoutingRunRepository routingRunRepository;
 
 	@PostMapping(UrlConstant.Routing.OPTIMIZE)
-	@Operation(summary = "Optimize routes", description = "Automatically optimizes delivery routes for all CREATED orders using ACTIVE vehicles with assigned drivers")
-	public ResponseEntity<ApiResponse<RoutingRunResponse>> optimizeRouting() {
-		RoutingRunEntity runEntity = routingService.executeAutoRouting();
+	@Operation(summary = "Optimize routes", description = "Automatically optimizes delivery routes for all CREATED orders using ACTIVE vehicles with assigned drivers for the given depot")
+	public ResponseEntity<ApiResponse<RoutingRunResponse>> optimizeRouting(@RequestParam Long depotId) {
+		RoutingRunEntity runEntity = routingService.executeAutoRouting(depotId);
 
 		RoutingRunResponse response = RoutingMapper.toRoutingRunResponse(runEntity);
 

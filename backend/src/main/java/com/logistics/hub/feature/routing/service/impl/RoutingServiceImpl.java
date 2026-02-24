@@ -161,6 +161,11 @@ public class RoutingServiceImpl implements RoutingService {
             }
         }
 
+        log.info("Node weight demands: {}", Arrays.toString(demandsWeight));
+        log.info("Node volume demands: {}", Arrays.toString(demandsVolume));
+        log.info("Vehicle weight capacities: {}", Arrays.toString(vehicleWeightCaps));
+        log.info("Vehicle volume capacities: {}", Arrays.toString(vehicleVolumeCaps));
+
         RoutingIndexManager manager = new RoutingIndexManager(nodeCount, totalVirtualVehicles, 0);
         RoutingModel routing = new RoutingModel(manager);
 
@@ -195,12 +200,16 @@ public class RoutingServiceImpl implements RoutingService {
                 true,
                 "Volume");
 
-        log.info("Routing problem setup:");
-        log.info("  - Nodes: {} (1 depot + {} deliveries)", nodeCount, nodeCount - 1);
-        log.info("  - Physical Vehicles: {}", physicalVehicleCount);
-        log.info("  - Total Virtual Vehicles (Trips): {}", totalVirtualVehicles);
-        log.info("  - Node weight demands: {}", Arrays.toString(demandsWeight));
-        log.info("  - Node volume demands: {}", Arrays.toString(demandsVolume));
+        // Add Disjunctions: cho phép bỏ qua đơn hàng nếu không thể đưa vào bất kỳ xe
+        // nào (với mức phạt lớn)
+        // Điều này giúp solver luôn tìm ra giải pháp thay vì trả về FAILED khi gặp ràng
+        // buộc cứng không thể thỏa mãn
+        long dropPenalty = 10_000_000L;
+        for (int i = 1; i < nodeCount; i++) {
+            routing.addDisjunction(new long[] { manager.nodeToIndex(i) }, dropPenalty);
+        }
+
+        log.info("Routing problem setup complete. Nodes: {}, Vehicles: {}", nodeCount, totalVirtualVehicles);
 
         int timeLimitSeconds = routingConfig.getSolver().getTimeLimitSeconds();
 
@@ -211,7 +220,7 @@ public class RoutingServiceImpl implements RoutingService {
                 .setTimeLimit(Duration.newBuilder().setSeconds(timeLimitSeconds).build())
                 .build();
 
-        log.info("Starting OR-Tools solver...");
+        log.info("Starting OR-Tools solver with time limit {}s...", timeLimitSeconds);
         LocalDateTime solveStart = LocalDateTime.now();
         Assignment solution = routing.solveWithParameters(searchParameters);
         LocalDateTime solveEnd = LocalDateTime.now();
@@ -246,9 +255,19 @@ public class RoutingServiceImpl implements RoutingService {
                 List<LocationEntity> routeWaypoints = new ArrayList<>();
                 routeWaypoints.add(depotLocation);
 
-                int sequence = 1;
+                int sequence = 0;
                 long routeDistanceMeters = 0;
                 int routeDurationMinutes = 0;
+
+                // Add Start Stop (Depot)
+                RouteStopEntity startStop = new RouteStopEntity();
+                startStop.setRoute(route);
+                startStop.setStopSequence(sequence++);
+                startStop.setLocation(depotLocation);
+                startStop.setOrder(null);
+                startStop.setDistanceFromPrevKm(BigDecimal.ZERO);
+                startStop.setDurationFromPrevMin(0);
+                stops.add(startStop);
 
                 long prevIndex = index;
                 index = solution.value(routing.nextVar(index));
@@ -288,9 +307,22 @@ public class RoutingServiceImpl implements RoutingService {
                 }
 
                 int lastNodeIndex = manager.indexToNode(prevIndex);
-                routeDistanceMeters += distanceMatrix[lastNodeIndex][0];
-                routeDurationMinutes += durationMatrix[lastNodeIndex][0];
+                long returnDistanceMeters = distanceMatrix[lastNodeIndex][0];
+                int returnDurationMinutes = durationMatrix[lastNodeIndex][0];
+
+                routeDistanceMeters += returnDistanceMeters;
+                routeDurationMinutes += returnDurationMinutes;
                 routeWaypoints.add(depotLocation);
+
+                // Add End Stop (Depot)
+                RouteStopEntity endStop = new RouteStopEntity();
+                endStop.setRoute(route);
+                endStop.setStopSequence(sequence++);
+                endStop.setLocation(depotLocation);
+                endStop.setOrder(null);
+                endStop.setDistanceFromPrevKm(BigDecimal.valueOf(returnDistanceMeters / 1000.0));
+                endStop.setDurationFromPrevMin(returnDurationMinutes);
+                stops.add(endStop);
 
                 String routePolyline = osrmDistanceService.getRoutePolyline(routeWaypoints);
                 route.setPolyline(routePolyline);
@@ -390,40 +422,46 @@ public class RoutingServiceImpl implements RoutingService {
 
         RoutingRunEntity result = optimizeRoutes(orders, vehicles, locations);
 
-        if (result.getStatus() == RoutingRunStatus.COMPLETED) {
-            orders.forEach(order -> order.setStatus(OrderStatus.IN_TRANSIT));
-            orderRepository.saveAll(orders);
-            log.info("Updated {} orders to IN_TRANSIT status", orders.size());
+        if (result.getStatus() == RoutingRunStatus.COMPLETED && result.getRoutes() != null) {
+            Set<Long> routedOrderIds = result.getRoutes().stream()
+                    .flatMap(route -> route.getStops().stream())
+                    .map(stop -> stop.getOrder() != null ? stop.getOrder().getId() : null)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            List<OrderEntity> routedOrders = orders.stream()
+                    .filter(o -> routedOrderIds.contains(o.getId()))
+                    .collect(Collectors.toList());
+
+            routedOrders.forEach(order -> order.setStatus(OrderStatus.IN_TRANSIT));
+            orderRepository.saveAll(routedOrders);
+            log.info("Updated {}/{} orders to IN_TRANSIT status", routedOrders.size(), orders.size());
         }
 
-        return routingRunRepository.save(result);
+        RoutingRunEntity saved = routingRunRepository.save(result);
+        return routingRunRepository.findByIdWithRoutes(saved.getId())
+                .orElse(saved);
     }
 
     @Override
     @Transactional
-    public RoutingRunEntity executeAutoRouting() {
-        log.info("Executing auto-routing: fetching available orders and vehicles");
+    public RoutingRunEntity executeAutoRouting(Long depotId) {
+        log.info("Executing auto-routing for depot ID: {}", depotId);
 
-        // For auto-routing, we pick the first depot with active vehicles and created
-        // orders
-        List<VehicleEntity> activeVehicles = vehicleRepository.findByStatusAndDriverIdNotNull(VehicleStatus.ACTIVE);
-        if (activeVehicles.isEmpty()) {
-            throw new ValidationException(RoutingConstant.VEHICLES_NOT_FOUND);
-        }
-
-        Long depotId = activeVehicles.get(0).getDepot() != null ? activeVehicles.get(0).getDepot().getId() : null;
         if (depotId == null) {
             throw new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED);
         }
 
-        List<VehicleEntity> vehicles = activeVehicles.stream()
-                .filter(v -> v.getDepot() != null && Objects.equals(v.getDepot().getId(), depotId))
-                .collect(Collectors.toList());
+        depotRepository.findById(depotId)
+                .orElseThrow(() -> new ResourceNotFoundException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
 
-        List<OrderEntity> orders = orderRepository.findByStatus(OrderStatus.CREATED).stream()
-                .filter(o -> o.getDepot() != null && Objects.equals(o.getDepot().getId(), depotId))
-                .collect(Collectors.toList());
+        List<VehicleEntity> vehicles = vehicleRepository.findByStatusAndDriverIdNotNullAndDepotId(VehicleStatus.ACTIVE,
+                depotId);
+        if (vehicles.isEmpty()) {
+            throw new ValidationException(RoutingConstant.VEHICLES_NOT_FOUND);
+        }
 
+        List<OrderEntity> orders = orderRepository.findByStatusAndDepotId(OrderStatus.CREATED, depotId);
         if (orders.isEmpty()) {
             throw new ValidationException("Không tìm thấy đơn hàng CREATED nào được gán cho kho ID: " + depotId);
         }

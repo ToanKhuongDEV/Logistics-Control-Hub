@@ -1,0 +1,279 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.logistics:control-hub >----------------------
+[INFO] Building Logistics Control Hub 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ control-hub ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ control-hub ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 125 source files with javac [debug release 17] to target\classes
+[INFO] MapStruct: Using accessor naming strategy: org.mapstruct.ap.spi.DefaultAccessorNamingStrategy
+[INFO] MapStruct: Using builder provider: org.mapstruct.ap.spi.DefaultBuilderProvider
+[INFO] MapStruct: Using enum naming strategy: org.mapstruct.ap.spi.DefaultEnumMappingStrategy
+[INFO]  MapStruct: processing: com.logistics.hub.feature.order.mapper.OrderMapper.
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.order.dto.response.OrderResponse toResponse(com.logistics.hub.feature.order.entity.OrderEntity entity).
+[INFO] -- MapStruct: mapping property: entityDepotId( entity ) to: setDepotId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entityDepotId( entity ).
+[INFO] -- MapStruct: mapping property: entityDepotName( entity ) to: setDepotName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityDepotName( entity ).
+[INFO] -- MapStruct: mapping property: entityDeliveryLocationLatitude( entity ) to: setLatitude(java.lang.Double).
+[INFO] -- MapStruct: selecting property mapping: entityDeliveryLocationLatitude( entity ).
+[INFO] -- MapStruct: mapping property: entityDeliveryLocationLongitude( entity ) to: setLongitude(java.lang.Double).
+[INFO] -- MapStruct: selecting property mapping: entityDeliveryLocationLongitude( entity ).
+[INFO] -- MapStruct: mapping property: entity.getId() to: setId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entity.getId().
+[INFO] -- MapStruct: mapping property: entity.getCode() to: setCode(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getCode().
+[INFO] -- MapStruct: mapping property: entity.getWeightKg() to: setWeightKg(java.lang.Integer).
+[INFO] -- MapStruct: selecting property mapping: entity.getWeightKg().
+[INFO] -- MapStruct: mapping property: entity.getVolumeM3() to: setVolumeM3(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: entity.getVolumeM3().
+[INFO] -- MapStruct: mapping property: entity.getStatus() to: setStatus(com.logistics.hub.feature.order.enums.OrderStatus).
+[INFO] -- MapStruct: selecting property mapping: entity.getStatus().
+[INFO] -- MapStruct: mapping property: entity.getCreatedAt() to: setCreatedAt(java.time.Instant).
+[INFO] -- MapStruct: selecting property mapping: entity.getCreatedAt().
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.order.entity.OrderEntity toEntity(com.logistics.hub.feature.order.dto.request.OrderRequest request).
+[INFO] -- MapStruct: mapping property: request.getCode() to: setCode(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getCode().
+[INFO] -- MapStruct: mapping property: request.getWeightKg() to: setWeightKg(java.lang.Integer).
+[INFO] -- MapStruct: selecting property mapping: request.getWeightKg().
+[INFO] -- MapStruct: mapping property: request.getVolumeM3() to: setVolumeM3(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: request.getVolumeM3().
+[INFO] - MapStruct: creating bean mapping method implementation for void updateEntityFromRequest(com.logistics.hub.feature.order.dto.request.OrderRequest request, @MappingTarget com.logistics.hub.feature.order.entity.OrderEntity entity).
+[INFO] -- MapStruct: mapping property: request.getCode() to: setCode(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getCode().
+[INFO] -- MapStruct: mapping property: request.getWeightKg() to: setWeightKg(java.lang.Integer).
+[INFO] -- MapStruct: selecting property mapping: request.getWeightKg().
+[INFO] -- MapStruct: mapping property: request.getVolumeM3() to: setVolumeM3(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: request.getVolumeM3().
+[INFO]  MapStruct: processing: com.logistics.hub.feature.location.mapper.LocationMapper.
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.location.dto.response.LocationResponse toResponse(com.logistics.hub.feature.location.entity.LocationEntity entity).
+[INFO] -- MapStruct: mapping property: entity.getId() to: setId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entity.getId().
+[INFO] -- MapStruct: mapping property: entity.getStreet() to: setStreet(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getStreet().
+[INFO] -- MapStruct: mapping property: entity.getCity() to: setCity(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getCity().
+[INFO] -- MapStruct: mapping property: entity.getCountry() to: setCountry(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getCountry().
+[INFO] -- MapStruct: mapping property: entity.getLatitude() to: setLatitude(java.lang.Double).
+[INFO] -- MapStruct: selecting property mapping: entity.getLatitude().
+[INFO] -- MapStruct: mapping property: entity.getLongitude() to: setLongitude(java.lang.Double).
+[INFO] -- MapStruct: selecting property mapping: entity.getLongitude().
+[INFO]  MapStruct: processing: com.logistics.hub.feature.dispatcher.mapper.DispatcherMapper.
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.auth.dto.response.DispatcherResponse toResponse(com.logistics.hub.feature.dispatcher.entity.DispatcherEntity entity).
+[INFO] -- MapStruct: mapping property: entity.getId() to: setId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entity.getId().
+[INFO] -- MapStruct: mapping property: entity.getUsername() to: setUsername(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getUsername().
+[INFO] -- MapStruct: mapping property: entity.getFullName() to: setFullName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getFullName().
+[INFO] -- MapStruct: mapping property: entity.getRole() to: setRole(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getRole().
+[INFO]  MapStruct: processing: com.logistics.hub.feature.vehicle.mapper.VehicleMapper.
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.vehicle.dto.response.VehicleResponse toResponse(com.logistics.hub.feature.vehicle.entity.VehicleEntity entity).
+[INFO] -- MapStruct: mapping property: entityDriverId( entity ) to: setDriverId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entityDriverId( entity ).
+[INFO] -- MapStruct: mapping property: entityDepotId( entity ) to: setDepotId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entityDepotId( entity ).
+[INFO] -- MapStruct: mapping property: entityDriverName( entity ) to: setDriverName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityDriverName( entity ).
+[INFO] -- MapStruct: mapping property: entityDepotName( entity ) to: setDepotName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityDepotName( entity ).
+[INFO] -- MapStruct: mapping property: entityDepotLocationId( entity ) to: setLocationId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entityDepotLocationId( entity ).
+[INFO] -- MapStruct: mapping property: entityDepotLocationStreet( entity ) to: setStreet(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityDepotLocationStreet( entity ).
+[INFO] -- MapStruct: mapping property: entityDepotLocationCity( entity ) to: setCity(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityDepotLocationCity( entity ).
+[INFO] -- MapStruct: mapping property: entityDepotLocationCountry( entity ) to: setCountry(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityDepotLocationCountry( entity ).
+[INFO] -- MapStruct: mapping property: entity.getId() to: setId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entity.getId().
+[INFO] -- MapStruct: mapping property: entity.getCode() to: setCode(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getCode().
+[INFO] -- MapStruct: mapping property: entity.getMaxWeightKg() to: setMaxWeightKg(java.lang.Integer).
+[INFO] -- MapStruct: selecting property mapping: entity.getMaxWeightKg().
+[INFO] -- MapStruct: mapping property: entity.getMaxVolumeM3() to: setMaxVolumeM3(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: entity.getMaxVolumeM3().
+[INFO] -- MapStruct: mapping property: entity.getCostPerKm() to: setCostPerKm(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: entity.getCostPerKm().
+[INFO] -- MapStruct: mapping property: entity.getStatus() to: setStatus(com.logistics.hub.feature.vehicle.enums.VehicleStatus).
+[INFO] -- MapStruct: selecting property mapping: entity.getStatus().
+[INFO] -- MapStruct: mapping property: entity.getType() to: setType(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getType().
+[INFO] -- MapStruct: mapping property: entity.getCreatedAt() to: setCreatedAt(java.time.Instant).
+[INFO] -- MapStruct: selecting property mapping: entity.getCreatedAt().
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.vehicle.entity.VehicleEntity toEntity(com.logistics.hub.feature.vehicle.dto.request.VehicleRequest request).
+[INFO] -- MapStruct: mapping property: request.getCode() to: setCode(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getCode().
+[INFO] -- MapStruct: mapping property: request.getMaxWeightKg() to: setMaxWeightKg(java.lang.Integer).
+[INFO] -- MapStruct: selecting property mapping: request.getMaxWeightKg().
+[INFO] -- MapStruct: mapping property: request.getMaxVolumeM3() to: setMaxVolumeM3(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: request.getMaxVolumeM3().
+[INFO] -- MapStruct: mapping property: request.getCostPerKm() to: setCostPerKm(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: request.getCostPerKm().
+[INFO] -- MapStruct: mapping property: request.getStatus() to: setStatus(com.logistics.hub.feature.vehicle.enums.VehicleStatus).
+[INFO] -- MapStruct: selecting property mapping: request.getStatus().
+[INFO] -- MapStruct: mapping property: request.getType() to: setType(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getType().
+[INFO] - MapStruct: creating bean mapping method implementation for void updateEntityFromRequest(com.logistics.hub.feature.vehicle.dto.request.VehicleRequest request, @MappingTarget com.logistics.hub.feature.vehicle.entity.VehicleEntity entity).
+[INFO] -- MapStruct: mapping property: request.getCode() to: setCode(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getCode().
+[INFO] -- MapStruct: mapping property: request.getMaxWeightKg() to: setMaxWeightKg(java.lang.Integer).
+[INFO] -- MapStruct: selecting property mapping: request.getMaxWeightKg().
+[INFO] -- MapStruct: mapping property: request.getMaxVolumeM3() to: setMaxVolumeM3(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: request.getMaxVolumeM3().
+[INFO] -- MapStruct: mapping property: request.getCostPerKm() to: setCostPerKm(java.math.BigDecimal).
+[INFO] -- MapStruct: selecting property mapping: request.getCostPerKm().
+[INFO] -- MapStruct: mapping property: request.getStatus() to: setStatus(com.logistics.hub.feature.vehicle.enums.VehicleStatus).
+[INFO] -- MapStruct: selecting property mapping: request.getStatus().
+[INFO] -- MapStruct: mapping property: request.getType() to: setType(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getType().
+[INFO]  MapStruct: processing: com.logistics.hub.feature.company.mapper.CompanyMapper.
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.company.entity.CompanyEntity toEntity(com.logistics.hub.feature.company.dto.request.CompanyRequest request).
+[INFO] -- MapStruct: mapping property: request.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getName().
+[INFO] -- MapStruct: mapping property: request.getAddress() to: setAddress(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getAddress().
+[INFO] -- MapStruct: mapping property: request.getPhone() to: setPhone(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getPhone().
+[INFO] -- MapStruct: mapping property: request.getEmail() to: setEmail(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getEmail().
+[INFO] -- MapStruct: mapping property: request.getWebsite() to: setWebsite(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getWebsite().
+[INFO] -- MapStruct: mapping property: request.getTaxId() to: setTaxId(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getTaxId().
+[INFO] -- MapStruct: mapping property: request.getDescription() to: setDescription(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getDescription().
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.company.dto.response.CompanyResponse toResponse(com.logistics.hub.feature.company.entity.CompanyEntity entity).
+[INFO] -- MapStruct: mapping property: entity.getId() to: setId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entity.getId().
+[INFO] -- MapStruct: mapping property: entity.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getName().
+[INFO] -- MapStruct: mapping property: entity.getAddress() to: setAddress(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getAddress().
+[INFO] -- MapStruct: mapping property: entity.getPhone() to: setPhone(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getPhone().
+[INFO] -- MapStruct: mapping property: entity.getEmail() to: setEmail(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getEmail().
+[INFO] -- MapStruct: mapping property: entity.getWebsite() to: setWebsite(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getWebsite().
+[INFO] -- MapStruct: mapping property: entity.getTaxId() to: setTaxId(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getTaxId().
+[INFO] -- MapStruct: mapping property: entity.getDescription() to: setDescription(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getDescription().
+[INFO] -- MapStruct: mapping property: entity.getCreatedAt() to: setCreatedAt(java.time.Instant).
+[INFO] -- MapStruct: selecting property mapping: entity.getCreatedAt().
+[INFO] -- MapStruct: mapping property: entity.getUpdatedAt() to: setUpdatedAt(java.time.Instant).
+[INFO] -- MapStruct: selecting property mapping: entity.getUpdatedAt().
+[INFO] - MapStruct: creating bean mapping method implementation for void updateEntityFromRequest(com.logistics.hub.feature.company.dto.request.CompanyRequest request, @MappingTarget com.logistics.hub.feature.company.entity.CompanyEntity entity).
+[INFO] -- MapStruct: mapping property: request.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getName().
+[INFO] -- MapStruct: mapping property: request.getAddress() to: setAddress(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getAddress().
+[INFO] -- MapStruct: mapping property: request.getPhone() to: setPhone(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getPhone().
+[INFO] -- MapStruct: mapping property: request.getEmail() to: setEmail(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getEmail().
+[INFO] -- MapStruct: mapping property: request.getWebsite() to: setWebsite(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getWebsite().
+[INFO] -- MapStruct: mapping property: request.getTaxId() to: setTaxId(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getTaxId().
+[INFO] -- MapStruct: mapping property: request.getDescription() to: setDescription(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getDescription().
+[INFO]  MapStruct: processing: com.logistics.hub.feature.depot.mapper.DepotMapper.
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.depot.dto.response.DepotResponse toResponse(com.logistics.hub.feature.depot.entity.DepotEntity entity).
+[INFO] -- MapStruct: mapping property: entityLocationId( entity ) to: setLocationId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entityLocationId( entity ).
+[INFO] -- MapStruct: mapping property: entityLocationStreet( entity ) to: setStreet(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityLocationStreet( entity ).
+[INFO] -- MapStruct: mapping property: entityLocationCity( entity ) to: setCity(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityLocationCity( entity ).
+[INFO] -- MapStruct: mapping property: entityLocationCountry( entity ) to: setCountry(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entityLocationCountry( entity ).
+[INFO] -- MapStruct: mapping property: entity.getId() to: setId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entity.getId().
+[INFO] -- MapStruct: mapping property: entity.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getName().
+[INFO] -- MapStruct: mapping property: entity.getDescription() to: setDescription(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getDescription().
+[INFO] -- MapStruct: mapping property: entity.getIsActive() to: setIsActive(java.lang.Boolean).
+[INFO] -- MapStruct: selecting property mapping: entity.getIsActive().
+[INFO] -- MapStruct: mapping property: entity.getCreatedAt() to: setCreatedAt(java.time.LocalDateTime).
+[INFO] -- MapStruct: selecting property mapping: entity.getCreatedAt().
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.depot.entity.DepotEntity toEntity(com.logistics.hub.feature.depot.dto.request.DepotRequest request).
+[INFO] -- MapStruct: mapping property: request.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getName().
+[INFO] -- MapStruct: mapping property: request.getDescription() to: setDescription(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getDescription().
+[INFO] -- MapStruct: mapping property: request.getIsActive() to: setIsActive(java.lang.Boolean).
+[INFO] -- MapStruct: selecting property mapping: request.getIsActive().
+[INFO] - MapStruct: creating bean mapping method implementation for void updateEntityFromRequest(com.logistics.hub.feature.depot.dto.request.DepotRequest request, @MappingTarget com.logistics.hub.feature.depot.entity.DepotEntity entity).
+[INFO] -- MapStruct: mapping property: request.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getName().
+[INFO] -- MapStruct: mapping property: request.getDescription() to: setDescription(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getDescription().
+[INFO] -- MapStruct: mapping property: request.getIsActive() to: setIsActive(java.lang.Boolean).
+[INFO] -- MapStruct: selecting property mapping: request.getIsActive().
+[INFO]  MapStruct: processing: com.logistics.hub.feature.driver.mapper.DriverMapper.
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.driver.dto.response.DriverResponse toResponse(com.logistics.hub.feature.driver.entity.DriverEntity entity).
+[INFO] -- MapStruct: mapping property: entity.getId() to: setId(java.lang.Long).
+[INFO] -- MapStruct: selecting property mapping: entity.getId().
+[INFO] -- MapStruct: mapping property: entity.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getName().
+[INFO] -- MapStruct: mapping property: entity.getLicenseNumber() to: setLicenseNumber(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getLicenseNumber().
+[INFO] -- MapStruct: mapping property: entity.getPhoneNumber() to: setPhoneNumber(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getPhoneNumber().
+[INFO] -- MapStruct: mapping property: entity.getEmail() to: setEmail(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: entity.getEmail().
+[INFO] -- MapStruct: mapping property: entity.getCreatedAt() to: setCreatedAt(java.time.Instant).
+[INFO] -- MapStruct: selecting property mapping: entity.getCreatedAt().
+[INFO] -- MapStruct: mapping property: entity.getUpdatedAt() to: setUpdatedAt(java.time.Instant).
+[INFO] -- MapStruct: selecting property mapping: entity.getUpdatedAt().
+[INFO] - MapStruct: creating bean mapping method implementation for com.logistics.hub.feature.driver.entity.DriverEntity toEntity(com.logistics.hub.feature.driver.dto.request.DriverRequest request).
+[INFO] -- MapStruct: mapping property: request.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getName().
+[INFO] -- MapStruct: mapping property: request.getLicenseNumber() to: setLicenseNumber(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getLicenseNumber().
+[INFO] -- MapStruct: mapping property: request.getPhoneNumber() to: setPhoneNumber(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getPhoneNumber().
+[INFO] -- MapStruct: mapping property: request.getEmail() to: setEmail(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getEmail().
+[INFO] - MapStruct: creating bean mapping method implementation for void updateEntityFromRequest(com.logistics.hub.feature.driver.dto.request.DriverRequest request, @MappingTarget com.logistics.hub.feature.driver.entity.DriverEntity entity).
+[INFO] -- MapStruct: mapping property: request.getName() to: setName(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getName().
+[INFO] -- MapStruct: mapping property: request.getLicenseNumber() to: setLicenseNumber(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getLicenseNumber().
+[INFO] -- MapStruct: mapping property: request.getPhoneNumber() to: setPhoneNumber(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getPhoneNumber().
+[INFO] -- MapStruct: mapping property: request.getEmail() to: setEmail(java.lang.String).
+[INFO] -- MapStruct: selecting property mapping: request.getEmail().
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/Intern_job/Logistics Control Hub/backend/src/main/java/com/logistics/hub/feature/routing/service/impl/OsrmDistanceService.java:[160,5] missing return statement
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  6.968 s
+[INFO] Finished at: 2026-02-24T15:29:56+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project control-hub: Compilation failure
+[ERROR] /D:/Intern_job/Logistics Control Hub/backend/src/main/java/com/logistics/hub/feature/routing/service/impl/OsrmDistanceService.java:[160,5] missing return statement
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

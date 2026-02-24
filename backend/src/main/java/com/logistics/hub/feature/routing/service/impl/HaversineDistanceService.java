@@ -54,4 +54,25 @@ public class HaversineDistanceService {
 
         return new DistanceResult(distance, durationMinutes, null);
     }
+
+    public com.logistics.hub.feature.routing.dto.response.MatrixResult calculateMatrix(
+            java.util.List<LocationEntity> locations) {
+        int size = locations.size();
+        long[][] distances = new long[size][size];
+        int[][] durations = new int[size][size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (i == j) {
+                    distances[i][j] = 0;
+                    durations[i][j] = 0;
+                } else {
+                    DistanceResult result = calculateDistance(locations.get(i), locations.get(j));
+                    distances[i][j] = result.getDistanceKm().multiply(java.math.BigDecimal.valueOf(1000)).longValue();
+                    durations[i][j] = result.getDurationMinutes();
+                }
+            }
+        }
+        return new com.logistics.hub.feature.routing.dto.response.MatrixResult(distances, durations);
+    }
 }

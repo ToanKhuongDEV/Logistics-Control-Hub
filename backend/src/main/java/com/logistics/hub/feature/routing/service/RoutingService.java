@@ -14,5 +14,5 @@ public interface RoutingService {
 
     RoutingRunEntity executeRouting(List<Long> orderIds, List<Long> vehicleIds);
 
-    RoutingRunEntity executeAutoRouting();
+    RoutingRunEntity executeAutoRouting(Long depotId);
 }

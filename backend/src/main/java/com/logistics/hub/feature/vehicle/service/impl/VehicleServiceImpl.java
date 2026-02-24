@@ -2,7 +2,10 @@ package com.logistics.hub.feature.vehicle.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
+import com.logistics.hub.feature.driver.entity.DriverEntity;
+import com.logistics.hub.feature.driver.repository.DriverRepository;
 import com.logistics.hub.feature.vehicle.constant.VehicleConstant;
 import com.logistics.hub.feature.vehicle.dto.request.VehicleRequest;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleResponse;
@@ -30,6 +33,7 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
     private final DepotRepository depotRepository;
+    private final DriverRepository driverRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -59,6 +63,7 @@ public class VehicleServiceImpl implements VehicleService {
         }
 
         VehicleEntity entity = vehicleMapper.toEntity(request);
+        resolveAndSetDepotDriver(request, entity);
         VehicleEntity saved = vehicleRepository.save(entity);
         return enrichResponse(saved);
     }
@@ -101,13 +106,30 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
         }
 
-        if (request.getDepotId() != null && !depotRepository.existsById(request.getDepotId())) {
-            throw new ResourceNotFoundException("Depot not found with id: " + request.getDepotId());
-        }
-
         vehicleMapper.updateEntityFromRequest(request, entity);
+        resolveAndSetDepotDriver(request, entity);
         VehicleEntity saved = vehicleRepository.save(entity);
         return enrichResponse(saved);
+    }
+
+    private void resolveAndSetDepotDriver(VehicleRequest request, VehicleEntity entity) {
+        if (request.getDepotId() != null) {
+            DepotEntity depot = depotRepository.findById(request.getDepotId())
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+            entity.setDepot(depot);
+        } else {
+            entity.setDepot(null);
+        }
+
+        if (request.getDriverId() != null) {
+            DriverEntity driver = driverRepository.findById(request.getDriverId())
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Driver not found with id: " + request.getDriverId()));
+            entity.setDriver(driver);
+        } else {
+            entity.setDriver(null);
+        }
     }
 
     @Override

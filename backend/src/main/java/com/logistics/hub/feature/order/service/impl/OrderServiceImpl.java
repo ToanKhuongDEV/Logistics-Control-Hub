@@ -83,7 +83,7 @@ public class OrderServiceImpl implements OrderService {
         entity.setStatus(OrderStatus.CREATED);
 
         LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
-        entity.setDeliveryLocationId(location.getId());
+        entity.setDeliveryLocation(location);
 
         OrderEntity saved = orderRepository.save(entity);
         return findById(saved.getId());
@@ -106,7 +106,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (request.getDeliveryLocation() != null) {
             LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
-            entity.setDeliveryLocationId(location.getId());
+            entity.setDeliveryLocation(location);
         }
 
         OrderEntity saved = orderRepository.save(entity);

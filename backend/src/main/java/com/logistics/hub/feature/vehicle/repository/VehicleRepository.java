@@ -33,12 +33,12 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
 
         long countByStatus(VehicleStatus status);
 
-        boolean existsByDriverId(Long driverId);
+        boolean existsByDriver_Id(Long driverId);
 
-        boolean existsByDriverIdAndIdNot(Long driverId, Long id);
+        boolean existsByDriver_IdAndIdNot(Long driverId, Long id);
 
-        boolean existsByDepotId(Long depotId);
+        boolean existsByDepot_Id(Long depotId);
 
-        @Query("SELECT v FROM VehicleEntity v WHERE v.status = :status AND v.driverId IS NOT NULL")
+        @Query("SELECT v FROM VehicleEntity v WHERE v.status = :status AND v.driver IS NOT NULL")
         List<VehicleEntity> findByStatusAndDriverIdNotNull(@Param("status") VehicleStatus status);
 }

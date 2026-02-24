@@ -1,4 +1,5 @@
 -- 1. Companies
+-- Java entity dùng Instant (@CreatedDate/@LastModifiedDate) → map sang TIMESTAMPTZ
 CREATE TABLE companies (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -8,8 +9,8 @@ CREATE TABLE companies (
     website VARCHAR(255),
     tax_id VARCHAR(50),
     description TEXT,
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ
 );
 
 -- 2. Dispatcher 
@@ -22,14 +23,15 @@ CREATE TABLE dispatchers (
 );
 
 -- 3. Drivers
+-- Java entity dùng Instant → map sang TIMESTAMPTZ (with timezone)
 CREATE TABLE drivers (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     license_number VARCHAR(50) NOT NULL UNIQUE,
     phone_number VARCHAR(20) NOT NULL UNIQUE,
     email VARCHAR(255),
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITHOUT TIME ZONE
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ
 );
 
 -- 4. Locations (With separated address fields)
@@ -47,6 +49,7 @@ CREATE TABLE locations (
 );
 
 -- 5. Depots (Start locations for vehicles)
+-- Java entity dùng LocalDateTime → map sang TIMESTAMP WITHOUT TIME ZONE
 CREATE TABLE depots (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -64,6 +67,7 @@ CREATE TABLE depots (
 );
 
 -- 6. Vehicles
+-- Java entity dùng Instant → map sang TIMESTAMPTZ
 CREATE TABLE vehicles (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -75,10 +79,10 @@ CREATE TABLE vehicles (
 
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     type VARCHAR(100),
-    driver_id BIGINT UNIQUE, -- QUAN TRỌNG
+    driver_id BIGINT UNIQUE,
     depot_id BIGINT,
 
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_vehicles_driver
         FOREIGN KEY (driver_id)
@@ -90,7 +94,7 @@ CREATE TABLE vehicles (
 );
 
 -- 7. Orders (Each order has 1 delivery location)
-
+-- Java entity dùng Instant → map sang TIMESTAMPTZ
 CREATE TABLE orders (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -102,7 +106,7 @@ CREATE TABLE orders (
 
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
 
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_orders_location
         FOREIGN KEY (delivery_location_id)
@@ -114,6 +118,7 @@ CREATE TABLE orders (
 );
 
 -- 8. Routing Runs (Optimization sessions)
+-- Java entity dùng LocalDateTime → TIMESTAMP WITHOUT TIME ZONE
 CREATE TABLE routing_runs (
     id BIGSERIAL PRIMARY KEY,
 
@@ -131,6 +136,7 @@ CREATE TABLE routing_runs (
 );
 
 -- 9. Routes (1 vehicle = 1 optimized route)
+-- Java entity dùng LocalDateTime → TIMESTAMP WITHOUT TIME ZONE
 CREATE TABLE routes (
     id BIGSERIAL PRIMARY KEY,
 
@@ -143,7 +149,7 @@ CREATE TABLE routes (
 
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
 
-    polyline TEXT, --(for map display)
+    polyline TEXT,
 
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
@@ -158,12 +164,13 @@ CREATE TABLE routes (
 );
 
 -- 10. Route Stops (Ordered delivery sequence)
+-- Java entity dùng LocalDateTime → TIMESTAMP WITHOUT TIME ZONE
 CREATE TABLE route_stops (
     id BIGSERIAL PRIMARY KEY,
 
     route_id BIGINT NOT NULL,
-    order_id BIGINT, -- Nullable (for depot stops)
-    location_id BIGINT NOT NULL, -- New field
+    order_id BIGINT,
+    location_id BIGINT NOT NULL,
 
     stop_sequence INT NOT NULL,
 

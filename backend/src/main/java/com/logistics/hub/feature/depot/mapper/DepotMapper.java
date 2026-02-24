@@ -10,16 +10,19 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface DepotMapper {
 
-  @Mapping(target = "address", ignore = true)
+  @Mapping(target = "locationId", source = "location.id")
+  @Mapping(target = "street", source = "location.street")
+  @Mapping(target = "city", source = "location.city")
+  @Mapping(target = "country", source = "location.country")
   DepotResponse toResponse(DepotEntity entity);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "locationId", ignore = true)
+  @Mapping(target = "location", ignore = true)
   DepotEntity toEntity(DepotRequest request);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
-  @Mapping(target = "locationId", ignore = true)
+  @Mapping(target = "location", ignore = true)
   void updateEntityFromRequest(DepotRequest request, @MappingTarget DepotEntity entity);
 }

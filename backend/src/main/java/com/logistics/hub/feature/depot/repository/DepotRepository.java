@@ -9,13 +9,13 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DepotRepository extends JpaRepository<DepotEntity, Long> {
-    boolean existsByLocationId(Long locationId);
+    boolean existsByLocation_Id(Long locationId);
 
-    boolean existsByLocationIdAndIdNot(Long locationId, Long id);
+    boolean existsByLocation_IdAndIdNot(Long locationId, Long id);
 
     Long countByIsActive(boolean isActive);
 
-    @Query("SELECT d FROM DepotEntity d JOIN LocationEntity l ON d.locationId = l.id "
+    @Query("SELECT d FROM DepotEntity d JOIN d.location l "
             + "WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) "
             + "OR LOWER(l.street) LIKE LOWER(CONCAT('%', :search, '%')) "
             + "OR LOWER(l.city) LIKE LOWER(CONCAT('%', :search, '%')) "

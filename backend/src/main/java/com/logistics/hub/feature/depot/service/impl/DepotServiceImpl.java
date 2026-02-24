@@ -11,7 +11,6 @@ import com.logistics.hub.feature.depot.mapper.DepotMapper;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.depot.service.DepotService;
 import com.logistics.hub.feature.location.entity.LocationEntity;
-import com.logistics.hub.feature.location.repository.LocationRepository;
 import com.logistics.hub.feature.location.service.LocationService;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,6 @@ public class DepotServiceImpl implements DepotService {
 
   private final DepotRepository depotRepository;
   private final DepotMapper depotMapper;
-  private final LocationRepository locationRepository;
   private final LocationService locationService;
   private final VehicleRepository vehicleRepository;
 
@@ -67,12 +65,12 @@ public class DepotServiceImpl implements DepotService {
     LocationEntity location = locationService.getOrCreateLocation(request.getLocationRequest());
     Long locationId = location.getId();
 
-    if (depotRepository.existsByLocationId(locationId)) {
+    if (depotRepository.existsByLocation_Id(locationId)) {
       throw new ValidationException(DepotConstant.DEPOT_LOCATION_EXISTS);
     }
 
     DepotEntity entity = depotMapper.toEntity(request);
-    entity.setLocationId(locationId);
+    entity.setLocation(location);
 
     DepotEntity saved = depotRepository.save(entity);
     return enrichResponse(saved);
@@ -86,12 +84,12 @@ public class DepotServiceImpl implements DepotService {
     LocationEntity location = locationService.getOrCreateLocation(request.getLocationRequest());
     Long newLocationId = location.getId();
 
-    if (depotRepository.existsByLocationIdAndIdNot(newLocationId, id)) {
+    if (depotRepository.existsByLocation_IdAndIdNot(newLocationId, id)) {
       throw new ValidationException(DepotConstant.DEPOT_LOCATION_EXISTS);
     }
 
     depotMapper.updateEntityFromRequest(request, entity);
-    entity.setLocationId(newLocationId);
+    entity.setLocation(location);
 
     DepotEntity saved = depotRepository.save(entity);
     return enrichResponse(saved);
@@ -103,7 +101,7 @@ public class DepotServiceImpl implements DepotService {
       throw new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id);
     }
 
-    if (vehicleRepository.existsByDepotId(id)) {
+    if (vehicleRepository.existsByDepot_Id(id)) {
       throw new ValidationException(DepotConstant.DEPOT_HAS_VEHICLES);
     }
 
@@ -125,17 +123,6 @@ public class DepotServiceImpl implements DepotService {
   }
 
   private DepotResponse enrichResponse(DepotEntity entity) {
-    DepotResponse response = depotMapper.toResponse(entity);
-    if (entity.getLocationId() != null) {
-      locationRepository.findById(entity.getLocationId())
-          .ifPresent(location -> {
-            String fullAddress = String.format("%s, %s, %s",
-                location.getStreet(),
-                location.getCity(),
-                location.getCountry());
-            response.setAddress(fullAddress);
-          });
-    }
-    return response;
+    return depotMapper.toResponse(entity);
   }
 }

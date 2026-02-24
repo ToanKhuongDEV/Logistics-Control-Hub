@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.depot.entity;
 
+import com.logistics.hub.feature.location.entity.LocationEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,8 +23,9 @@ public class DepotEntity {
   @Column(nullable = false, length = 255)
   private String name;
 
-  @Column(name = "location_id", nullable = false, unique = true)
-  private Long locationId;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "location_id", nullable = false, unique = true)
+  private LocationEntity location;
 
   @Column(length = 500)
   private String description;

@@ -2,9 +2,7 @@ package com.logistics.hub.feature.vehicle.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
-import com.logistics.hub.feature.driver.repository.DriverRepository;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
-import com.logistics.hub.feature.location.repository.LocationRepository;
 import com.logistics.hub.feature.vehicle.constant.VehicleConstant;
 import com.logistics.hub.feature.vehicle.dto.request.VehicleRequest;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleResponse;
@@ -31,9 +29,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     private final VehicleRepository vehicleRepository;
     private final VehicleMapper vehicleMapper;
-    private final DriverRepository driverRepository;
     private final DepotRepository depotRepository;
-    private final LocationRepository locationRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -58,7 +54,7 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
         }
 
-        if (request.getDriverId() != null && vehicleRepository.existsByDriverId(request.getDriverId())) {
+        if (request.getDriverId() != null && vehicleRepository.existsByDriver_Id(request.getDriverId())) {
             throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
         }
 
@@ -101,7 +97,7 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
         }
 
-        if (request.getDriverId() != null && vehicleRepository.existsByDriverIdAndIdNot(request.getDriverId(), id)) {
+        if (request.getDriverId() != null && vehicleRepository.existsByDriver_IdAndIdNot(request.getDriverId(), id)) {
             throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
         }
 
@@ -160,28 +156,6 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     private VehicleResponse enrichResponse(VehicleEntity entity) {
-        VehicleResponse response = vehicleMapper.toResponse(entity);
-        if (entity.getDriverId() != null) {
-            driverRepository.findById(entity.getDriverId())
-                    .ifPresent(driver -> response.setDriverName(driver.getName()));
-        }
-        if (entity.getDepotId() != null) {
-            depotRepository.findById(entity.getDepotId())
-                    .ifPresent(depot -> {
-                        response.setDepotName(depot.getName());
-                        response.setLocationId(depot.getLocationId());
-                        if (depot.getLocationId() != null) {
-                            locationRepository.findById(depot.getLocationId())
-                                    .ifPresent(location -> {
-                                        String fullAddress = String.format("%s, %s, %s",
-                                                location.getStreet(),
-                                                location.getCity(),
-                                                location.getCountry());
-                                        response.setAddress(fullAddress);
-                                    });
-                        }
-                    });
-        }
-        return response;
+        return vehicleMapper.toResponse(entity);
     }
 }

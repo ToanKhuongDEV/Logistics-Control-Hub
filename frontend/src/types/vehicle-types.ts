@@ -16,6 +16,10 @@ export interface Vehicle {
 	driverName?: string;
 	depotId?: number;
 	depotName?: string;
+	locationId?: number;
+	street?: string;
+	city?: string;
+	country?: string;
 	createdAt?: string;
 }
 

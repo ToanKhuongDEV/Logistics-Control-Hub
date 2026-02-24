@@ -19,6 +19,8 @@ public class DriverConstant {
     public static final String LICENSE_LENGTH_EXCEEDED = "Số bằng lái không được vượt quá 50 ký tự";
     public static final String PHONE_LENGTH_EXCEEDED = "Số điện thoại không được vượt quá 20 ký tự";
     public static final String PHONE_INVALID_FORMAT = "Số điện thoại phải có đúng 10 chữ số";
+    public static final String LICENSE_NUMBER_REGEX = "^[A-Z]\\d-\\d{6}$";
+    public static final String LICENSE_INVALID_FORMAT = "Số GPLX phải có định dạng X0-000000 (ví dụ: A1-123456)";
     public static final String EMAIL_LENGTH_EXCEEDED = "Email không được vượt quá 255 ký tự";
     public static final String EMAIL_INVALID_FORMAT = "Email không hợp lệ";
 

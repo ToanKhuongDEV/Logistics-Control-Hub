@@ -82,11 +82,11 @@ public class LocationServiceImpl implements LocationService {
             throw new ResourceNotFoundException(LocationConstant.LOCATION_NOT_FOUND + id);
         }
 
-        if (depotRepository.existsByLocationId(id)) {
+        if (depotRepository.existsByLocation_Id(id)) {
             throw new com.logistics.hub.common.exception.ValidationException(LocationConstant.LOCATION_IN_USE_BY_DEPOT);
         }
 
-        if (orderRepository.existsByDeliveryLocationId(id)) {
+        if (orderRepository.existsByDeliveryLocation_Id(id)) {
             throw new com.logistics.hub.common.exception.ValidationException(
                     LocationConstant.LOCATION_IN_USE_BY_ORDERS);
         }

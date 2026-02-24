@@ -49,9 +49,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
 
         Optional<OrderEntity> findTopByOrderByIdDesc();
 
-        boolean existsByDriverId(Long driverId);
+        boolean existsByDriver_Id(Long driverId);
 
-        boolean existsByDeliveryLocationId(Long locationId);
+        boolean existsByDeliveryLocation_Id(Long locationId);
 
         Long countByStatus(OrderStatus status);
 

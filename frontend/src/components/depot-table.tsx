@@ -61,7 +61,7 @@ export function DepotTable({ depots, onEdit, onDelete, isLoading }: DepotTablePr
 						<tr key={depot.id} className="hover:bg-muted/50 transition-colors">
 							<td className="px-6 py-4 text-sm text-foreground font-medium">#{depot.id}</td>
 							<td className="px-6 py-4 text-sm text-foreground font-medium">{depot.name}</td>
-							<td className="px-6 py-4 text-sm text-foreground max-w-xs">{truncateText(depot.address, 60)}</td>
+							<td className="px-6 py-4 text-sm text-foreground max-w-xs">{truncateText(`${depot.street}, ${depot.city}, ${depot.country}`, 60)}</td>
 							<td className="px-6 py-4 text-sm text-muted-foreground max-w-xs">{truncateText(depot.description, 40)}</td>
 							<td className="px-6 py-4">
 								{depot.isActive ? (

@@ -2,7 +2,9 @@ export interface Depot {
 	id: number;
 	name: string;
 	locationId: number;
-	address: string;
+	street: string;
+	city: string;
+	country: string;
 	description: string;
 	isActive: boolean;
 	createdAt: string;

@@ -7,7 +7,9 @@ export enum OrderStatus {
 
 export interface Location {
 	id: number;
-	name: string;
+	street: string;
+	city: string;
+	country: string;
 	latitude: number;
 	longitude: number;
 }

@@ -10,17 +10,25 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface VehicleMapper {
 
-    @Mapping(target = "driverName", ignore = true)
-    @Mapping(target = "depotName", ignore = true)
-    @Mapping(target = "locationId", ignore = true)
-    @Mapping(target = "address", ignore = true)
+    @Mapping(target = "driverId", source = "driver.id")
+    @Mapping(target = "depotId", source = "depot.id")
+    @Mapping(target = "driverName", source = "driver.name")
+    @Mapping(target = "depotName", source = "depot.name")
+    @Mapping(target = "locationId", source = "depot.location.id")
+    @Mapping(target = "street", source = "depot.location.street")
+    @Mapping(target = "city", source = "depot.location.city")
+    @Mapping(target = "country", source = "depot.location.country")
     VehicleResponse toResponse(VehicleEntity entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "driver", ignore = true)
+    @Mapping(target = "depot", ignore = true)
     VehicleEntity toEntity(VehicleRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "driver", ignore = true)
+    @Mapping(target = "depot", ignore = true)
     void updateEntityFromRequest(VehicleRequest request, @MappingTarget VehicleEntity entity);
 }

@@ -13,6 +13,8 @@ export interface RouteStop {
 	durationFromPrevMin: number;
 	arrivalTime?: string;
 	departureTime?: string;
+	latitude?: number;
+	longitude?: number;
 }
 
 export interface Route {

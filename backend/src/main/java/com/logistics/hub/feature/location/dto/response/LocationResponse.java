@@ -8,7 +8,9 @@ import lombok.Data;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LocationResponse {
     private Long id;
-    private String name;
+    private String street;
+    private String city;
+    private String country;
     private Double latitude;
     private Double longitude;
 }

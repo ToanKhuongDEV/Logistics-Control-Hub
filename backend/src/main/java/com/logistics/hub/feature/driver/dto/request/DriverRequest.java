@@ -14,7 +14,7 @@ public class DriverRequest {
     private String name;
 
     @NotBlank(message = DriverConstant.LICENSE_NUMBER_REQUIRED)
-    @Size(max = 50, message = DriverConstant.LICENSE_LENGTH_EXCEEDED)
+    @jakarta.validation.constraints.Pattern(regexp = DriverConstant.LICENSE_NUMBER_REGEX, message = DriverConstant.LICENSE_INVALID_FORMAT)
     private String licenseNumber;
 
     @NotBlank(message = DriverConstant.PHONE_NUMBER_REQUIRED)

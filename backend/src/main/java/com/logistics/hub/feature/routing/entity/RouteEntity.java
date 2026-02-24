@@ -1,6 +1,7 @@
 package com.logistics.hub.feature.routing.entity;
 
 import com.logistics.hub.feature.routing.enums.RouteStatus;
+import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,8 +23,9 @@ public class RouteEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "vehicle_id", nullable = false)
-    private Long vehicleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_id", nullable = false)
+    private VehicleEntity vehicle;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "routing_run_id")

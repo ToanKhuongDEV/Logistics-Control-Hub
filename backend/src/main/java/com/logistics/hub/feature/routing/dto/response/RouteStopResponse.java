@@ -17,4 +17,6 @@ public class RouteStopResponse {
     private Integer stopSequence;
     private BigDecimal distanceFromPrevKm;
     private Integer durationFromPrevMin;
+    private Double latitude;
+    private Double longitude;
 }

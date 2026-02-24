@@ -1,5 +1,7 @@
 package com.logistics.hub.feature.routing.entity;
 
+import com.logistics.hub.feature.location.entity.LocationEntity;
+import com.logistics.hub.feature.order.entity.OrderEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,11 +27,13 @@ public class RouteStopEntity {
     @JoinColumn(name = "route_id", nullable = false)
     private RouteEntity route;
 
-    @Column(name = "location_id", nullable = false)
-    private Long locationId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id", nullable = false)
+    private LocationEntity location;
 
-    @Column(name = "order_id")
-    private Long orderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private OrderEntity order;
 
     @Column(name = "stop_sequence", nullable = false)
     private Integer stopSequence;

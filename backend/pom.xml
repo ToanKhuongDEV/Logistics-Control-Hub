@@ -22,6 +22,7 @@
         <temporal.version>1.24.0</temporal.version>
         <ortools.version>9.8.3296</ortools.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <lombok.version>1.18.36</lombok.version>
 
     </properties>
 
@@ -83,7 +84,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.mapstruct</groupId>
@@ -149,11 +150,16 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+
+                    <compilerArgs>
+                        <arg>-Amapstruct.verbose=true</arg>
+                    </compilerArgs>
+
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.30</version>
+                            <version>${lombok.version}</version>
                         </path>
                         <path>
                             <groupId>org.mapstruct</groupId>

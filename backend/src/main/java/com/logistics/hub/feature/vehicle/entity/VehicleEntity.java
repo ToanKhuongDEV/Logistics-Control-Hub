@@ -1,5 +1,7 @@
 package com.logistics.hub.feature.vehicle.entity;
 
+import com.logistics.hub.feature.depot.entity.DepotEntity;
+import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,7 +11,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-
 
 @Entity
 @Table(name = "vehicles")
@@ -41,11 +42,13 @@ public class VehicleEntity {
     @Column(length = 100)
     private String type;
 
-    @Column(name = "driver_id", unique = true)
-    private Long driverId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "driver_id", unique = true)
+    private DriverEntity driver;
 
-    @Column(name = "depot_id")
-    private Long depotId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "depot_id")
+    private DepotEntity depot;
 
     @CreationTimestamp
     @Column(name = "created_at")

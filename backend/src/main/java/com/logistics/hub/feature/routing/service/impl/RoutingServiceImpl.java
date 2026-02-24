@@ -61,11 +61,11 @@ public class RoutingServiceImpl implements RoutingService {
     @Override
     public RoutingRunEntity optimizeRoutes(List<OrderEntity> orders, List<VehicleEntity> vehicles,
             List<LocationEntity> locations) {
-        Long depotId = vehicles.get(0).getDepotId();
+        Long depotId = vehicles.get(0).getDepot() != null ? vehicles.get(0).getDepot().getId() : null;
 
         DepotEntity depot = depotRepository.findById(depotId)
                 .orElseThrow(() -> new ResourceNotFoundException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
-        Long locationId = depot.getLocationId();
+        Long locationId = depot.getLocation() != null ? depot.getLocation().getId() : null;
 
         Map<Long, LocationEntity> locationMap = locations.stream()
                 .collect(Collectors.toMap(LocationEntity::getId, l -> l));
@@ -77,7 +77,8 @@ public class RoutingServiceImpl implements RoutingService {
         }
 
         Map<Long, List<OrderEntity>> ordersByLocation = orders.stream()
-                .collect(Collectors.groupingBy(OrderEntity::getDeliveryLocationId));
+                .collect(Collectors
+                        .groupingBy(o -> o.getDeliveryLocation() != null ? o.getDeliveryLocation().getId() : null));
 
         List<LocationEntity> nodeLocations = new ArrayList<>();
         List<List<OrderEntity>> orderGroupsByNode = new ArrayList<>();
@@ -254,7 +255,7 @@ public class RoutingServiceImpl implements RoutingService {
                 VehicleEntity vehicle = vehicles.get(physicalIdx);
                 RouteEntity route = new RouteEntity();
                 route.setRoutingRun(runEntity);
-                route.setVehicleId(vehicle.getId());
+                route.setVehicle(vehicle);
                 route.setStatus(RouteStatus.CREATED);
 
                 List<RouteStopEntity> stops = new ArrayList<>();
@@ -288,15 +289,15 @@ public class RoutingServiceImpl implements RoutingService {
                         RouteStopEntity stop = new RouteStopEntity();
                         stop.setRoute(route);
                         stop.setStopSequence(sequence++);
-                        stop.setLocationId(stopLocation.getId());
-                        stop.setOrderId(order.getId());
+                        stop.setLocation(stopLocation);
+                        stop.setOrder(order);
                         stop.setDistanceFromPrevKm(BigDecimal.valueOf(legDistanceMeters / 1000.0));
                         stop.setDurationFromPrevMin(legDurationMinutes);
 
                         stops.add(stop);
 
-                        if (vehicle.getDriverId() != null) {
-                            order.setDriverId(vehicle.getDriverId());
+                        if (vehicle.getDriver() != null) {
+                            order.setDriver(vehicle.getDriver());
                         }
                     }
 
@@ -380,13 +381,13 @@ public class RoutingServiceImpl implements RoutingService {
             log.warn("Some orders were not found. Requested: {}, Found: {}", orderIds.size(), orders.size());
         }
 
-        Long depotId = vehicles.get(0).getDepotId();
+        Long depotId = vehicles.get(0).getDepot() != null ? vehicles.get(0).getDepot().getId() : null;
         if (depotId == null) {
             throw new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED);
         }
 
         boolean multipleDepots = vehicles.stream()
-                .map(VehicleEntity::getDepotId)
+                .map(v -> v.getDepot() != null ? v.getDepot().getId() : null)
                 .anyMatch(id -> !Objects.equals(id, depotId));
 
         if (multipleDepots) {
@@ -395,11 +396,11 @@ public class RoutingServiceImpl implements RoutingService {
 
         DepotEntity depot = depotRepository.findById(depotId)
                 .orElseThrow(() -> new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
-        Long locationId = depot.getLocationId();
+        Long locationId = depot.getLocation() != null ? depot.getLocation().getId() : null;
 
         Set<Long> locationIds = new HashSet<>();
         locationIds.add(locationId);
-        orders.forEach(o -> locationIds.add(o.getDeliveryLocationId()));
+        orders.forEach(o -> locationIds.add(o.getDeliveryLocation() != null ? o.getDeliveryLocation().getId() : null));
 
         List<LocationEntity> locations = locationRepository.findAllById(locationIds);
 

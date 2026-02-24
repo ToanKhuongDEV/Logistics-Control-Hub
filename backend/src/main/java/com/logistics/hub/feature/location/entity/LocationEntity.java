@@ -10,7 +10,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "locations")
+@Table(name = "locations", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_locations_address_coords", columnNames = { "street", "city", "country", "latitude",
+                "longitude" })
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

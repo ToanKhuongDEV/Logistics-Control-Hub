@@ -47,6 +47,8 @@ export function DriverForm({ driver, onSubmit, onClose, isSubmitting = false }: 
 
 		if (!formData.licenseNumber.trim()) {
 			newErrors.licenseNumber = "Vui lòng nhập số GPLX";
+		} else if (!/^[A-Z]\d-\d{6}$/.test(formData.licenseNumber.trim())) {
+			newErrors.licenseNumber = "Số GPLX phải có định dạng X0-000000 (ví dụ: A1-123456)";
 		}
 
 		if (!formData.phoneNumber.trim()) {
@@ -94,7 +96,7 @@ export function DriverForm({ driver, onSubmit, onClose, isSubmitting = false }: 
 						<Label htmlFor="licenseNumber" className="text-foreground">
 							Số GPLX <span className="text-destructive">*</span>
 						</Label>
-						<Input id="licenseNumber" value={formData.licenseNumber} onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })} placeholder="012345678" disabled={isSubmitting} className={errors.licenseNumber ? "border-destructive" : ""} />
+						<Input id="licenseNumber" value={formData.licenseNumber} onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value.toUpperCase() })} placeholder="A1-123456" disabled={isSubmitting} className={errors.licenseNumber ? "border-destructive" : ""} />
 						{errors.licenseNumber && <p className="text-sm text-destructive">{errors.licenseNumber}</p>}
 					</div>
 

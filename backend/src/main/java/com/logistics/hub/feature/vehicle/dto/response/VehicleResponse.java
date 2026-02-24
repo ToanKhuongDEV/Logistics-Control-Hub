@@ -20,6 +20,8 @@ public class VehicleResponse {
     private Long depotId;
     private String depotName;
     private Long locationId;
-    private String address;
+    private String street;
+    private String city;
+    private String country;
     private Instant createdAt;
 }

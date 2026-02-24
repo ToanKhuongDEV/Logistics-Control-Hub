@@ -8,7 +8,9 @@ public class DepotResponse {
   private Long id;
   private String name;
   private Long locationId;
-  private String address;
+  private String street;
+  private String city;
+  private String country;
   private String description;
   private Boolean isActive;
   private LocalDateTime createdAt;

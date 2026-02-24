@@ -32,13 +32,12 @@ export function DepotForm({ depot, onSubmit, onClose, isSubmitting }: DepotFormP
 
 	useEffect(() => {
 		if (depot) {
-			const addressParts = depot.address?.split(", ") || [];
 			setFormData({
 				name: depot.name,
 				locationRequest: {
-					street: addressParts[0] || "",
-					city: addressParts[1] || "",
-					country: addressParts[2] || "Việt Nam",
+					street: depot.street || "",
+					city: depot.city || "",
+					country: depot.country || "Việt Nam",
 				},
 				description: depot.description || "",
 				isActive: depot.isActive ?? true,

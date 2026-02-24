@@ -47,6 +47,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional
     public DriverResponse create(DriverRequest request) {
+        normalizeRequest(request);
         validateDriverRequest(request, null);
         DriverEntity driver = driverMapper.toEntity(request);
         DriverEntity savedDriver = driverRepository.save(driver);
@@ -59,6 +60,7 @@ public class DriverServiceImpl implements DriverService {
         DriverEntity driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
 
+        normalizeRequest(request);
         validateDriverRequest(request, id);
 
         driverMapper.updateEntityFromRequest(request, driver);
@@ -73,11 +75,11 @@ public class DriverServiceImpl implements DriverService {
             throw new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND);
         }
 
-        if (vehicleRepository.existsByDriverId(id)) {
+        if (vehicleRepository.existsByDriver_Id(id)) {
             throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
         }
 
-        if (orderRepository.existsByDriverId(id)) {
+        if (orderRepository.existsByDriver_Id(id)) {
             throw new ValidationException(DriverConstant.DRIVER_HAS_ORDERS);
         }
 
@@ -110,6 +112,12 @@ public class DriverServiceImpl implements DriverService {
 
         if (phoneExists) {
             throw new ValidationException(DriverConstant.PHONE_NUMBER_EXISTS);
+        }
+    }
+
+    private void normalizeRequest(DriverRequest request) {
+        if (request.getLicenseNumber() != null) {
+            request.setLicenseNumber(request.getLicenseNumber().trim().toUpperCase());
         }
     }
 

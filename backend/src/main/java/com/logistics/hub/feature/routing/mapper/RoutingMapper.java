@@ -50,7 +50,7 @@ public final class RoutingMapper {
 
         RouteResponse response = new RouteResponse();
         response.setId(entity.getId());
-        response.setVehicleId(entity.getVehicleId());
+        response.setVehicleId(entity.getVehicle() != null ? entity.getVehicle().getId() : null);
         response.setStatus(entity.getStatus() != null ? entity.getStatus().name() : null);
         // address field will be handled by higher level or mapper if needed,
         // using entity.getVehicle().getDepot().getAddress() if available
@@ -78,11 +78,15 @@ public final class RoutingMapper {
 
         RouteStopResponse response = new RouteStopResponse();
         response.setId(entity.getId());
-        response.setLocationId(entity.getLocationId());
-        response.setOrderId(entity.getOrderId());
+        response.setLocationId(entity.getLocation() != null ? entity.getLocation().getId() : null);
+        response.setOrderId(entity.getOrder() != null ? entity.getOrder().getId() : null);
         response.setStopSequence(entity.getStopSequence());
         response.setDistanceFromPrevKm(entity.getDistanceFromPrevKm());
         response.setDurationFromPrevMin(entity.getDurationFromPrevMin());
+        if (entity.getLocation() != null) {
+            response.setLatitude(entity.getLocation().getLatitude());
+            response.setLongitude(entity.getLocation().getLongitude());
+        }
 
         return response;
     }

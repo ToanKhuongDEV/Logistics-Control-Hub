@@ -31,7 +31,7 @@ public interface DriverRepository extends JpaRepository<DriverEntity, Long> {
                         Pageable pageable);
 
         @Query("SELECT d FROM DriverEntity d WHERE " +
-                        "d.id NOT IN (SELECT v.driverId FROM VehicleEntity v WHERE v.driverId IS NOT NULL) " +
+                        "d.id NOT IN (SELECT v.driver.id FROM VehicleEntity v WHERE v.driver IS NOT NULL) " +
                         "OR (:includeDriverId IS NOT NULL AND d.id = :includeDriverId)")
         List<DriverEntity> findAvailableDrivers(@Param("includeDriverId") Long includeDriverId);
 }

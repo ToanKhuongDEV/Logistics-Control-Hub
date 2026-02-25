@@ -33,10 +33,19 @@ export interface RoutingRun {
 	status: string;
 	startTime: string;
 	endTime: string;
+	createdAt: string;
 	totalDistanceKm: number;
 	totalCost: number;
 	configuration: string;
 	routes: Route[];
+}
+
+export interface RoutingHistoryPage {
+	content: RoutingRun[];
+	totalElements: number;
+	totalPages: number;
+	currentPage: number;
+	pageSize: number;
 }
 
 interface ApiResponse<T> {
@@ -56,8 +65,14 @@ export const routingApi = {
 		const response = await apiClient.get<ApiResponse<RoutingRun>>(`${ROUTING_API_BASE}/runs/${id}`);
 		return response.data.data;
 	},
+
 	async getLatestRun(depotId: number): Promise<RoutingRun | null> {
 		const response = await apiClient.get<ApiResponse<RoutingRun>>(`${ROUTING_API_BASE}/latest/${depotId}`);
+		return response.data.data;
+	},
+
+	async getHistoryByDepot(depotId: number, page = 0, size = 20): Promise<RoutingHistoryPage> {
+		const response = await apiClient.get<ApiResponse<RoutingHistoryPage>>(`${ROUTING_API_BASE}/history/${depotId}?page=${page}&size=${size}`);
 		return response.data.data;
 	},
 };

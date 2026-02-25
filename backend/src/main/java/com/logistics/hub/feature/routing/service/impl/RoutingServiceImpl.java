@@ -487,6 +487,15 @@ public class RoutingServiceImpl implements RoutingService {
         return runs.isEmpty() ? Optional.empty() : Optional.of(runs.get(0));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<RoutingRunEntity> getHistoryByDepot(Long depotId, int page, int size) {
+        depotRepository.findById(depotId)
+                .orElseThrow(() -> new ResourceNotFoundException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return routingRunRepository.findAllByDepot_Id(depotId, pageable);
+    }
+
     private int count(List<?> list) {
         return list == null ? 0 : list.size();
     }

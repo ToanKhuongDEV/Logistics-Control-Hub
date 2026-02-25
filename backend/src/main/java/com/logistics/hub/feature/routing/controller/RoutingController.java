@@ -12,9 +12,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(UrlConstant.Routing.PREFIX)
@@ -61,5 +66,29 @@ public class RoutingController {
 				.orElse(null);
 
 		return ResponseEntity.ok(ApiResponse.success(RoutingConstant.ROUTING_RUN_RETRIEVED_SUCCESS, response));
+	}
+
+	@GetMapping(UrlConstant.Routing.HISTORY_BY_DEPOT)
+	@Operation(summary = "Get routing run history for depot", description = "Returns paginated list of all routing runs for a specific depot, newest first")
+	public ResponseEntity<ApiResponse<Map<String, Object>>> getHistoryByDepot(
+			@PathVariable Long depotId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		log.info("Fetching routing history for depot id: {}, page: {}, size: {}", depotId, page, size);
+
+		Page<RoutingRunEntity> runPage = routingService.getHistoryByDepot(depotId, page, size);
+
+		List<RoutingRunResponse> content = runPage.getContent().stream()
+				.map(RoutingMapper::toRoutingRunResponse)
+				.collect(Collectors.toList());
+
+		Map<String, Object> result = Map.of(
+				"content", content,
+				"totalElements", runPage.getTotalElements(),
+				"totalPages", runPage.getTotalPages(),
+				"currentPage", runPage.getNumber(),
+				"pageSize", runPage.getSize());
+
+		return ResponseEntity.ok(ApiResponse.success("Lấy lịch sử tối ưu thành công", result));
 	}
 }

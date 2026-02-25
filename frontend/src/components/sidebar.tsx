@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Truck, Package, BarChart3, Settings, LogOut, User, Warehouse } from "lucide-react";
+import { LayoutGrid, Truck, Package, BarChart3, Settings, LogOut, User, Warehouse, History } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -38,6 +38,11 @@ export function Sidebar() {
 			name: "Kho",
 			href: "/depots",
 			icon: Warehouse,
+		},
+		{
+			name: "Lịch sử",
+			href: "/history",
+			icon: History,
 		},
 		{
 			name: "Cài đặt",

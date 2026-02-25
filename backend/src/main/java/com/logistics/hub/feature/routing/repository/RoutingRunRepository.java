@@ -2,6 +2,8 @@ package com.logistics.hub.feature.routing.repository;
 
 import com.logistics.hub.feature.routing.entity.RoutingRunEntity;
 import com.logistics.hub.feature.routing.enums.RoutingRunStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -27,4 +29,7 @@ public interface RoutingRunRepository extends JpaRepository<RoutingRunEntity, Lo
       "WHERE r.depot.id = :depotId AND r.status = :status " +
       "ORDER BY r.createdAt DESC")
   List<RoutingRunEntity> findLatestByDepot_Id(@Param("depotId") Long depotId, @Param("status") RoutingRunStatus status);
+
+  @Query(value = "SELECT r FROM RoutingRunEntity r WHERE r.depot.id = :depotId ORDER BY r.createdAt DESC", countQuery = "SELECT COUNT(r) FROM RoutingRunEntity r WHERE r.depot.id = :depotId")
+  Page<RoutingRunEntity> findAllByDepot_Id(@Param("depotId") Long depotId, Pageable pageable);
 }

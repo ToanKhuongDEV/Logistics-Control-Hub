@@ -6,12 +6,14 @@ import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.driver.repository.DriverRepository;
 import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.repository.OrderRepository;
+import com.logistics.hub.feature.redis.constant.CacheConstant;
 import com.logistics.hub.feature.routing.enums.RoutingRunStatus;
 import com.logistics.hub.feature.routing.repository.RoutingRunRepository;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,6 +28,7 @@ public class DashboardServiceImpl implements DashboardService {
   private final RoutingRunRepository routingRunRepository;
 
   @Override
+  @Cacheable(value = CacheConstant.DASHBOARD_STATS, key = "#depotId ?: 'all'", unless = "#result == null")
   public DashboardStatisticsResponse getStatistics(Long depotId) {
     log.info("Fetching dashboard statistics for depotId: {}", depotId);
 

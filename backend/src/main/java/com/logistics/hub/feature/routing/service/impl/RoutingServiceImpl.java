@@ -24,6 +24,7 @@ import com.logistics.hub.feature.routing.service.RoutingService;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
+import com.logistics.hub.feature.redis.service.OsrmCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,7 @@ public class RoutingServiceImpl implements RoutingService {
 
     private final RoutingConfig routingConfig;
     private final OsrmDistanceService osrmDistanceService;
+    private final OsrmCacheService osrmCacheService;
     private final OrderRepository orderRepository;
     private final VehicleRepository vehicleRepository;
     private final LocationRepository locationRepository;
@@ -100,8 +102,8 @@ public class RoutingServiceImpl implements RoutingService {
         log.info("Building distance matrix for {} nodes (1 depot + {} delivery locations)",
                 nodeCount, nodeCount - 1);
 
-        com.logistics.hub.feature.routing.dto.response.MatrixResult matrixResult = osrmDistanceService
-                .getMatrix(nodeLocations);
+        com.logistics.hub.feature.routing.dto.response.MatrixResult matrixResult = osrmCacheService
+                .getMatrixCached(nodeLocations);
         long[][] distanceMatrix = matrixResult.getDistanceMatrix();
         int[][] durationMatrix = matrixResult.getDurationMatrix();
 

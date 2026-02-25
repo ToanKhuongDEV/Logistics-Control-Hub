@@ -4,12 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DistanceResult {
+public class DistanceResult implements Serializable {
     private BigDecimal distanceKm;
     private Integer durationMinutes;
     private String polyline; // Encoded route geometry from OSRM

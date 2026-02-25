@@ -11,8 +11,12 @@ import com.logistics.hub.feature.driver.mapper.DriverMapper;
 import com.logistics.hub.feature.driver.repository.DriverRepository;
 import com.logistics.hub.feature.driver.service.DriverService;
 import com.logistics.hub.feature.order.repository.OrderRepository;
+import com.logistics.hub.feature.redis.constant.CacheConstant;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +42,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheConstant.DRIVERS, key = "'id:' + #id")
     public DriverResponse findById(Long id) {
         DriverEntity driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
@@ -46,6 +51,11 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstant.DRIVERS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DRIVER_STATS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
+    })
     public DriverResponse create(DriverRequest request) {
         normalizeRequest(request);
         validateDriverRequest(request, null);
@@ -56,6 +66,11 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstant.DRIVERS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DRIVER_STATS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
+    })
     public DriverResponse update(Long id, DriverRequest request) {
         DriverEntity driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
@@ -70,6 +85,11 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstant.DRIVERS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DRIVER_STATS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
+    })
     public void delete(Long id) {
         if (!driverRepository.existsById(id)) {
             throw new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND);
@@ -92,6 +112,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheConstant.DRIVERS, key = "'available:' + #includeDriverId")
     public List<DriverResponse> getAvailableDrivers(Long includeDriverId) {
         return driverRepository.findAvailableDrivers(includeDriverId)
                 .stream()
@@ -123,6 +144,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheConstant.DRIVER_STATS, key = "'all'")
     public com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse getStatistics() {
         long total = driverRepository.count();
         List<DriverEntity> availableDrivers = driverRepository.findAvailableDrivers(null);

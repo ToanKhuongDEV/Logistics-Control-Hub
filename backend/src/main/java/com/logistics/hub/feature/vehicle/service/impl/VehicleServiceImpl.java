@@ -13,9 +13,13 @@ import com.logistics.hub.feature.vehicle.dto.response.VehicleStatisticsResponse;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.mapper.VehicleMapper;
+import com.logistics.hub.feature.redis.constant.CacheConstant;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import com.logistics.hub.feature.vehicle.service.VehicleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -44,6 +48,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheConstant.VEHICLES, key = "'id:' + #id")
     public VehicleResponse findById(Long id) {
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
@@ -51,6 +56,11 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstant.VEHICLES, allEntries = true),
+            @CacheEvict(value = CacheConstant.VEHICLE_STATS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
+    })
     public VehicleResponse create(VehicleRequest request) {
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
             request.setCode(generateVehicleCode(request.getMaxWeightKg()));
@@ -94,6 +104,11 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstant.VEHICLES, allEntries = true),
+            @CacheEvict(value = CacheConstant.VEHICLE_STATS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
+    })
     public VehicleResponse update(Long id, VehicleRequest request) {
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
@@ -133,6 +148,11 @@ public class VehicleServiceImpl implements VehicleService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstant.VEHICLES, allEntries = true),
+            @CacheEvict(value = CacheConstant.VEHICLE_STATS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
+    })
     public void delete(Long id) {
         if (!vehicleRepository.existsById(id)) {
             throw new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id);
@@ -142,6 +162,7 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheConstant.VEHICLE_STATS, key = "'all'")
     public VehicleStatisticsResponse getStatistics() {
         List<VehicleEntity> allVehicles = vehicleRepository.findAll();
 

@@ -103,6 +103,7 @@ CREATE TABLE orders (
     weight_kg INT,
     volume_m3 NUMERIC(6,2),
     driver_id BIGINT,
+    depot_id BIGINT,
 
     status VARCHAR(30) NOT NULL DEFAULT 'CREATED',
 
@@ -114,7 +115,11 @@ CREATE TABLE orders (
     
     CONSTRAINT fk_orders_driver
         FOREIGN KEY (driver_id)
-        REFERENCES drivers(id)
+        REFERENCES drivers(id),
+
+    CONSTRAINT fk_orders_depot
+        FOREIGN KEY (depot_id)
+        REFERENCES depots(id)
 );
 
 -- 8. Routing Runs (Optimization sessions)
@@ -131,8 +136,13 @@ CREATE TABLE routing_runs (
     total_cost NUMERIC(12,2),
 
     configuration TEXT,
+    depot_id BIGINT,
 
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_routing_runs_depot
+        FOREIGN KEY (depot_id)
+        REFERENCES depots(id)
 );
 
 -- 9. Routes (1 vehicle = 1 optimized route)

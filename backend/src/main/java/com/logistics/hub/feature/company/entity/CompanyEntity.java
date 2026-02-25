@@ -3,9 +3,8 @@ package com.logistics.hub.feature.company.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
@@ -13,7 +12,6 @@ import java.time.Instant;
 @Table(name = "companies")
 @Getter
 @Setter
-@EntityListeners(AuditingEntityListener.class)
 public class CompanyEntity {
 
     @Id
@@ -32,18 +30,18 @@ public class CompanyEntity {
     private String email;
 
     private String website;
-    
+
     @Column(name = "tax_id")
     private String taxId;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
-    @LastModifiedDate
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private Instant updatedAt;
 }

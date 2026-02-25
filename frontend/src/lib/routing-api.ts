@@ -56,4 +56,8 @@ export const routingApi = {
 		const response = await apiClient.get<ApiResponse<RoutingRun>>(`${ROUTING_API_BASE}/runs/${id}`);
 		return response.data.data;
 	},
+	async getLatestRun(depotId: number): Promise<RoutingRun | null> {
+		const response = await apiClient.get<ApiResponse<RoutingRun>>(`${ROUTING_API_BASE}/latest/${depotId}`);
+		return response.data.data;
+	},
 };

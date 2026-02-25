@@ -1,11 +1,14 @@
 package com.logistics.hub.feature.routing.entity;
 
+import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.routing.enums.RoutingRunStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -41,7 +44,12 @@ public class RoutingRunEntity {
     @Column(columnDefinition = "TEXT")
     private String configuration;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "depot_id")
+    private DepotEntity depot;
+
     @OneToMany(mappedBy = "routingRun", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Fetch(FetchMode.SUBSELECT)
     private List<RouteEntity> routes;
 
     @CreationTimestamp

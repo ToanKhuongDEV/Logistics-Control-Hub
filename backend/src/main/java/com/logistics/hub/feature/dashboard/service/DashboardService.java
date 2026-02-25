@@ -4,5 +4,5 @@ import com.logistics.hub.feature.dashboard.dto.response.DashboardStatisticsRespo
 
 public interface DashboardService {
 
-  DashboardStatisticsResponse getStatistics();
+  DashboardStatisticsResponse getStatistics(Long depotId);
 }

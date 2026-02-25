@@ -39,11 +39,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> findAll(Pageable pageable, OrderStatus status, String search) {
+    public Page<OrderResponse> findAll(Pageable pageable, OrderStatus status, String search, Long depotId) {
         String statusStr = status != null ? status.name() : null;
         String searchStr = (search != null && !search.isEmpty()) ? search : null;
 
-        return orderRepository.findAllWithLocationAndFilters(statusStr, searchStr, pageable)
+        return orderRepository.findAllWithLocationAndFilters(statusStr, searchStr, depotId, pageable)
                 .map(OrderResponse::fromProjection);
     }
 

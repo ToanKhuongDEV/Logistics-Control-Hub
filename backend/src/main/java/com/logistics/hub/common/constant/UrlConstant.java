@@ -73,6 +73,7 @@ public class UrlConstant {
         public static final String OPTIMIZE = "/optimize";
         public static final String RUNS = "/runs";
         public static final String RUN_BY_ID = "/runs/{id}";
+        public static final String LATEST_BY_DEPOT = "/latest/{depotId}";
 
         private Routing() {
         }

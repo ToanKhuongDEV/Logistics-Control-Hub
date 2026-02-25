@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -24,8 +25,9 @@ public class DashboardController {
 
   @GetMapping("/statistics")
   @Operation(summary = "Get dashboard statistics", description = "Retrieves comprehensive statistics for the dashboard including vehicles, orders, depots, drivers, and routing runs")
-  public ResponseEntity<ApiResponse<DashboardStatisticsResponse>> getStatistics() {
-    DashboardStatisticsResponse statistics = dashboardService.getStatistics();
+  public ResponseEntity<ApiResponse<DashboardStatisticsResponse>> getStatistics(
+      @RequestParam(required = false) Long depotId) {
+    DashboardStatisticsResponse statistics = dashboardService.getStatistics(depotId);
     return ResponseEntity.ok(
         ApiResponse.success(200, DashboardConstant.DASHBOARD_STATISTICS_RETRIEVED_SUCCESS, statistics));
   }

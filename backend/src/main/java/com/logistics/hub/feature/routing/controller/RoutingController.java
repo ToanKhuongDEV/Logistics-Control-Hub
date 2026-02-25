@@ -50,4 +50,16 @@ public class RoutingController {
 
 		return ResponseEntity.ok(ApiResponse.success(RoutingConstant.ROUTING_RUN_RETRIEVED_SUCCESS, response));
 	}
+
+	@GetMapping(UrlConstant.Routing.LATEST_BY_DEPOT)
+	@Operation(summary = "Get latest routing run for depot", description = "Retrieves the most recent successful routing run for a specific depot")
+	public ResponseEntity<ApiResponse<RoutingRunResponse>> getLatestRoutingRunByDepot(@PathVariable Long depotId) {
+		log.info("Fetching latest routing run for depot id: {}", depotId);
+
+		RoutingRunResponse response = routingService.getLatestRunByDepot(depotId)
+				.map(RoutingMapper::toRoutingRunResponse)
+				.orElse(null);
+
+		return ResponseEntity.ok(ApiResponse.success(RoutingConstant.ROUTING_RUN_RETRIEVED_SUCCESS, response));
+	}
 }

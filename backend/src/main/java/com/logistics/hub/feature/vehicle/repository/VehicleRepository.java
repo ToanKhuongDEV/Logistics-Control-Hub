@@ -33,6 +33,8 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
 
         long countByStatus(VehicleStatus status);
 
+        long countByStatusAndDepot_Id(VehicleStatus status, Long depotId);
+
         boolean existsByDriver_Id(Long driverId);
 
         boolean existsByDriver_IdAndIdNot(Long driverId, Long id);
@@ -43,6 +45,6 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
         List<VehicleEntity> findByStatusAndDriverIdNotNull(@Param("status") VehicleStatus status);
 
         @Query("SELECT v FROM VehicleEntity v WHERE v.status = :status AND v.driver IS NOT NULL AND v.depot.id = :depotId")
-        List<VehicleEntity> findByStatusAndDriverIdNotNullAndDepotId(@Param("status") VehicleStatus status,
+        List<VehicleEntity> findByStatusAndDriverIdNotNullAndDepot_Id(@Param("status") VehicleStatus status,
                         @Param("depotId") Long depotId);
 }

@@ -10,85 +10,35 @@ import { useState, useEffect } from "react";
 import { routingApi, Route } from "@/lib/routing-api";
 import { dashboardApi } from "@/lib/dashboard-api";
 import { depotApi } from "@/lib/depot-api";
+import { orderApi } from "@/lib/order-api";
 import { DashboardStatistics } from "@/types/dashboard-types";
 import { Depot } from "@/types/depot-types";
+import { Order, OrderStatus } from "@/types/order-types";
+import { toast } from "sonner";
 
 const LeafletMap = dynamic(() => import("@/components/leaflet-map").then((mod) => mod.LeafletMap), {
 	ssr: false,
 	loading: () => <p className="h-[400px] w-full flex items-center justify-center bg-gray-100 rounded-lg">Đang tải bản đồ...</p>,
 });
 
-const shipments = [
-	{
-		id: "SHIP-1045",
-		location: "Atlanta, GA - ETA: 14:30",
-		eta: "14:30",
-		status: "on-time" as const,
-	},
-	{
-		id: "SHIP-1046",
-		location: "Dallas, TX - ETA: 16:00",
-		eta: "16:00",
-		status: "delayed" as const,
-	},
-	{
-		id: "SHIP-1047",
-		location: "Chicago, IL - ETA: 10:45",
-		eta: "10:45",
-		status: "in-transit" as const,
-	},
-	{
-		id: "SHIP-1048",
-		location: "Atlanta, DL - ETA: 14:30",
-		eta: "14:30",
-		status: "on-time" as const,
-	},
-	{
-		id: "SHIP-1049",
-		location: "Atlanta, GA - ETA: 14:30",
-		eta: "14:30",
-		status: "on-time" as const,
-	},
-	{
-		id: "SHIP-1050",
-		location: "Dallas, TX - ETA: 16:00",
-		eta: "16:00",
-		status: "delayed" as const,
-	},
-	{
-		id: "SHIP-1051",
-		location: "Chicago, IL - ETA: 10:45",
-		eta: "10:45",
-		status: "in-transit" as const,
-	},
-	{
-		id: "SHIP-1052",
-		location: "Atlanta, GA - ETA: 14:30",
-		eta: "14:30",
-		status: "on-time" as const,
-	},
-];
-
 export default function DashboardPage() {
 	const [routes, setRoutes] = useState<Route[]>([]);
 	const [isOptimizing, setIsOptimizing] = useState(false);
-	const [optimizationResult, setOptimizationResult] = useState<string | null>(null);
-	const [error, setError] = useState<string | null>(null);
 	const [statistics, setStatistics] = useState<DashboardStatistics | null>(null);
 	const [isLoadingStats, setIsLoadingStats] = useState(true);
 	const [depots, setDepots] = useState<Depot[]>([]);
 	const [selectedDepotId, setSelectedDepotId] = useState<number | null>(null);
 	const [isLoadingDepots, setIsLoadingDepots] = useState(true);
+	const [inTransitOrders, setInTransitOrders] = useState<Order[]>([]);
+	const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
 	const handleOptimizeRoutes = async () => {
 		if (selectedDepotId === null) {
-			setError("Vui lòng chọn kho trước khi tối ưu tuyến đường.");
+			toast.error("Vui lòng chọn kho trước khi tối ưu tuyến đường.");
 			return;
 		}
 
 		setIsOptimizing(true);
-		setError(null);
-		setOptimizationResult(null);
 
 		try {
 			const result = await routingApi.optimize(selectedDepotId);
@@ -97,27 +47,52 @@ export default function DashboardPage() {
 
 			const totalKm = result.totalDistanceKm ?? result.routes.reduce((sum, r) => sum + (r.totalDistanceKm ?? 0), 0);
 			const totalCost = result.totalCost ?? result.routes.reduce((sum, r) => sum + (r.totalCost ?? 0), 0);
-			setOptimizationResult(`Tối ưu thành công! Tạo ${result.routes.length} tuyến đường, tổng ${totalKm.toFixed(2)} km, chi phí ${totalCost.toFixed(0)} VND`);
+			toast.success(`Tối ưu thành công! Tạo ${result.routes.length} tuyến đường, tổng ${totalKm.toFixed(2)} km, chi phí ${totalCost.toFixed(0)} VND`);
+
+			// Refresh stats and orders after optimization
+			fetchStatisticsAndOrders();
 		} catch (err: any) {
 			console.error("Optimization error:", err);
-			setError(err.response?.data?.message || "Không thể tối ưu tuyến đường. Vui lòng thử lại.");
+			toast.error(err.response?.data?.message || "Không thể tối ưu tuyến đường. Vui lòng thử lại.");
 		} finally {
 			setIsOptimizing(false);
 		}
 	};
 
-	useEffect(() => {
-		const fetchStatistics = async () => {
-			try {
-				const stats = await dashboardApi.getStatistics();
-				setStatistics(stats);
-			} catch (error) {
-				console.error("Failed to fetch dashboard statistics:", error);
-			} finally {
-				setIsLoadingStats(false);
-			}
-		};
+	const fetchStatisticsAndOrders = async () => {
+		setIsLoadingStats(true);
+		setIsLoadingOrders(true);
+		try {
+			const stats = await dashboardApi.getStatistics(selectedDepotId);
+			setStatistics(stats);
 
+			const ordersResult = await orderApi.getOrders({
+				status: OrderStatus.IN_TRANSIT,
+				depotId: selectedDepotId,
+				size: 10,
+			});
+			setInTransitOrders(ordersResult.data);
+
+			// Fetch latest routing run for this depot to show on map
+			if (selectedDepotId) {
+				const latestRun = await routingApi.getLatestRun(selectedDepotId);
+				if (latestRun && latestRun.routes) {
+					setRoutes(latestRun.routes);
+				} else {
+					setRoutes([]);
+				}
+			} else {
+				setRoutes([]);
+			}
+		} catch (error) {
+			console.error("Failed to fetch dashboard data:", error);
+		} finally {
+			setIsLoadingStats(false);
+			setIsLoadingOrders(false);
+		}
+	};
+
+	useEffect(() => {
 		const fetchDepots = async () => {
 			try {
 				const result = await depotApi.getDepots({ size: 100 });
@@ -129,9 +104,12 @@ export default function DashboardPage() {
 			}
 		};
 
-		fetchStatistics();
 		fetchDepots();
 	}, []);
+
+	useEffect(() => {
+		fetchStatisticsAndOrders();
+	}, [selectedDepotId]);
 
 	return (
 		<ProtectedRoute>
@@ -168,19 +146,6 @@ export default function DashboardPage() {
 						</div>
 					</div>
 
-					{/* Notification Messages */}
-					{optimizationResult && (
-						<div className="p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-							<p className="text-sm font-medium">{optimizationResult}</p>
-						</div>
-					)}
-
-					{error && (
-						<div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
-							<p className="text-sm font-medium">{error}</p>
-						</div>
-					)}
-
 					{/* KPI Cards */}
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						{isLoadingStats ? (
@@ -213,7 +178,7 @@ export default function DashboardPage() {
 
 						{/* Shipment List */}
 						<div>
-							<ShipmentList shipments={shipments} />
+							<ShipmentList shipments={inTransitOrders} isLoading={isLoadingOrders} />
 						</div>
 					</div>
 				</div>

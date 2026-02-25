@@ -26,19 +26,39 @@ public class DashboardServiceImpl implements DashboardService {
   private final RoutingRunRepository routingRunRepository;
 
   @Override
-  public DashboardStatisticsResponse getStatistics() {
-    log.info("Fetching dashboard statistics");
+  public DashboardStatisticsResponse getStatistics(Long depotId) {
+    log.info("Fetching dashboard statistics for depotId: {}", depotId);
 
-    Long activeVehicles = vehicleRepository.countByStatus(VehicleStatus.ACTIVE);
-    Long totalOrders = orderRepository.count();
-    Long ordersCreated = orderRepository.countByStatus(OrderStatus.CREATED);
-    Long ordersInTransit = orderRepository.countByStatus(OrderStatus.IN_TRANSIT);
-    Long ordersDelivered = orderRepository.countByStatus(OrderStatus.DELIVERED);
-    Long ordersCancelled = orderRepository.countByStatus(OrderStatus.CANCELLED);
+    Long activeVehicles;
+    Long totalOrders;
+    Long ordersCreated;
+    Long ordersInTransit;
+    Long ordersDelivered;
+    Long ordersCancelled;
+
+    if (depotId != null) {
+      activeVehicles = vehicleRepository.countByStatusAndDepot_Id(VehicleStatus.ACTIVE, depotId);
+      totalOrders = orderRepository.countByDepot_Id(depotId);
+      ordersCreated = orderRepository.countByStatusAndDepot_Id(OrderStatus.CREATED, depotId);
+      ordersInTransit = orderRepository.countByStatusAndDepot_Id(OrderStatus.IN_TRANSIT, depotId);
+      ordersDelivered = orderRepository.countByStatusAndDepot_Id(OrderStatus.DELIVERED, depotId);
+      ordersCancelled = orderRepository.countByStatusAndDepot_Id(OrderStatus.CANCELLED, depotId);
+    } else {
+      activeVehicles = vehicleRepository.countByStatus(VehicleStatus.ACTIVE);
+      totalOrders = orderRepository.count();
+      ordersCreated = orderRepository.countByStatus(OrderStatus.CREATED);
+      ordersInTransit = orderRepository.countByStatus(OrderStatus.IN_TRANSIT);
+      ordersDelivered = orderRepository.countByStatus(OrderStatus.DELIVERED);
+      ordersCancelled = orderRepository.countByStatus(OrderStatus.CANCELLED);
+    }
+
     Long activeDepots = depotRepository.countByIsActive(true);
     Long totalDrivers = driverRepository.count();
-    Long totalRoutingRuns = routingRunRepository.count();
-    Long successfulRuns = routingRunRepository.countByStatus(RoutingRunStatus.COMPLETED);
+    Long totalRoutingRuns = depotId != null ? routingRunRepository.countByDepot_Id(depotId)
+        : routingRunRepository.count();
+    Long successfulRuns = depotId != null
+        ? routingRunRepository.countByStatusAndDepot_Id(RoutingRunStatus.COMPLETED, depotId)
+        : routingRunRepository.countByStatus(RoutingRunStatus.COMPLETED);
 
     return DashboardStatisticsResponse.builder()
         .activeVehicles(activeVehicles)

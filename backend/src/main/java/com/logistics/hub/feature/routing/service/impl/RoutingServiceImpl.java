@@ -229,6 +229,7 @@ public class RoutingServiceImpl implements RoutingService {
 
         RoutingRunEntity runEntity = new RoutingRunEntity();
         runEntity.setStartTime(LocalDateTime.now());
+        runEntity.setDepot(depot);
 
         if (solution != null) {
             runEntity.setStatus(RoutingRunStatus.COMPLETED);
@@ -349,6 +350,10 @@ public class RoutingServiceImpl implements RoutingService {
                         routePolyline != null ? "present" : "null");
             }
 
+            if (routes.isEmpty()) {
+                throw new ValidationException(RoutingConstant.NO_ROUTES_CREATED);
+            }
+
             runEntity.setRoutes(routes);
             runEntity.setTotalDistanceKm(BigDecimal.valueOf(totalRunDistanceMeters / 1000.0));
             runEntity.setTotalCost(totalRunCost);
@@ -365,6 +370,7 @@ public class RoutingServiceImpl implements RoutingService {
         } else {
             runEntity.setStatus(RoutingRunStatus.FAILED);
             log.warn("No solution found for routing optimization");
+            throw new ValidationException(RoutingConstant.OPTIMIZATION_FAILED);
         }
 
         runEntity.setEndTime(LocalDateTime.now());
@@ -455,15 +461,15 @@ public class RoutingServiceImpl implements RoutingService {
         depotRepository.findById(depotId)
                 .orElseThrow(() -> new ResourceNotFoundException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
 
-        List<VehicleEntity> vehicles = vehicleRepository.findByStatusAndDriverIdNotNullAndDepotId(VehicleStatus.ACTIVE,
+        List<VehicleEntity> vehicles = vehicleRepository.findByStatusAndDriverIdNotNullAndDepot_Id(VehicleStatus.ACTIVE,
                 depotId);
         if (vehicles.isEmpty()) {
             throw new ValidationException(RoutingConstant.VEHICLES_NOT_FOUND);
         }
 
-        List<OrderEntity> orders = orderRepository.findByStatusAndDepotId(OrderStatus.CREATED, depotId);
+        List<OrderEntity> orders = orderRepository.findByStatusAndDepot_Id(OrderStatus.CREATED, depotId);
         if (orders.isEmpty()) {
-            throw new ValidationException("Không tìm thấy đơn hàng CREATED nào được gán cho kho ID: " + depotId);
+            throw new ValidationException(RoutingConstant.ORDERS_NOT_FOUND);
         }
 
         log.info("Found {} orders and {} vehicles for depot ID: {}", orders.size(), vehicles.size(), depotId);
@@ -472,6 +478,13 @@ public class RoutingServiceImpl implements RoutingService {
         List<Long> vehicleIds = vehicles.stream().map(VehicleEntity::getId).collect(Collectors.toList());
 
         return executeRouting(orderIds, vehicleIds);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<RoutingRunEntity> getLatestRunByDepot(Long depotId) {
+        List<RoutingRunEntity> runs = routingRunRepository.findLatestByDepot_Id(depotId, RoutingRunStatus.COMPLETED);
+        return runs.isEmpty() ? Optional.empty() : Optional.of(runs.get(0));
     }
 
     private int count(List<?> list) {

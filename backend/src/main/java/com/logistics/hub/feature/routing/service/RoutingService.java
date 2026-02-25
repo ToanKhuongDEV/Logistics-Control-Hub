@@ -15,4 +15,6 @@ public interface RoutingService {
     RoutingRunEntity executeRouting(List<Long> orderIds, List<Long> vehicleIds);
 
     RoutingRunEntity executeAutoRouting(Long depotId);
+
+    java.util.Optional<RoutingRunEntity> getLatestRunByDepot(Long depotId);
 }

@@ -34,9 +34,10 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long depotId) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<OrderResponse> orderPage = orderService.findAll(pageable, status, search);
+        Page<OrderResponse> orderPage = orderService.findAll(pageable, status, search, depotId);
 
         PaginatedResponse<OrderResponse> response = new PaginatedResponse<>();
         response.setData(orderPage.getContent());

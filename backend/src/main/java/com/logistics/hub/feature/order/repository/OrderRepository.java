@@ -40,13 +40,16 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
                         "LEFT JOIN drivers d ON o.driver_id = d.id " +
                         "LEFT JOIN depots dp ON o.depot_id = dp.id " +
                         "WHERE (:status IS NULL OR o.status = :status) " +
+                        "AND (:depotId IS NULL OR o.depot_id = :depotId) " +
                         "AND (:search IS NULL OR LOWER(o.code) LIKE LOWER(CONCAT('%', :search, '%'))) " +
                         "ORDER BY o.created_at DESC", countQuery = "SELECT count(*) FROM orders o " +
                                         "WHERE (:status IS NULL OR o.status = :status) " +
+                                        "AND (:depotId IS NULL OR o.depot_id = :depotId) " +
                                         "AND (:search IS NULL OR LOWER(o.code) LIKE LOWER(CONCAT('%', :search, '%')))", nativeQuery = true)
         Page<OrderProjection> findAllWithLocationAndFilters(
                         @Param("status") String status,
                         @Param("search") String search,
+                        @Param("depotId") Long depotId,
                         Pageable pageable);
 
         boolean existsByCode(String code);
@@ -59,7 +62,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
 
         Long countByStatus(OrderStatus status);
 
+        Long countByStatusAndDepot_Id(OrderStatus status, Long depotId);
+
+        Long countByDepot_Id(Long depotId);
+
         List<OrderEntity> findByStatus(OrderStatus status);
 
-        List<OrderEntity> findByStatusAndDepotId(OrderStatus status, Long depotId);
+        List<OrderEntity> findByStatusAndDepot_Id(OrderStatus status, Long depotId);
 }

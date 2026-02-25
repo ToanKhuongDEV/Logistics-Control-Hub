@@ -15,8 +15,9 @@ public final class RoutingConstant {
     // ==================== Error Messages ====================
 
     public static final String ROUTING_RUN_NOT_FOUND = "Không tìm thấy phiên tối ưu lộ trình với id: ";
-    public static final String ORDERS_NOT_FOUND = "Không có đơn hàng nào ở trạng thái CREATED để tối ưu";
-    public static final String VEHICLES_NOT_FOUND = "Không có phương tiện nào ở trạng thái ACTIVE với tài xế được gán để tối ưu";
+    public static final String ORDERS_NOT_FOUND = "Không tìm thấy đơn hàng nào phù hợp để tối ưu trong kho này.";
+    public static final String NO_ROUTES_CREATED = "Không tìm thấy đơn hàng hoặc phương tiện phù hợp để tạo tuyến đường.";
+    public static final String VEHICLES_NOT_FOUND = "Không tìm thấy phương tiện nào phù hợp (đang hoạt động và có tài xế) để tối ưu.";
     public static final String LOCATIONS_NOT_FOUND = "Không tìm thấy đầy đủ các địa điểm";
     public static final String DEPOT_NOT_ASSIGNED = "Không tìm thấy kho hàng với id: ";
     public static final String DEPOT_LOCATION_NOT_FOUND = "Không tìm thấy địa điểm của kho với id kho: ";

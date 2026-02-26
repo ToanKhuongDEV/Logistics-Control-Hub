@@ -1,160 +1,311 @@
-# AI Supply Chain Control Tower
+# 🚛 Logistics Control Hub
 
-A logistics system that performs real-time route optimization, event-driven disruption handling, and durable delivery workflows.  
-This project simulates how modern logistics companies manage fleet operations under real-world constraints and unexpected incidents.
-
----
-
-## 1. Project Overview
-
-In real-world logistics, route planning is not a one-time static task. Vehicles move continuously, orders have delivery windows, and disruptions such as traffic jams or vehicle breakdowns can occur at any time.
-
-**AI Supply Chain Control Tower** is built to simulate a real operational environment where the system:
-- Optimizes delivery routes for multiple vehicles and orders
-- Continuously tracks vehicle movement in near real-time
-- Automatically reacts to disruptions without human intervention
-- Allows administrators to override decisions when necessary
-- Manages long-running delivery processes reliably
+A full-stack logistics management system that solves the **Vehicle Routing Problem (VRP)** using Google OR-Tools, providing real-time route optimization, interactive map visualization, and comprehensive fleet management.
 
 ---
 
-## 2. Key Capabilities
+## 📋 Table of Contents
 
-### 2.1 Route Optimization (Core Feature)
-
-- Solves the **Vehicle Routing Problem (VRP)** for multiple vehicles and orders
-- Considers:
-    - Vehicle capacity
-    - Delivery time windows
-    - Distance and estimated travel time
-- Optimizes for:
-    - Minimum total distance
-    - Reduced delivery delays
-- Supports **re-optimization** when conditions change
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [API Documentation](#api-documentation)
+- [Project Structure](#project-structure)
 
 ---
 
-### 2.2 Real-time Fleet Tracking (Simulated)
+## Overview
 
-- Vehicles periodically emit GPS data
-- Location updates are streamed through Kafka
-- Vehicle positions and order statuses are pushed to the frontend via WebSocket
-- Enables near real-time visibility of fleet operations
+**Logistics Control Hub** is a logistics operations platform built for intern/portfolio purposes, simulating how a modern fleet dispatch system works. It handles the full lifecycle from order creation → depot assignment → vehicle routing optimization → route visualization on a live map.
 
----
-
-### 2.3 Disruption Management (Autonomous Decision Making)
-
-The system automatically reacts to operational disruptions such as:
-- Traffic congestion
-- Vehicle breakdowns
-- Delivery delays
-
-For each disruption, the system:
-1. Detects the event
-2. Analyzes affected routes and orders
-3. Decides the best mitigation strategy
-4. Triggers partial or full route re-optimization
-5. Updates ETA and order status
-
-This removes the need for manual dispatch intervention.
+The system integrates with **OSRM** (Open Source Routing Machine) for real-world road distance and duration calculations, and uses **Google OR-Tools** to compute optimal delivery routes under vehicle capacity constraints.
 
 ---
 
-### 2.4 Human-in-the-loop Control
+## Tech Stack
 
-Administrators can intervene when needed by:
-- Forcing route re-optimization
-- Disabling vehicles
-- Locking routes to prevent changes
-- Increasing priority for critical orders
+### Backend
 
-All manual actions are validated against constraints and recorded in audit logs.
+| Layer           | Technology                          |
+| --------------- | ----------------------------------- |
+| Language        | Java 17                             |
+| Framework       | Spring Boot 3.4.4                   |
+| ORM             | Spring Data JPA + Hibernate         |
+| Database        | PostgreSQL 15                       |
+| Cache           | Redis 7 (Spring Data Redis)         |
+| Routing Engine  | Google OR-Tools 9.8                 |
+| Map Routing API | OSRM (Open Source Routing Machine)  |
+| Security        | Spring Security + JWT (JJWT 0.11.5) |
+| API Docs        | SpringDoc OpenAPI (Swagger UI)      |
+| Code Gen        | Lombok + MapStruct                  |
 
----
+### Frontend
 
-### 2.5 Durable Delivery Workflows
+| Layer         | Technology            |
+| ------------- | --------------------- |
+| Framework     | Next.js 16 + React 19 |
+| Language      | TypeScript            |
+| Styling       | Tailwind CSS v4       |
+| UI Components | Radix UI + shadcn/ui  |
+| Map           | Leaflet.js            |
+| Charts        | Recharts              |
+| Forms         | React Hook Form + Zod |
+| HTTP          | Axios                 |
 
-- Each delivery is modeled as a **long-running workflow**
-- Workflow steps include:
-    - Route assignment
-    - Progress tracking
-    - Disruption handling
-    - Delivery completion
-- Workflows are **durable**:
-    - Application restarts do not lose delivery state
-    - Failures are retried safely
+### Infrastructure
 
----
-
-## 3. System Architecture
-
-The system is implemented as a **monolithic application** with a modular, feature-based structure.
-
-### Technology Stack
-
-**Backend**
-- Java 17
-- Spring Boot
-- Kafka (event streaming)
-- PostgreSQL
-- Temporal (workflow engine)
-- OptaPlanner / OR-Tools (route optimization)
-- WebSocket (real-time updates)
-
-**Frontend**
-- React.js
-- Map visualization (Leaflet / Mapbox)
-
-**Infrastructure**
-- Docker & Docker Compose
+| Service          | Technology               |
+| ---------------- | ------------------------ |
+| Containerization | Docker + Docker Compose  |
+| Map Routing      | OSRM v5.27 (self-hosted) |
+| Database         | PostgreSQL 15 Alpine     |
+| Cache            | Redis 7 Alpine           |
 
 ---
 
-## 4. Architecture Principles
+## Features
 
-- Monolithic deployment for simplicity
-- Feature-based modularization
-- Clear separation between:
-    - Domain logic
-    - Application services
-    - Infrastructure and adapters
-- Event-driven internal communication
-- Designed to be easily split into microservices if needed
+### 🗺️ Route Optimization
+
+- Solves **Capacitated VRP** with Google OR-Tools
+- Considers vehicle weight & volume capacity
+- Uses real road distances from OSRM API
+- Asynchronous optimization with status polling
+- Displays optimized routes as polylines on interactive map
+
+### 📦 Order Management
+
+- Full CRUD for delivery orders
+- Auto-assigns orders to nearest depot
+- Order lifecycle: `CREATED` → `IN_TRANSIT` → `DELIVERED`
+- Filters by status, depot, driver
+
+### 🏭 Depot Management
+
+- Multiple depot support
+- Each depot has a geographic location
+- Statistics: active vehicles, pending orders, route runs
+
+### 🚗 Vehicle & Driver Management
+
+- Fleet management with status tracking (`ACTIVE`, `IDLE`, `MAINTENANCE`)
+- Driver-vehicle assignment
+- Vehicle capacity configuration (weight kg, volume m³, cost per km)
+
+### 📊 Dashboard
+
+- Real-time summary: total distance, total cost, number of routes
+- Statistics cards per depot
+- Route visualization with stop-by-stop breakdown
+
+### 🔐 Authentication
+
+- JWT-based authentication with refresh token
+- Role-based access: `DISPATCHER`, `ADMIN`
+- Secure password hashing with BCrypt
+
+### ⚡ Redis Caching
+
+- OSRM API response caching (distance matrix)
+- Metadata caching for depots, drivers, vehicles
 
 ---
 
-## 5. Main Functional Modules
+## Architecture
 
-- **Order Management**  
-  Create and track delivery orders with lifecycle states
-
-- **Vehicle & Driver Management**  
-  Manage fleet availability, capacity, and status
-
-- **Routing & Optimization**  
-  Compute and update optimal delivery routes
-
-- **Event Processing**  
-  Handle GPS updates and disruption events
-
-- **Disruption Handling**  
-  Automatically mitigate operational incidents
-
-- **Workflow Management**  
-  Ensure reliable, long-running delivery execution
-
-- **Control Tower Dashboard**  
-  Provide operational visibility and control
+```
+┌─────────────────────────────────────────────────────┐
+│                   Frontend (Next.js)                 │
+│         Dashboard │ Map │ Orders │ Fleet Mgmt        │
+└────────────────────────┬────────────────────────────┘
+                         │ REST API (HTTP/JSON)
+┌────────────────────────▼────────────────────────────┐
+│               Backend (Spring Boot)                  │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────────┐ │
+│  │   Auth   │  │  Orders  │  │  Route Optimizer  │ │
+│  ├──────────┤  ├──────────┤  │  (Google OR-Tools)│ │
+│  │  Depots  │  │ Vehicles │  └────────┬──────────┘ │
+│  ├──────────┤  ├──────────┤           │             │
+│  │ Drivers  │  │ Routing  │◄──────────┘             │
+│  └──────────┘  └──────────┘                         │
+│         │            │                              │
+│    ┌────▼────┐  ┌────▼────────────┐                 │
+│    │  Redis  │  │    OSRM API     │                 │
+│    │ (Cache) │  │  (Road Dist.)   │                 │
+│    └─────────┘  └─────────────────┘                 │
+│         │                                           │
+│    ┌────▼────────────────┐                          │
+│    │   PostgreSQL DB      │                         │
+│    └─────────────────────┘                          │
+└─────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 6. Running the Project
+## Getting Started
 
 ### Prerequisites
-- Docker
-- Docker Compose
 
-### Start the system
+- [Docker](https://www.docker.com/) & Docker Compose
+- OR for local development: Java 17, Node.js 20, PostgreSQL 15, Redis
+
+### Option A: Run with Docker Compose (Recommended)
+
+**1. Clone the repository**
+
 ```bash
-docker-compose up
+git clone https://github.com/ToanKhuongDEV/Logistics-Control-Hub.git
+cd Logistics-Control-Hub
+```
+
+**2. Create environment file**
+
+```bash
+cp .env.example .env
+# Edit .env with your values
+```
+
+**3. Prepare OSRM data** (Vietnam map)
+
+```bash
+cd osrm-data
+# Download Hanoi/Vietnam OSM data and process it
+# See DOCKER_GUIDE.md for detailed OSRM setup steps
+```
+
+**4. Start all services**
+
+```bash
+docker-compose up -d
+```
+
+**5. Access the application**
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+
+---
+
+### Option B: Local Development
+
+**Backend**
+
+```bash
+cd backend
+# Create .env file with required variables (see .env.example)
+mvn spring-boot:run
+```
+
+**Frontend**
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Database
+DB_NAME=logistics_db
+DB_USERNAME=postgres
+DB_PASSWORD=your_db_password
+DB_PORT=5432
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+
+# JWT
+JWT_SECRET=your_jwt_secret_min_32_chars
+JWT_REFRESH_SECRET=your_refresh_secret_min_32_chars
+
+# Server
+SERVER_PORT=8080
+```
+
+---
+
+## API Documentation
+
+Once the backend is running, access Swagger UI at:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+### Key Endpoints
+
+| Method | Endpoint                         | Description                |
+| ------ | -------------------------------- | -------------------------- |
+| `POST` | `/api/v1/auth/login`             | Login, returns JWT         |
+| `GET`  | `/api/v1/orders`                 | List all orders            |
+| `POST` | `/api/v1/orders`                 | Create a new order         |
+| `GET`  | `/api/v1/depots`                 | List all depots            |
+| `GET`  | `/api/v1/depots/{id}/statistics` | Depot statistics           |
+| `POST` | `/api/v1/routing/optimize`       | Trigger route optimization |
+| `GET`  | `/api/v1/routing/runs/{id}`      | Get optimization result    |
+| `GET`  | `/api/v1/vehicles`               | List vehicles              |
+| `GET`  | `/api/v1/drivers`                | List drivers               |
+
+---
+
+## Project Structure
+
+```
+Logistics-Control-Hub/
+├── backend/                    # Spring Boot application
+│   ├── src/main/java/com/logistics/hub/
+│   │   ├── feature/
+│   │   │   ├── auth/           # JWT authentication
+│   │   │   ├── company/        # Company management
+│   │   │   ├── dashboard/      # Dashboard statistics
+│   │   │   ├── depot/          # Depot management
+│   │   │   ├── dispatcher/     # Dispatcher accounts
+│   │   │   ├── driver/         # Driver management
+│   │   │   ├── geocoding/      # Address geocoding
+│   │   │   ├── location/       # Location management
+│   │   │   ├── order/          # Order management
+│   │   │   ├── redis/          # Redis cache services
+│   │   │   ├── routing/        # VRP optimization + OSRM
+│   │   │   └── vehicle/        # Vehicle management
+│   │   └── shared/             # Shared utilities
+│   └── Dockerfile
+├── frontend/                   # Next.js application
+│   ├── src/
+│   │   ├── app/                # Next.js app router pages
+│   │   ├── components/         # React components
+│   │   └── lib/                # Utilities, API clients
+│   └── Dockerfile
+├── database/
+│   ├── database_schema.sql     # Table definitions
+│   └── seeding_data.sql        # Sample data
+├── osrm-data/                  # OSRM map data
+├── docker-compose.yml
+└── .env.example
+```
+
+---
+
+## Default Credentials
+
+| Role       | Username       | Password |
+| ---------- | -------------- | -------- |
+| Admin      | `admin01`      | `123456` |
+| Dispatcher | `dispatcher01` | `123456` |
+
+---
+
+## License
+
+This project is developed as an internship/portfolio project.

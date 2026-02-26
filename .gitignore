@@ -33,8 +33,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-DOCKER_GUIDE.md
-docker-compose.yml
+# DOCKER_GUIDE.md
+# docker-compose.yml
 # PLAN.md
 **/AI_generate
-osrm-data
+# OSRM processed map data (too large for Git, generate on server)
+osrm-data/*
+

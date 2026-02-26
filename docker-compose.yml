@@ -1,0 +1,102 @@
+services:
+  # ─────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: logistics-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-logistics_db}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/database_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seeding_data.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    networks:
+      - logistics-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # OSRM – Open Source Routing Machine
+  # ─────────────────────────────────────────
+  osrm:
+    image: osrm/osrm-backend:latest
+    container_name: logistics-osrm
+    command: osrm-routed --algorithm mld /data/hanoi.osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./osrm-data/data-HANOI:/data
+    networks:
+      - logistics-network
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────
+  # Backend – Spring Boot
+  # Redis is hosted on Redis Cloud (external)
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME:-logistics}/backend:latest
+    container_name: logistics-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-logistics_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      SERVER_PORT: 8080
+      OSRM_URL: http://osrm:5000
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    networks:
+      - logistics-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────
+  # Frontend – Next.js
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME:-logistics}/frontend:latest
+    container_name: logistics-frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    ports:
+      - "3000:3000"
+    networks:
+      - logistics-network
+    restart: unless-stopped
+
+networks:
+  logistics-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

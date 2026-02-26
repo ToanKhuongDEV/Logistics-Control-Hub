@@ -1,160 +1,310 @@
-# AI Supply Chain Control Tower
+# 🚛 Logistics Control Hub
 
-Một hệ thống logistics tập trung thực hiện tối ưu hóa lộ trình theo thời gian thực, xử lý sự cố hướng sự kiện và quy trình giao hàng bền vững.
-Dự án này mô phỏng cách các công ty logistics hiện đại quản lý vận hành đội xe dưới các ràng buộc thực tế và những sự cố bất ngờ.
-
----
-
-## 1. Tổng Quan Dự Án
-
-Trong logistics thực tế, việc lập kế hoạch lộ trình không phải là một tác vụ tĩnh làm một lần là xong. Xe di chuyển liên tục, đơn hàng có khung giờ giao nhận cụ thể, và các sự cố như tắc đường hay hỏng xe có thể xảy ra bất cứ lúc nào.
-
-**AI Supply Chain Control Tower** được xây dựng để mô phỏng một môi trường vận hành thực tế, nơi hệ thống:
-- Tối ưu hóa lộ trình giao hàng cho nhiều xe và đơn hàng cùng lúc
-- Theo dõi di chuyển của xe liên tục gần như thời gian thực
-- Tự động phản ứng với các gián đoạn mà không cần con người can thiệp
-- Cho phép quản trị viên ghi đè quyết định khi cần thiết
-- Quản lý các quy trình giao hàng kéo dài một cách tin cậy
+Một hệ thống quản lý logistics full-stack giải quyết bài toán **Định Tuyến Xe (VRP)** bằng Google OR-Tools, cung cấp tối ưu hóa lộ trình thời gian thực, trực quan hóa bản đồ tương tác và quản lý đội xe toàn diện.
 
 ---
 
-## 2. Các Khả Năng Chính
+## 📋 Mục Lục
 
-### 2.1 Tối Ưu Hóa Lộ Trình (Tính Năng Cốt Lõi)
-
-- Giải quyết **Bài toán định tuyến xe (Vehicle Routing Problem - VRP)** cho nhiều xe và đơn hàng
-- Cân nhắc các yếu tố:
-    - Tải trọng của xe
-    - Khung giờ giao hàng (Time windows)
-    - Khoảng cách và thời gian di chuyển ước tính
-- Tối ưu hóa cho:
-    - Tổng quãng đường di chuyển ngắn nhất
-    - Giảm thiểu việc giao hàng trễ giờ
-- Hỗ trợ **tối ưu hóa lại (re-optimization)** khi điều kiện thay đổi
+- [Tổng Quan](#tổng-quan)
+- [Tech Stack](#tech-stack)
+- [Tính Năng](#tính-năng)
+- [Kiến Trúc](#kiến-trúc)
+- [Cài Đặt & Chạy](#cài-đặt--chạy)
+- [Tài Liệu API](#tài-liệu-api)
+- [Cấu Trúc Dự Án](#cấu-trúc-dự-án)
 
 ---
 
-### 2.2 Theo Dõi Đội Xe Thời Gian Thực (Mô Phỏng)
+## Tổng Quan
 
-- Các xe định kỳ phát tín hiệu dữ liệu GPS
-- Cập nhật vị trí được truyền qua Kafka
-- Vị trí xe và trạng thái đơn hàng được đẩy xuống frontend thông qua WebSocket
-- Cho phép nhìn thấy toàn cảnh hoạt động của đội xe gần như tức thời
+**Logistics Control Hub** là nền tảng vận hành logistics, mô phỏng cách một hệ thống điều phối đội xe hiện đại hoạt động. Hệ thống xử lý toàn bộ vòng đời từ tạo đơn hàng → gán kho → tối ưu hóa lộ trình → hiển thị trên bản đồ thực tế.
 
----
-
-### 2.3 Quản Lý Sự Cố (Ra Quyết Định Tự Động)
-
-Hệ thống tự động phản ứng với các gián đoạn vận hành như:
-- Tắc đường
-- Xe bị hỏng
-- Giao hàng bị trễ
-
-Đối với mỗi sự cố, hệ thống sẽ:
-1. Phát hiện sự kiện
-2. Phân tích các lộ trình và đơn hàng bị ảnh hưởng
-3. Quyết định chiến lược giảm thiểu rủi ro tốt nhất
-4. Kích hoạt tối ưu hóa lại một phần hoặc toàn bộ lộ trình
-5. Cập nhật thời gian dự kiến (ETA) và trạng thái đơn hàng
-
-Điều này loại bỏ sự cần thiết phải có điều phối viên xử lý thủ công.
+Hệ thống tích hợp với **OSRM** (Open Source Routing Machine) để tính khoảng cách và thời gian di chuyển theo đường thực tế, và sử dụng **Google OR-Tools** để tính toán lộ trình giao hàng tối ưu theo ràng buộc tải trọng xe.
 
 ---
 
-### 2.4 Kiểm Soát Có Con Người Tham Gia (Human-in-the-loop)
+## Tech Stack
 
-Quản trị viên có thể can thiệp khi cần thiết bằng cách:
-- Ép buộc tối ưu hóa lại lộ trình
-- Vô hiệu hóa xe
-- Khóa lộ trình để ngăn chặn thay đổi
-- Tăng mức độ ưu tiên cho các đơn hàng quan trọng
+### Backend
 
-Mọi hành động thủ công đều được kiểm tra tính hợp lệ so với các ràng buộc và được ghi lại trong nhật ký kiểm toán.
+| Tầng                  | Công nghệ                           |
+| --------------------- | ----------------------------------- |
+| Ngôn ngữ              | Java 17                             |
+| Framework             | Spring Boot 3.4.4                   |
+| ORM                   | Spring Data JPA + Hibernate         |
+| Cơ sở dữ liệu         | PostgreSQL 15                       |
+| Cache                 | Redis 7 (Spring Data Redis)         |
+| Engine tối ưu         | Google OR-Tools 9.8                 |
+| API định tuyến bản đồ | OSRM (Open Source Routing Machine)  |
+| Bảo mật               | Spring Security + JWT (JJWT 0.11.5) |
+| Tài liệu API          | SpringDoc OpenAPI (Swagger UI)      |
+| Code Gen              | Lombok + MapStruct                  |
+
+### Frontend
+
+| Tầng          | Công nghệ             |
+| ------------- | --------------------- |
+| Framework     | Next.js 16 + React 19 |
+| Ngôn ngữ      | TypeScript            |
+| Styling       | Tailwind CSS v4       |
+| UI Components | Radix UI + shadcn/ui  |
+| Bản đồ        | Leaflet.js            |
+| Biểu đồ       | Recharts              |
+| Form          | React Hook Form + Zod |
+| HTTP Client   | Axios                 |
+
+### Hạ Tầng
+
+| Dịch vụ           | Công nghệ                |
+| ----------------- | ------------------------ |
+| Container hóa     | Docker + Docker Compose  |
+| Định tuyến bản đồ | OSRM v5.27 (self-hosted) |
+| Cơ sở dữ liệu     | PostgreSQL 15 Alpine     |
+| Cache             | Redis 7 Alpine           |
 
 ---
 
-### 2.5 Quy Trình Giao Hàng Bền Vững
+## Tính Năng
 
-- Mỗi chuyến giao hàng được mô hình hóa như một **quy trình dài hạn (long-running workflow)**
-- Các bước quy trình bao gồm:
-    - Gán lộ trình
-    - Theo dõi tiến độ
-    - Xử lý sự cố
-    - Hoàn tất giao hàng
-- Các quy trình có tính **bền vững (durable)**:
-    - Khởi động lại ứng dụng không làm mất trạng thái giao hàng
-    - Các lỗi kỹ thuật được thử lại (retry) một cách an toàn
+### 🗺️ Tối Ưu Hóa Lộ Trình
+
+- Giải bài toán **Capacitated VRP** với Google OR-Tools
+- Xét ràng buộc tải trọng và thể tích xe
+- Sử dụng khoảng cách đường thực từ OSRM API
+- Tối ưu hóa bất đồng bộ với cơ chế polling trạng thái
+- Hiển thị lộ trình tối ưu dưới dạng polyline trên bản đồ tương tác
+
+### 📦 Quản Lý Đơn Hàng
+
+- CRUD đầy đủ cho đơn giao hàng
+- Tự động gán đơn về kho gần nhất
+- Vòng đời đơn hàng: `CREATED` → `IN_TRANSIT` → `DELIVERED`
+- Lọc theo trạng thái, kho, tài xế
+
+### 🏭 Quản Lý Kho
+
+- Hỗ trợ nhiều kho (multi-depot)
+- Mỗi kho có vị trí địa lý trên bản đồ
+- Thống kê: xe đang hoạt động, đơn chờ xử lý, số lần tối ưu
+
+### 🚗 Quản Lý Xe & Tài Xế
+
+- Quản lý đội xe với theo dõi trạng thái (`ACTIVE`, `IDLE`, `MAINTENANCE`)
+- Gán tài xế cho xe
+- Cấu hình năng lực xe (tải trọng kg, thể tích m³, chi phí/km)
+
+### 📊 Bảng Điều Khiển
+
+- Tóm tắt thời gian thực: tổng cự ly, tổng chi phí, số tuyến đường
+- Card thống kê theo kho
+- Trực quan hóa lộ trình với danh sách điểm dừng
+
+### 🔐 Xác Thực & Phân Quyền
+
+- Xác thực JWT với refresh token
+- Phân quyền theo vai trò: `DISPATCHER`, `ADMIN`
+- Mã hóa mật khẩu an toàn với BCrypt
+
+### ⚡ Redis Caching
+
+- Cache phản hồi OSRM API (ma trận khoảng cách)
+- Cache metadata cho kho, tài xế, xe
 
 ---
 
-## 3. Kiến Trúc Hệ Thống
+## Kiến Trúc
 
-Hệ thống được triển khai dưới dạng **ứng dụng đơn khối (monolithic)** với cấu trúc mô-đun hóa dựa trên tính năng (**feature-based**).
+```
+┌─────────────────────────────────────────────────────┐
+│               Frontend (Next.js)                     │
+│    Dashboard │ Bản đồ │ Đơn hàng │ Quản lý đội xe   │
+└────────────────────────┬────────────────────────────┘
+                         │ REST API (HTTP/JSON)
+┌────────────────────────▼────────────────────────────┐
+│             Backend (Spring Boot)                    │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────────┐ │
+│  │   Auth   │  │  Orders  │  │  Route Optimizer  │ │
+│  ├──────────┤  ├──────────┤  │  (Google OR-Tools)│ │
+│  │  Depots  │  │ Vehicles │  └────────┬──────────┘ │
+│  ├──────────┤  ├──────────┤           │             │
+│  │ Drivers  │  │ Routing  │◄──────────┘             │
+│  └──────────┘  └──────────┘                         │
+│         │            │                              │
+│    ┌────▼────┐  ┌────▼─────────────┐                │
+│    │  Redis  │  │    OSRM API      │                │
+│    │ (Cache) │  │ (Khoảng cách     │                │
+│    └─────────┘  │  đường thực tế)  │                │
+│                 └──────────────────┘                │
+│         │                                           │
+│    ┌────▼─────────────────┐                         │
+│    │    PostgreSQL DB      │                        │
+│    └──────────────────────┘                         │
+└─────────────────────────────────────────────────────┘
+```
 
-### Technology Stack
+---
+
+## Cài Đặt & Chạy
+
+### Yêu Cầu
+
+- [Docker](https://www.docker.com/) & Docker Compose
+- Hoặc để phát triển cục bộ: Java 17, Node.js 20, PostgreSQL 15, Redis
+
+### Cách A: Chạy bằng Docker Compose (Khuyến nghị)
+
+**1. Clone repository**
+
+```bash
+git clone https://github.com/ToanKhuongDEV/Logistics-Control-Hub.git
+cd Logistics-Control-Hub
+```
+
+**2. Tạo file môi trường**
+
+```bash
+cp .env.example .env
+# Chỉnh sửa .env theo giá trị của bạn
+```
+
+**3. Chuẩn bị dữ liệu OSRM** (bản đồ Việt Nam)
+
+```bash
+# Xem DOCKER_GUIDE.md để biết hướng dẫn chi tiết setup OSRM
+```
+
+**4. Khởi động tất cả dịch vụ**
+
+```bash
+docker-compose up -d
+```
+
+**5. Truy cập ứng dụng**
+| Dịch vụ | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+
+---
+
+### Cách B: Phát Triển Cục Bộ
 
 **Backend**
-- Java 17
-- Spring Boot
-- Kafka (event streaming)
-- PostgreSQL
-- Temporal (workflow engine)
-- OptaPlanner / OR-Tools (tối ưu hóa lộ trình)
-- WebSocket (cập nhật thời gian thực)
+
+```bash
+cd backend
+# Tạo .env với các biến cần thiết
+mvn spring-boot:run
+```
 
 **Frontend**
-- React.js
-- Trực quan hóa bản đồ (Leaflet / Mapbox)
 
-**Infrastructure**
-- Docker & Docker Compose
-
----
-
-## 4. Các Nguyên Lý Kiến Trúc
-
-- Triển khai đơn khối để đơn giản hóa
-- Mô-đun hóa dựa trên tính năng
-- Phân tách rõ ràng giữa:
-    - Logic nghiệp vụ (Domain logic)
-    - Dịch vụ ứng dụng (Application services)
-    - Hạ tầng và bộ chuyển đổi (Infrastructure and adapters)
-- Giao tiếp nội bộ hướng sự kiện
-- Được thiết kế để dễ dàng tách thành microservices nếu cần
-
----
-
-## 5. Các Mô-đun Chức Năng Chính
-
-- **Order Management (Quản lý Đơn hàng)**
-  Tạo và theo dõi các đơn giao hàng với trạng thái vòng đời
-
-- **Vehicle & Driver Management (Quản lý Xe & Tài xế)**
-  Quản lý tính sẵn sàng, tải trọng và trạng thái của đội xe
-
-- **Routing & Optimization (Định tuyến & Tối ưu hóa)**
-  Tính toán và cập nhật các lộ trình giao hàng tối ưu
-
-- **Event Processing (Xử lý Sự kiện)**
-  Xử lý cập nhật GPS và các sự kiện gián đoạn
-
-- **Disruption Handling (Xử lý Sự cố)**
-  Tự động giảm thiểu các sự cố vận hành
-
-- **Workflow Management (Quản lý Quy trình)**
-  Đảm bảo thực thi giao hàng tin cậy, lâu dài
-
-- **Control Tower Dashboard (Bảng Điều khiển)**
-  Cung cấp khả năng hiển thị và kiểm soát vận hành
-
----
-
-## 6. Chạy Dự Án
-
-### Yêu cầu tiên quyết
-- Docker
-- Docker Compose
-
-### Khởi chạy hệ thống
 ```bash
-docker-compose up
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## Biến Môi Trường
+
+Tạo file `.env` ở thư mục gốc:
+
+```env
+# Database
+DB_NAME=logistics_db
+DB_USERNAME=postgres
+DB_PASSWORD=your_db_password
+DB_PORT=5432
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+
+# JWT
+JWT_SECRET=your_jwt_secret_min_32_chars
+JWT_REFRESH_SECRET=your_refresh_secret_min_32_chars
+
+# Server
+SERVER_PORT=8080
+```
+
+---
+
+## Tài Liệu API
+
+Sau khi backend chạy, truy cập Swagger UI tại:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+### Các Endpoint Chính
+
+| Method | Endpoint                         | Mô tả                     |
+| ------ | -------------------------------- | ------------------------- |
+| `POST` | `/api/v1/auth/login`             | Đăng nhập, trả về JWT     |
+| `GET`  | `/api/v1/orders`                 | Danh sách đơn hàng        |
+| `POST` | `/api/v1/orders`                 | Tạo đơn hàng mới          |
+| `GET`  | `/api/v1/depots`                 | Danh sách kho             |
+| `GET`  | `/api/v1/depots/{id}/statistics` | Thống kê theo kho         |
+| `POST` | `/api/v1/routing/optimize`       | Kích hoạt tối ưu lộ trình |
+| `GET`  | `/api/v1/routing/runs/{id}`      | Lấy kết quả tối ưu        |
+| `GET`  | `/api/v1/vehicles`               | Danh sách xe              |
+| `GET`  | `/api/v1/drivers`                | Danh sách tài xế          |
+
+---
+
+## Cấu Trúc Dự Án
+
+```
+Logistics-Control-Hub/
+├── backend/                    # Ứng dụng Spring Boot
+│   ├── src/main/java/com/logistics/hub/
+│   │   ├── feature/
+│   │   │   ├── auth/           # Xác thực JWT
+│   │   │   ├── company/        # Quản lý công ty
+│   │   │   ├── dashboard/      # Thống kê dashboard
+│   │   │   ├── depot/          # Quản lý kho
+│   │   │   ├── dispatcher/     # Tài khoản điều phối
+│   │   │   ├── driver/         # Quản lý tài xế
+│   │   │   ├── geocoding/      # Geocoding địa chỉ
+│   │   │   ├── location/       # Quản lý vị trí
+│   │   │   ├── order/          # Quản lý đơn hàng
+│   │   │   ├── redis/          # Dịch vụ cache Redis
+│   │   │   ├── routing/        # Tối ưu VRP + OSRM
+│   │   │   └── vehicle/        # Quản lý xe
+│   │   └── shared/             # Tiện ích dùng chung
+│   └── Dockerfile
+├── frontend/                   # Ứng dụng Next.js
+│   ├── src/
+│   │   ├── app/                # Next.js app router
+│   │   ├── components/         # React components
+│   │   └── lib/                # Utilities, API clients
+│   └── Dockerfile
+├── database/
+│   ├── database_schema.sql     # Định nghĩa bảng
+│   └── seeding_data.sql        # Dữ liệu mẫu
+├── osrm-data/                  # Dữ liệu bản đồ OSRM
+├── docker-compose.yml
+└── .env.example
+```
+
+---
+
+## Tài Khoản Mặc Định
+
+| Vai trò    | Username       | Password |
+| ---------- | -------------- | -------- |
+| Admin      | `admin01`      | `123456` |
+| Dispatcher | `dispatcher01` | `123456` |
+
+---
+
+## Giấy Phép
+
+Dự án được phát triển cho mục đích internship / portfolio cá nhân.

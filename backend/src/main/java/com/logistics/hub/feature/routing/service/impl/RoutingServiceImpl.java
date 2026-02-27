@@ -24,6 +24,7 @@ import com.logistics.hub.feature.routing.service.RoutingService;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
+import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.redis.service.OsrmCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -299,10 +300,6 @@ public class RoutingServiceImpl implements RoutingService {
                         stop.setDurationFromPrevMin(legDurationMinutes);
 
                         stops.add(stop);
-
-                        if (vehicle.getDriver() != null) {
-                            order.setDriver(vehicle.getDriver());
-                        }
                     }
 
                     prevIndex = index;
@@ -431,19 +428,41 @@ public class RoutingServiceImpl implements RoutingService {
         RoutingRunEntity result = optimizeRoutes(orders, vehicles, locations);
 
         if (result.getStatus() == RoutingRunStatus.COMPLETED && result.getRoutes() != null) {
-            Set<Long> routedOrderIds = result.getRoutes().stream()
-                    .flatMap(route -> route.getStops().stream())
-                    .map(stop -> stop.getOrder() != null ? stop.getOrder().getId() : null)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
+            // Build a map: orderId -> DriverEntity from the authoritative route stops
+            // Each stop already knows which vehicle (and thus which driver) was assigned by
+            // the solver
+            Map<Long, DriverEntity> orderDriverMap = result.getRoutes()
+                    .stream()
+                    .flatMap(route -> {
+                        DriverEntity driver = route.getVehicle() != null
+                                ? route.getVehicle().getDriver()
+                                : null;
+                        return route.getStops().stream()
+                                .filter(stop -> stop.getOrder() != null && driver != null)
+                                .map(stop -> Map.entry(stop.getOrder().getId(), driver));
+                    })
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+                            (d1, d2) -> d1 // keep first if duplicate (shouldn't happen)
+                    ));
 
             List<OrderEntity> routedOrders = orders.stream()
-                    .filter(o -> routedOrderIds.contains(o.getId()))
+                    .filter(o -> orderDriverMap.containsKey(o.getId()))
                     .collect(Collectors.toList());
 
-            routedOrders.forEach(order -> order.setStatus(OrderStatus.IN_TRANSIT));
+            routedOrders.forEach(order -> {
+                order.setStatus(OrderStatus.IN_TRANSIT);
+                // Assign the driver of the vehicle that was allocated to this order
+                DriverEntity assignedDriver = orderDriverMap.get(order.getId());
+                if (assignedDriver != null) {
+                    order.setDriver(assignedDriver);
+                }
+            });
+
             orderRepository.saveAll(routedOrders);
-            log.info("Updated {}/{} orders to IN_TRANSIT status", routedOrders.size(), orders.size());
+            log.info("Updated {}/{} orders to IN_TRANSIT status with driver assignment",
+                    routedOrders.size(), orders.size());
         }
 
         RoutingRunEntity saved = routingRunRepository.save(result);

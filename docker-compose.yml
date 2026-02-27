@@ -3,6 +3,11 @@ services:
   # PostgreSQL Database
   # ─────────────────────────────────────────
   postgres:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: postgres:15-alpine
     container_name: logistics-postgres
     environment:
@@ -11,6 +16,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "${DB_PORT:-5432}:5432"
+    mem_limit: 300m
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/database_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
@@ -27,6 +33,17 @@ services:
   # OSRM – Open Source Routing Machine
   # ─────────────────────────────────────────
   osrm:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 1500m
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
     image: osrm/osrm-backend:latest
     container_name: logistics-osrm
     command: osrm-routed --algorithm mld /data/hanoi.osrm
@@ -43,6 +60,12 @@ services:
   # Redis is hosted on Redis Cloud (external)
   # ─────────────────────────────────────────
   backend:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 700m
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -77,6 +100,12 @@ services:
   # Frontend – Next.js
   # ─────────────────────────────────────────
   frontend:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    mem_limit: 150m
     build:
       context: ./frontend
       dockerfile: Dockerfile

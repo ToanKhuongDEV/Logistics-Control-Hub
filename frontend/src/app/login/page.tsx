@@ -156,7 +156,7 @@ export default function LoginPage() {
 										<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground">DEMO</span>
 										<p className="text-sm font-semibold text-foreground">Bạn muốn dùng tài khoản dùng thử?</p>
 									</div>
-									<p className="text-xs text-muted-foreground mb-3">Khám phá tính năng ngay mà không cần tài khoản riêng.</p>
+									<p className="text-xs text-muted-foreground mb-3">Khám phá tính năng ngay mà không cần tài khoản.</p>
 									<div className="flex items-center gap-2">
 										<button
 											type="button"

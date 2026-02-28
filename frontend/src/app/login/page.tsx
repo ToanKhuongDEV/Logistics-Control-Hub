@@ -17,8 +17,16 @@ export default function LoginPage() {
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
+	const [showDemoBanner, setShowDemoBanner] = useState(true);
 	const { login } = useAuth();
 	const router = useRouter();
+
+	const handleUseDemoAccount = () => {
+		setUsername("dispatcher01");
+		setPassword("password123");
+		setShowDemoBanner(false);
+		toast.success("Đã điền tài khoản dùng thử! Nhấn Đăng nhập để tiếp tục.");
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -136,6 +144,36 @@ export default function LoginPage() {
 						<h2 className="text-3xl font-bold text-foreground">Đăng nhập</h2>
 						<p className="text-muted-foreground">Truy cập vào bảng điều khiển logistics của bạn</p>
 					</div>
+
+					{/* Demo Account Banner */}
+					{showDemoBanner && (
+						<div className="relative rounded-xl border border-primary/30 bg-primary/10 p-4 overflow-hidden">
+							{/* Shimmer effect */}
+							<div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse" style={{ animationDuration: "2s" }} />
+							<div className="relative flex items-start justify-between gap-3">
+								<div className="flex-1">
+									<div className="flex items-center gap-2 mb-1">
+										<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground">DEMO</span>
+										<p className="text-sm font-semibold text-foreground">Bạn muốn dùng tài khoản dùng thử?</p>
+									</div>
+									<p className="text-xs text-muted-foreground mb-3">Khám phá tính năng ngay mà không cần tài khoản riêng.</p>
+									<div className="flex items-center gap-2">
+										<button
+											type="button"
+											onClick={handleUseDemoAccount}
+											id="btn-use-demo-account"
+											className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-md hover:shadow-primary/25 hover:scale-105 active:scale-95"
+										>
+											✓ Có, dùng thử ngay
+										</button>
+										<button type="button" onClick={() => setShowDemoBanner(false)} className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
+											Không, cảm ơn
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
 
 					{/* Form */}
 					<form onSubmit={handleSubmit} className="space-y-6">

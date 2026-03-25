@@ -8,9 +8,9 @@ import com.logistics.hub.feature.depot.dto.request.DepotRequest;
 import com.logistics.hub.feature.depot.dto.response.DepotResponse;
 import com.logistics.hub.feature.depot.dto.response.DepotStatisticsResponse;
 import com.logistics.hub.feature.depot.service.DepotService;
+import com.logistics.hub.common.middleware.annotation.TrimAndValid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(UrlConstant.Depot.PREFIX)
 @RequiredArgsConstructor
 @Tag(name = "Depot", description = "APIs for managing distribution centers (depots)")
+@TrimAndValid
 public class DepotController {
 
   private final DepotService depotService;
@@ -56,7 +57,7 @@ public class DepotController {
 
   @PostMapping
   @Operation(summary = "Create new depot", description = "Creates a new depot and automatically geocodes its address")
-  public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody DepotRequest request) {
+  public ResponseEntity<ApiResponse<?>> create(@RequestBody DepotRequest request) {
     DepotResponse createdDepot = depotService.create(request);
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.success(201, DepotConstant.DEPOT_CREATED_SUCCESS, createdDepot));
@@ -64,7 +65,7 @@ public class DepotController {
 
   @PutMapping(UrlConstant.Depot.BY_ID)
   @Operation(summary = "Update depot", description = "Updates an existing depot and re-geocodes its address if changed")
-  public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody DepotRequest request) {
+  public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @RequestBody DepotRequest request) {
     DepotResponse updatedDepot = depotService.update(id, request);
     return ResponseEntity.ok(ApiResponse.success(DepotConstant.DEPOT_UPDATED_SUCCESS, updatedDepot));
   }

@@ -8,9 +8,9 @@ import com.logistics.hub.feature.order.dto.response.OrderResponse;
 import com.logistics.hub.feature.order.dto.response.OrderStatisticsResponse;
 import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.service.OrderService;
+import com.logistics.hub.common.middleware.annotation.TrimAndValid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +24,7 @@ import com.logistics.hub.common.constant.UrlConstant;
 @RequestMapping(UrlConstant.Order.PREFIX)
 @RequiredArgsConstructor
 @Tag(name = "Order", description = "APIs for managing delivery orders")
+@TrimAndValid
 public class OrderController {
 
     private final OrderService orderService;
@@ -66,7 +67,7 @@ public class OrderController {
 
     @PostMapping
     @Operation(summary = "Create new order", description = "Adds a new delivery order to the system")
-    public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody OrderRequest request) {
+    public ResponseEntity<ApiResponse<?>> create(@RequestBody OrderRequest request) {
         OrderResponse createdOrder = orderService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(201, OrderConstant.ORDER_CREATED_SUCCESS, createdOrder));
@@ -74,7 +75,7 @@ public class OrderController {
 
     @PutMapping(UrlConstant.Order.BY_ID)
     @Operation(summary = "Update order", description = "Updates an existing order's information")
-    public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody OrderRequest request) {
+    public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @RequestBody OrderRequest request) {
         OrderResponse updatedOrder = orderService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_UPDATED_SUCCESS, updatedOrder));
     }

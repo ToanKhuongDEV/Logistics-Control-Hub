@@ -7,9 +7,9 @@ import com.logistics.hub.feature.auth.dto.request.RefreshTokenRequest;
 import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
 import com.logistics.hub.feature.auth.dto.response.LoginResponse;
 import com.logistics.hub.feature.auth.service.AuthService;
+import com.logistics.hub.common.middleware.annotation.TrimAndValid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +20,14 @@ import com.logistics.hub.common.constant.UrlConstant;
 @RequestMapping(UrlConstant.Auth.PREFIX)
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Login & Token APIs for Dispatchers")
+@TrimAndValid
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping(UrlConstant.Auth.LOGIN)
     @Operation(summary = "Login with Username/Password", description = "Returns access and refresh tokens on successful login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             LoginResponse user = authService.login(request);
             return ResponseEntity.ok(user);
@@ -38,7 +39,7 @@ public class AuthController {
 
     @PostMapping(UrlConstant.Auth.REFRESH)
     @Operation(summary = "Refresh Access Token", description = "Use refresh token to get new access token")
-    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
         try {
             LoginResponse response = authService.refreshToken(request);
             return ResponseEntity.ok(response);

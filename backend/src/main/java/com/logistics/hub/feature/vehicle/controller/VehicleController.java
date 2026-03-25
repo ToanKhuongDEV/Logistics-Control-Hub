@@ -8,9 +8,9 @@ import com.logistics.hub.feature.vehicle.dto.response.VehicleResponse;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleStatisticsResponse;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.service.VehicleService;
+import com.logistics.hub.common.middleware.annotation.TrimAndValid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +24,7 @@ import com.logistics.hub.common.constant.UrlConstant;
 @RequestMapping(UrlConstant.Vehicle.PREFIX)
 @RequiredArgsConstructor
 @Tag(name = "Vehicle", description = "APIs for managing fleet vehicles")
+@TrimAndValid
 public class VehicleController {
 
     private final VehicleService vehicleService;
@@ -58,7 +59,7 @@ public class VehicleController {
 
     @PostMapping
     @Operation(summary = "Create new vehicle", description = "Adds a new vehicle to the fleet")
-    public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody VehicleRequest request) {
+    public ResponseEntity<ApiResponse<?>> create(@RequestBody VehicleRequest request) {
         VehicleResponse createdVehicle = vehicleService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(201, VehicleConstant.VEHICLE_CREATED_SUCCESS, createdVehicle));
@@ -66,7 +67,7 @@ public class VehicleController {
 
     @PutMapping(UrlConstant.Vehicle.BY_ID)
     @Operation(summary = "Update vehicle", description = "Updates an existing vehicle's information")
-    public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody VehicleRequest request) {
+    public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @RequestBody VehicleRequest request) {
         VehicleResponse updatedVehicle = vehicleService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLE_UPDATED_SUCCESS, updatedVehicle));
     }

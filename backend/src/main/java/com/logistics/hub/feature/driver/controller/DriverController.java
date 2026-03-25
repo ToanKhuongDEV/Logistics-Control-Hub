@@ -9,7 +9,7 @@ import com.logistics.hub.feature.driver.dto.response.DriverResponse;
 
 import com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse;
 import com.logistics.hub.feature.driver.service.DriverService;
-import jakarta.validation.Valid;
+import com.logistics.hub.common.middleware.annotation.TrimAndValid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping(UrlConstant.Driver.PREFIX)
 @RequiredArgsConstructor
+@TrimAndValid
 public class DriverController {
 
     private final DriverService driverService;
@@ -62,14 +63,14 @@ public class DriverController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<DriverResponse>> create(@Valid @RequestBody DriverRequest request) {
+    public ResponseEntity<ApiResponse<DriverResponse>> create(@RequestBody DriverRequest request) {
         DriverResponse createdDriver = driverService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(201, DriverConstant.DRIVER_CREATED_SUCCESS, createdDriver));
     }
 
     @PutMapping(UrlConstant.Driver.BY_ID)
-    public ResponseEntity<ApiResponse<DriverResponse>> update(@PathVariable Long id, @Valid @RequestBody DriverRequest request) {
+    public ResponseEntity<ApiResponse<DriverResponse>> update(@PathVariable Long id, @RequestBody DriverRequest request) {
         DriverResponse updatedDriver = driverService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(DriverConstant.DRIVER_UPDATED_SUCCESS, updatedDriver));
     }

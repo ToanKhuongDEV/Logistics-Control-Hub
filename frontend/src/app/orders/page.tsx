@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrderForm } from "@/components/order-form";
 import { OrderTable } from "@/components/order-table";
 import { OrderStats } from "@/components/order-stats";
@@ -29,19 +30,20 @@ export default function OrdersPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 	const [depots, setDepots] = useState<Depot[]>([]);
+	const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
+	const [bulkStatus, setBulkStatus] = useState<OrderStatus | "">("");
+	const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
-	// Filter states
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
 	const [depotFilter, setDepotFilter] = useState("all");
 	const [sortBy, setSortBy] = useState("createdAt,desc");
 
-	// Fetch orders
 	const fetchOrders = async () => {
 		setIsLoading(true);
 		try {
 			const response = await orderApi.getOrders({
-				page: currentPage - 1, // Backend uses 0-based indexing
+				page: currentPage - 1,
 				size: ITEMS_PER_PAGE,
 				status: statusFilter !== "all" ? statusFilter : undefined,
 				search: searchQuery || undefined,
@@ -52,6 +54,7 @@ export default function OrdersPage() {
 			setOrders(response.data);
 			setTotalPages(response.pagination.totalPages);
 			setTotalElements(response.pagination.totalElements);
+			setSelectedOrderIds([]);
 		} catch (error: any) {
 			console.error("Error fetching orders:", error);
 			toast.error(error?.response?.data?.message || "Không thể tải danh sách đơn hàng");
@@ -60,7 +63,6 @@ export default function OrdersPage() {
 		}
 	};
 
-	// Fetch statistics
 	const fetchStatistics = async () => {
 		try {
 			const stats = await orderApi.getStatistics();
@@ -80,18 +82,15 @@ export default function OrdersPage() {
 		}
 	};
 
-	// Initial load and when filters/page change
 	useEffect(() => {
 		fetchOrders();
 	}, [currentPage, statusFilter, searchQuery, depotFilter, sortBy]);
 
-	// Fetch statistics on mount and after CRUD operations
 	useEffect(() => {
 		fetchStatistics();
 		fetchDepots();
 	}, []);
 
-	// Reset to page 1 when filters change
 	useEffect(() => {
 		setCurrentPage(1);
 	}, [searchQuery, statusFilter, depotFilter, sortBy]);
@@ -143,7 +142,6 @@ export default function OrdersPage() {
 			await fetchOrders();
 			await fetchStatistics();
 
-			// Reset to page 1 if current page becomes empty after deletion
 			if (orders.length === 1 && currentPage > 1) {
 				setCurrentPage(currentPage - 1);
 			}
@@ -170,6 +168,35 @@ export default function OrdersPage() {
 		setCurrentPage(page);
 	};
 
+	const handleToggleOrderSelection = (orderId: number) => {
+		setSelectedOrderIds((current) => (current.includes(orderId) ? current.filter((id) => id !== orderId) : [...current, orderId]));
+	};
+
+	const handleBulkStatusUpdate = async () => {
+		if (!bulkStatus || selectedOrderIds.length === 0) {
+			toast.error("Hãy chọn đơn hàng và trạng thái cần cập nhật");
+			return;
+		}
+
+		setIsBulkUpdating(true);
+		try {
+			await orderApi.updateOrdersStatusBulk({
+				orderIds: selectedOrderIds,
+				status: bulkStatus,
+			});
+			toast.success("Cập nhật trạng thái hàng loạt thành công");
+			setBulkStatus("");
+			setSelectedOrderIds([]);
+			await fetchOrders();
+			await fetchStatistics();
+		} catch (error: any) {
+			console.error("Error bulk updating order status:", error);
+			toast.error(error?.response?.data?.message || "Không thể cập nhật trạng thái hàng loạt");
+		} finally {
+			setIsBulkUpdating(false);
+		}
+	};
+
 	return (
 		<ProtectedRoute>
 			<DashboardLayout>
@@ -182,9 +209,8 @@ export default function OrdersPage() {
 					</div>
 
 					<div className="p-8 space-y-6">
-						{/* Statistics Cards */}
 						<OrderStats totalOrders={statistics?.total || 0} pendingOrders={statistics?.pending || 0} inTransitOrders={statistics?.inTransit || 0} />
-						{/* Filters */}
+
 						<OrderFilters
 							searchQuery={searchQuery}
 							onSearchChange={setSearchQuery}
@@ -197,22 +223,52 @@ export default function OrdersPage() {
 							depots={depots}
 						/>
 
-						{/* Actions */}
-						<div className="flex items-center justify-end">
+						<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+									<Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as OrderStatus | "")}>
+										<SelectTrigger className="w-full sm:w-[220px] bg-card border-border">
+											<SelectValue placeholder="Cập nhật trạng thái" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value={OrderStatus.CREATED}>Đã tạo</SelectItem>
+											<SelectItem value={OrderStatus.IN_TRANSIT}>Đang giao</SelectItem>
+											<SelectItem value={OrderStatus.DELIVERED}>Đã giao</SelectItem>
+											<SelectItem value={OrderStatus.CANCELLED}>Đã hủy</SelectItem>
+										</SelectContent>
+									</Select>
+									<Button onClick={handleBulkStatusUpdate} disabled={selectedOrderIds.length === 0 || !bulkStatus || isBulkUpdating} className="gap-2">
+										Cập nhật hàng loạt
+									</Button>
+								</div>
+
 							<Button onClick={() => setIsFormOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
 								<Plus className="w-4 h-4" />
 								Thêm đơn hàng mới
 							</Button>
 						</div>
 
-						{/* Table and Pagination */}
 						<div className="space-y-4">
-							<OrderTable orders={orders} onEdit={handleEditOrder} onDelete={handleDeleteOrder} isLoading={isLoading} />
+							<OrderTable
+								orders={orders}
+								onEdit={handleEditOrder}
+								onDelete={handleDeleteOrder}
+								isLoading={isLoading}
+								selectedOrderIds={selectedOrderIds}
+								onToggleOrderSelection={handleToggleOrderSelection}
+							/>
 
-							{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={handlePageChange} entityName="đơn hàng" />}
+							{totalElements > 0 && (
+								<Pagination
+									currentPage={currentPage}
+									totalPages={totalPages}
+									itemsPerPage={ITEMS_PER_PAGE}
+									totalItems={totalElements}
+									onPageChange={handlePageChange}
+									entityName="đơn hàng"
+								/>
+							)}
 						</div>
 
-						{/* Order Form Modal */}
 						{isFormOpen && <OrderForm order={editingOrder || undefined} onSubmit={handleFormSubmit} onClose={handleCloseForm} isSubmitting={isFormSubmitting} />}
 					</div>
 				</div>

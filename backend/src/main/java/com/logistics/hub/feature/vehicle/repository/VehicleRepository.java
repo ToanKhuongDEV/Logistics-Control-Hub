@@ -21,11 +21,13 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
 
         @Query("SELECT v FROM VehicleEntity v WHERE " +
                         "(:status IS NULL OR v.status = :status) AND " +
+                        "(:depotId IS NULL OR v.depot.id = :depotId) AND " +
                         "(:search IS NULL OR :search = '' OR " +
                         "LOWER(v.code) LIKE LOWER(CONCAT('%', :search, '%')))")
-        Page<VehicleEntity> findByStatusAndSearch(
+        Page<VehicleEntity> findByStatusAndSearchAndDepot(
                         @Param("status") VehicleStatus status,
                         @Param("search") String search,
+                        @Param("depotId") Long depotId,
                         Pageable pageable);
 
         @Query("SELECT v.code FROM VehicleEntity v WHERE v.code LIKE CONCAT(:prefix, '%') ORDER BY v.code DESC LIMIT 1")

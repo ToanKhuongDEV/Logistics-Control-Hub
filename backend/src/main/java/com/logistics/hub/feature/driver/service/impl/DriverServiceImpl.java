@@ -35,8 +35,8 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DriverResponse> findAll(Pageable pageable, String search) {
-        return driverRepository.findBySearch(search, pageable)
+    public Page<DriverResponse> findAll(Pageable pageable, String search, Long depotId) {
+        return driverRepository.findBySearchAndDepot(search, depotId, pageable)
                 .map(driverMapper::toResponse);
     }
 

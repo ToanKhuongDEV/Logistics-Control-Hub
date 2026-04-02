@@ -80,3 +80,8 @@ export interface OrderFilterParams {
 	depotId?: number | null;
 	sort?: string[];
 }
+
+export interface BulkOrderStatusUpdateRequest {
+	orderIds: number[];
+	status: OrderStatus;
+}

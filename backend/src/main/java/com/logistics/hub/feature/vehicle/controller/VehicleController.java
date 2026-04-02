@@ -3,6 +3,7 @@ package com.logistics.hub.feature.vehicle.controller;
 import com.logistics.hub.common.base.ApiResponse;
 import com.logistics.hub.common.base.PaginatedResponse;
 import com.logistics.hub.feature.vehicle.constant.VehicleConstant;
+import com.logistics.hub.feature.vehicle.dto.request.BulkVehicleDepotUpdateRequest;
 import com.logistics.hub.feature.vehicle.dto.request.VehicleRequest;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleResponse;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleStatisticsResponse;
@@ -34,9 +35,10 @@ public class VehicleController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) VehicleStatus status,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long depotId) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<VehicleResponse> vehiclePage = vehicleService.findAll(pageable, status, search);
+        Page<VehicleResponse> vehiclePage = vehicleService.findAll(pageable, status, search, depotId);
 
         PaginatedResponse<VehicleResponse> response = new PaginatedResponse<>();
         response.setData(vehiclePage.getContent());
@@ -69,6 +71,13 @@ public class VehicleController {
     public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody VehicleRequest request) {
         VehicleResponse updatedVehicle = vehicleService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLE_UPDATED_SUCCESS, updatedVehicle));
+    }
+
+    @PatchMapping(UrlConstant.Vehicle.BULK_DEPOT)
+    @Operation(summary = "Update vehicle depot in bulk", description = "Updates depot for multiple selected vehicles")
+    public ResponseEntity<ApiResponse<?>> updateDepotBulk(@Valid @RequestBody BulkVehicleDepotUpdateRequest request) {
+        vehicleService.updateDepotBulk(request.getDepotId(), request.getVehicleIds());
+        return ResponseEntity.ok(ApiResponse.success(VehicleConstant.VEHICLES_DEPOT_UPDATED_SUCCESS, null));
     }
 
     @DeleteMapping(UrlConstant.Vehicle.BY_ID)

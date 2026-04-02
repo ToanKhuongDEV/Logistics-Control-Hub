@@ -1,11 +1,12 @@
 import apiClient from "./api";
-import { Driver, DriverRequest, DriverStatistics } from "@/types/driver-types";
+import { Driver, DriverRequest, DriverStatistics, DriverFilterParams } from "@/types/driver-types";
 import { PaginatedResponse } from "@/types/common-types";
 
 export const driverApi = {
-	async getDrivers(params: { page: number; size: number; search?: string }): Promise<PaginatedResponse<Driver>> {
-		const searchParam = params.search ? `&search=${params.search}` : "";
-		const response = await apiClient.get(`/api/v1/drivers?page=${params.page}&size=${params.size}${searchParam}`);
+	async getDrivers(params: DriverFilterParams): Promise<PaginatedResponse<Driver>> {
+		const searchParam = params.search ? `&search=${encodeURIComponent(params.search)}` : "";
+		const depotParam = params.depotId !== undefined ? `&depotId=${params.depotId}` : "";
+		const response = await apiClient.get(`/api/v1/drivers?page=${params.page}&size=${params.size}${searchParam}${depotParam}`);
 		return response.data.data;
 	},
 

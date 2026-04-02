@@ -28,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,8 +43,8 @@ public class VehicleServiceImpl implements VehicleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<VehicleResponse> findAll(Pageable pageable, VehicleStatus status, String search) {
-        Page<VehicleEntity> vehiclePage = vehicleRepository.findByStatusAndSearch(status, search, pageable);
+    public Page<VehicleResponse> findAll(Pageable pageable, VehicleStatus status, String search, Long depotId) {
+        Page<VehicleEntity> vehiclePage = vehicleRepository.findByStatusAndSearchAndDepot(status, search, depotId, pageable);
         return vehiclePage.map(this::enrichResponse);
     }
 
@@ -125,6 +127,35 @@ public class VehicleServiceImpl implements VehicleService {
         resolveAndSetDepotDriver(request, entity);
         VehicleEntity saved = vehicleRepository.save(entity);
         return enrichResponse(saved);
+    }
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConstant.VEHICLES, allEntries = true),
+            @CacheEvict(value = CacheConstant.VEHICLE_STATS, allEntries = true),
+            @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
+    })
+    public void updateDepotBulk(Long depotId, List<Long> vehicleIds) {
+        DepotEntity depot = depotRepository.findById(depotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + depotId));
+
+        List<VehicleEntity> vehicles = vehicleRepository.findAllById(vehicleIds);
+
+        if (vehicles.size() != vehicleIds.size()) {
+            Set<Long> foundIds = vehicles.stream()
+                    .map(VehicleEntity::getId)
+                    .collect(Collectors.toSet());
+
+            String missingIds = vehicleIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(", "));
+
+            throw new ValidationException(VehicleConstant.VEHICLE_IDS_NOT_FOUND + missingIds);
+        }
+
+        vehicles.forEach(vehicle -> vehicle.setDepot(depot));
+        vehicleRepository.saveAll(vehicles);
     }
 
     private void resolveAndSetDepotDriver(VehicleRequest request, VehicleEntity entity) {

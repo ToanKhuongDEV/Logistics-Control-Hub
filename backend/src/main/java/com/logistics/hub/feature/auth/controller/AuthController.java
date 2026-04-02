@@ -3,7 +3,11 @@ package com.logistics.hub.feature.auth.controller;
 import com.logistics.hub.common.base.ApiResponse;
 import com.logistics.hub.common.constant.UrlConstant;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
+import com.logistics.hub.feature.auth.dto.request.ChangePasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
+import com.logistics.hub.feature.auth.dto.request.ForgotPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
+import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
 import com.logistics.hub.feature.auth.service.AuthService;
@@ -94,6 +98,43 @@ public class AuthController {
 
         DispatcherResponse userData = authService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.USER_INFO_RETRIEVED_SUCCESS, userData));
+    }
+
+    @PostMapping(UrlConstant.Auth.CREATE_ACCOUNT)
+    @Operation(summary = "Create Employee Account", description = "Creates a new employee account for internal use")
+    public ResponseEntity<ApiResponse<DispatcherResponse>> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        DispatcherResponse response = authService.createAccount(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(HttpStatus.CREATED.value(), AuthConstant.ACCOUNT_CREATED_SUCCESS, response));
+    }
+
+    @PostMapping(UrlConstant.Auth.CHANGE_PASSWORD)
+    @Operation(summary = "Change Password", description = "Changes password for the currently authenticated user")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, AuthConstant.NOT_AUTHENTICATED));
+        }
+
+        authService.changePassword(authentication.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.PASSWORD_CHANGED_SUCCESS, null));
+    }
+
+    @PostMapping(UrlConstant.Auth.FORGOT_PASSWORD)
+    @Operation(summary = "Forgot Password", description = "Sends password reset instructions to user email")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.FORGOT_PASSWORD_EMAIL_SENT, null));
+    }
+
+    @PostMapping(UrlConstant.Auth.RESET_PASSWORD)
+    @Operation(summary = "Reset Password", description = "Resets password using a valid reset token")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.PASSWORD_RESET_SUCCESS, null));
     }
 
     // ======================== Cookie Helpers ========================

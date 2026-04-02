@@ -1,6 +1,10 @@
 package com.logistics.hub.feature.auth.service;
 
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
+import com.logistics.hub.feature.auth.dto.request.ChangePasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
+import com.logistics.hub.feature.auth.dto.request.ForgotPasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
 
@@ -25,4 +29,12 @@ public interface AuthService {
     void logout(String refreshToken);
 
     DispatcherResponse getCurrentUser(String username);
+
+    DispatcherResponse createAccount(CreateAccountRequest request);
+
+    void changePassword(String username, ChangePasswordRequest request);
+
+    void forgotPassword(ForgotPasswordRequest request);
+
+    void resetPassword(ResetPasswordRequest request);
 }

@@ -18,6 +18,7 @@ CREATE TABLE dispatchers (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
     full_name VARCHAR(100),
     role VARCHAR(20) NOT NULL DEFAULT 'DISPATCHER'
 );
@@ -228,5 +229,17 @@ CREATE TABLE refresh_tokens (
 CREATE INDEX idx_refresh_tokens_username ON refresh_tokens(username);
 CREATE INDEX idx_refresh_tokens_jti ON refresh_tokens(jti);
 CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
+
+CREATE TABLE password_reset_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    token VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_password_reset_tokens_email ON password_reset_tokens(email);
+CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
 
 -- END OF SCRIPT

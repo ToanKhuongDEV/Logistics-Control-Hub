@@ -22,6 +22,13 @@ export const orderApi = {
 		if (params?.depotId !== undefined && params?.depotId !== null) {
 			queryParams.append("depotId", params.depotId.toString());
 		}
+		if (params?.sort?.length) {
+			params.sort.forEach((sortValue) => {
+				if (sortValue) {
+					queryParams.append("sort", sortValue);
+				}
+			});
+		}
 
 		const url = `${ORDER_API_BASE}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 		const response = await apiClient.get<ApiResponse<PaginatedOrderResponse>>(url);

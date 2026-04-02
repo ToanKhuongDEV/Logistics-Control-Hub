@@ -13,6 +13,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Component
@@ -30,10 +31,14 @@ public class JwtUtils {
     @Value("${spring.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
-
+    // ======================== Access Token ========================
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractJti(String token) {
+        return extractClaim(token, Claims::getId);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -46,17 +51,7 @@ public class JwtUtils {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtExpiration);
-    }
-
-    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
-        return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
-                .compact();
+        return buildToken(extraClaims, userDetails, jwtExpiration, getSignInKey(), SignatureAlgorithm.HS256);
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -69,24 +64,19 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-
+    // ======================== Refresh Token ========================
 
     public String extractUsernameFromRefreshToken(String token) {
         return extractClaim(token, Claims::getSubject, getRefreshSignInKey());
     }
 
-    public String generateRefreshToken(UserDetails userDetails) {
-        return buildRefreshToken(new HashMap<>(), userDetails, refreshExpiration);
+    public String extractJtiFromRefreshToken(String token) {
+        return extractClaim(token, Claims::getId, getRefreshSignInKey());
     }
 
-    private String buildRefreshToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
-        return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getRefreshSignInKey(), SignatureAlgorithm.HS512)
-                .compact();
+    public String generateRefreshToken(UserDetails userDetails) {
+        return buildToken(new HashMap<>(), userDetails, refreshExpiration, getRefreshSignInKey(),
+                SignatureAlgorithm.HS512);
     }
 
     public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
@@ -99,7 +89,35 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Trả về thời điểm hết hạn của refresh token (now + refreshExpiration).
+     * Dùng để lưu expiresAt trong DB.
+     */
+    public Date getRefreshTokenExpirationDate() {
+        return new Date(System.currentTimeMillis() + refreshExpiration);
+    }
 
+    /**
+     * Trả về thời gian sống của refresh token tính bằng giây.
+     * Dùng để set maxAge cho cookie.
+     */
+    public long getRefreshExpirationSeconds() {
+        return refreshExpiration / 1000;
+    }
+
+    // ======================== Common ========================
+
+    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration, Key key,
+            SignatureAlgorithm algorithm) {
+        return Jwts.builder()
+                .setClaims(extraClaims)
+                .setId(UUID.randomUUID().toString())
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key, algorithm)
+                .compact();
+    }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver, Key key) {
         final Claims claims = extractAllClaims(token, key);

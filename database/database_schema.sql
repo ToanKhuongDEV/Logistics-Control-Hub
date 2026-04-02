@@ -215,4 +215,18 @@ CREATE INDEX idx_routes_vehicle ON routes(vehicle_id);
 CREATE INDEX idx_route_stops_route ON route_stops(route_id);
 CREATE INDEX idx_vehicles_driver ON vehicles(driver_id);
 
+-- 12. Refresh Tokens (for token rotation)
+CREATE TABLE refresh_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    jti VARCHAR(36) NOT NULL UNIQUE,
+    token TEXT NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_refresh_tokens_username ON refresh_tokens(username);
+CREATE INDEX idx_refresh_tokens_jti ON refresh_tokens(jti);
+CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
+
 -- END OF SCRIPT

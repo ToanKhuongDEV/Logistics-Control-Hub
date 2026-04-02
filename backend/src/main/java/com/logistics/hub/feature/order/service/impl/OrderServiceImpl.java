@@ -12,6 +12,7 @@ import com.logistics.hub.feature.order.entity.OrderEntity;
 import com.logistics.hub.feature.order.enums.OrderStatus;
 import com.logistics.hub.feature.order.mapper.OrderMapper;
 import com.logistics.hub.feature.order.repository.OrderRepository;
+import com.logistics.hub.feature.order.repository.OrderSpecification;
 import com.logistics.hub.feature.order.service.OrderService;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
@@ -40,11 +41,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> findAll(Pageable pageable, OrderStatus status, String search, Long depotId) {
-        String statusStr = status != null ? status.name() : null;
-        String searchStr = (search != null && !search.isEmpty()) ? search : null;
-
-        return orderRepository.findAllWithLocationAndFilters(statusStr, searchStr, depotId, pageable)
-                .map(OrderResponse::fromProjection);
+        return orderRepository.findAll(OrderSpecification.withFilters(status, search, depotId), pageable)
+                .map(this::toResponse);
     }
 
     @Override
@@ -103,6 +101,27 @@ public class OrderServiceImpl implements OrderService {
 
         OrderEntity saved = orderRepository.save(entity);
         return findById(saved.getId());
+    }
+
+    private OrderResponse toResponse(OrderEntity entity) {
+        OrderResponse response = orderMapper.toResponse(entity);
+
+        if (entity.getDeliveryLocation() != null) {
+            response.setDeliveryStreet(entity.getDeliveryLocation().getStreet());
+            response.setDeliveryCity(entity.getDeliveryLocation().getCity());
+            response.setDeliveryCountry(entity.getDeliveryLocation().getCountry());
+            response.setDeliveryLocationName(String.format("%s, %s, %s",
+                    entity.getDeliveryLocation().getStreet(),
+                    entity.getDeliveryLocation().getCity(),
+                    entity.getDeliveryLocation().getCountry()));
+        }
+
+        if (entity.getDriver() != null) {
+            response.setDriverId(entity.getDriver().getId());
+            response.setDriverName(entity.getDriver().getName());
+        }
+
+        return response;
     }
 
     @Override

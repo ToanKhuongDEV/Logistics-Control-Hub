@@ -78,4 +78,5 @@ export interface OrderFilterParams {
 	status?: OrderStatus | "all";
 	search?: string;
 	depotId?: number | null;
+	sort?: string[];
 }

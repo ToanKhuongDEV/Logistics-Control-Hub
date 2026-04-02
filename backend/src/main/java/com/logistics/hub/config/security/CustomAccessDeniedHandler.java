@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
@@ -24,16 +23,14 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(
             HttpServletRequest request,
             HttpServletResponse response,
-            AccessDeniedException accessDeniedException
-    ) throws IOException, ServletException {
-        
+            AccessDeniedException accessDeniedException) throws IOException, ServletException {
+
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setStatus(HttpStatus.FORBIDDEN.value());
 
         ApiResponse<Void> apiResponse = ApiResponse.error(
                 HttpStatus.FORBIDDEN.value(),
-                SecurityConstant.FORBIDDEN
-        );
+                SecurityConstant.FORBIDDEN);
 
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
     }

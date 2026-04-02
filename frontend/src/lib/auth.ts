@@ -7,7 +7,6 @@ export interface LoginRequest {
 
 export interface LoginResponse {
 	accessToken: string;
-	refreshToken: string;
 }
 
 export interface User {
@@ -19,31 +18,31 @@ export interface User {
 
 class AuthService {
 	async login(username: string, password: string): Promise<LoginResponse> {
-		const response = await apiClient.post<LoginResponse>("/api/v1/auth/login", {
+		const response = await apiClient.post<{ data: LoginResponse }>("/api/v1/auth/login", {
 			username,
 			password,
 		});
 
-		const { accessToken, refreshToken } = response.data;
+		const { accessToken } = response.data.data;
 
-		// Store tokens in localStorage
+		// Access token is stored client-side; refresh token is handled via HttpOnly cookie.
 		localStorage.setItem("accessToken", accessToken);
-		localStorage.setItem("refreshToken", refreshToken);
 
-		return response.data;
+		return response.data.data;
 	}
 
-	logout(): void {
+	async logout(): Promise<void> {
+		try {
+			await apiClient.post("/api/v1/auth/logout");
+		} catch {
+			// Ignore logout transport errors and still clear local auth state.
+		}
+
 		localStorage.removeItem("accessToken");
-		localStorage.removeItem("refreshToken");
 	}
 
 	getAccessToken(): string | null {
 		return localStorage.getItem("accessToken");
-	}
-
-	getRefreshToken(): string | null {
-		return localStorage.getItem("refreshToken");
 	}
 
 	isAuthenticated(): boolean {

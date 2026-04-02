@@ -9,10 +9,11 @@ public final class AuthConstant {
     public static final String NOT_AUTHENTICATED = "Chưa được xác thực";
     public static final String LOGIN_SUCCESS = "Đăng nhập thành công";
     public static final String TOKEN_REFRESH_SUCCESS = "Làm mới token thành công";
+    public static final String LOGOUT_SUCCESS = "Đăng xuất thành công";
     public static final String INVALID_CREDENTIALS = "Tên đăng nhập hoặc mật khẩu không đúng";
     public static final String INVALID_TOKEN = "Token không hợp lệ hoặc đã hết hạn";
+    public static final String REFRESH_TOKEN_NOT_FOUND = "Refresh token không tồn tại hoặc đã bị thu hồi";
 
     public static final String USERNAME_REQUIRED = "Tên đăng nhập không được để trống";
     public static final String PASSWORD_REQUIRED = "Mật khẩu không được để trống";
-    public static final String REFRESH_TOKEN_REQUIRED = "Refresh token không được để trống";
 }

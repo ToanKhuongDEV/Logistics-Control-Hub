@@ -11,7 +11,9 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
 import { orderApi } from "@/lib/order-api";
+import { depotApi } from "@/lib/depot-api";
 import { Order, OrderRequest, OrderStatistics, OrderStatus } from "@/types/order-types";
+import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
@@ -26,10 +28,13 @@ export default function OrdersPage() {
 	const [totalElements, setTotalElements] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+	const [depots, setDepots] = useState<Depot[]>([]);
 
 	// Filter states
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
+	const [depotFilter, setDepotFilter] = useState("all");
+	const [sortBy, setSortBy] = useState("createdAt,desc");
 
 	// Fetch orders
 	const fetchOrders = async () => {
@@ -40,6 +45,8 @@ export default function OrdersPage() {
 				size: ITEMS_PER_PAGE,
 				status: statusFilter !== "all" ? statusFilter : undefined,
 				search: searchQuery || undefined,
+				depotId: depotFilter !== "all" ? Number(depotFilter) : undefined,
+				sort: [sortBy],
 			});
 
 			setOrders(response.data);
@@ -63,20 +70,31 @@ export default function OrdersPage() {
 		}
 	};
 
+	const fetchDepots = async () => {
+		try {
+			const response = await depotApi.getDepots({ page: 0, size: 100 });
+			setDepots(response.data.filter((depot) => depot.isActive));
+		} catch (error) {
+			console.error("Error fetching depots:", error);
+			toast.error("Không thể tải danh sách kho");
+		}
+	};
+
 	// Initial load and when filters/page change
 	useEffect(() => {
 		fetchOrders();
-	}, [currentPage, statusFilter, searchQuery]);
+	}, [currentPage, statusFilter, searchQuery, depotFilter, sortBy]);
 
 	// Fetch statistics on mount and after CRUD operations
 	useEffect(() => {
 		fetchStatistics();
+		fetchDepots();
 	}, []);
 
 	// Reset to page 1 when filters change
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [searchQuery, statusFilter]);
+	}, [searchQuery, statusFilter, depotFilter, sortBy]);
 
 	const handleAddOrder = async (data: OrderRequest) => {
 		setIsFormSubmitting(true);
@@ -167,7 +185,17 @@ export default function OrdersPage() {
 						{/* Statistics Cards */}
 						<OrderStats totalOrders={statistics?.total || 0} pendingOrders={statistics?.pending || 0} inTransitOrders={statistics?.inTransit || 0} />
 						{/* Filters */}
-						<OrderFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} status={statusFilter} onStatusChange={setStatusFilter} />
+						<OrderFilters
+							searchQuery={searchQuery}
+							onSearchChange={setSearchQuery}
+							status={statusFilter}
+							onStatusChange={setStatusFilter}
+							depotId={depotFilter}
+							onDepotChange={setDepotFilter}
+							sortBy={sortBy}
+							onSortByChange={setSortBy}
+							depots={depots}
+						/>
 
 						{/* Actions */}
 						<div className="flex items-center justify-end">

@@ -3,6 +3,7 @@
 import React from "react";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -201,6 +202,11 @@ export default function LoginPage() {
 								<button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}>
 									{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
 								</button>
+							</div>
+							<div className="flex justify-end">
+								<Link href="/forgot-password" className="text-sm font-medium text-primary transition-colors hover:text-primary/80 hover:underline">
+									Quên mật khẩu?
+								</Link>
 							</div>
 						</div>
 

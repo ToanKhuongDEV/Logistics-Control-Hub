@@ -1,24 +1,37 @@
 package com.logistics.hub.feature.auth.service.impl;
 
+import com.logistics.hub.common.exception.UnauthorizedException;
+import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
+import com.logistics.hub.feature.auth.dto.request.ChangePasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
+import com.logistics.hub.feature.auth.dto.request.ForgotPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
+import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
+import com.logistics.hub.feature.auth.entity.PasswordResetTokenEntity;
 import com.logistics.hub.feature.auth.entity.RefreshTokenEntity;
+import com.logistics.hub.feature.auth.repository.PasswordResetTokenRepository;
 import com.logistics.hub.feature.auth.repository.RefreshTokenRepository;
 import com.logistics.hub.feature.auth.service.AuthService;
 import com.logistics.hub.feature.auth.util.JwtUtils;
+import com.logistics.hub.feature.auth.service.PasswordResetMailService;
 import com.logistics.hub.feature.dispatcher.entity.DispatcherEntity;
 import com.logistics.hub.feature.dispatcher.mapper.DispatcherMapper;
 import com.logistics.hub.feature.dispatcher.repository.DispatcherRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +42,14 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
     private final DispatcherMapper dispatcherMapper;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordResetMailService passwordResetMailService;
+
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
+
+    @Value("${app.auth.reset-password-expiration-minutes:15}")
+    private long resetPasswordExpirationMinutes;
 
     @Override
     @Transactional
@@ -117,6 +138,91 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return dispatcherMapper.toResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public DispatcherResponse createAccount(CreateAccountRequest request) {
+        if (dispatcherRepository.existsByUsername(request.getUsername())) {
+            throw new ValidationException(AuthConstant.USERNAME_ALREADY_EXISTS);
+        }
+
+        if (dispatcherRepository.existsByEmailIgnoreCase(request.getEmail())) {
+            throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
+        }
+
+        DispatcherEntity dispatcher = new DispatcherEntity();
+        dispatcher.setUsername(request.getUsername().trim());
+        dispatcher.setFullName(request.getFullName().trim());
+        dispatcher.setEmail(request.getEmail().trim().toLowerCase());
+        dispatcher.setPassword(passwordEncoder.encode(request.getPassword()));
+        dispatcher.setRole("DISPATCHER");
+
+        return dispatcherMapper.toResponse(dispatcherRepository.save(dispatcher));
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String username, ChangePasswordRequest request) {
+        DispatcherEntity user = dispatcherRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException(AuthConstant.NOT_AUTHENTICATED));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new ValidationException(AuthConstant.CURRENT_PASSWORD_INCORRECT);
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new ValidationException(AuthConstant.PASSWORD_MUST_BE_DIFFERENT);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        dispatcherRepository.save(user);
+        refreshTokenRepository.deleteByUsername(user.getUsername());
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        dispatcherRepository.findByEmailIgnoreCase(request.getEmail().trim())
+                .ifPresent(user -> {
+                    passwordResetTokenRepository.deleteByEmailIgnoreCase(user.getEmail());
+
+                    String token = UUID.randomUUID().toString();
+                    PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity();
+                    resetToken.setToken(token);
+                    resetToken.setEmail(user.getEmail());
+                    resetToken.setExpiresAt(Instant.now().plus(resetPasswordExpirationMinutes, ChronoUnit.MINUTES));
+
+                    passwordResetTokenRepository.save(resetToken);
+
+                    String resetUrl = frontendUrl + "/reset-password?token=" + token;
+                    passwordResetMailService.sendPasswordResetEmail(user.getEmail(), user.getFullName(), resetUrl);
+                });
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetTokenEntity resetToken = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new ValidationException(AuthConstant.INVALID_TOKEN));
+
+        if (resetToken.getUsedAt() != null || resetToken.getExpiresAt().isBefore(Instant.now())) {
+            throw new ValidationException(AuthConstant.INVALID_TOKEN);
+        }
+
+        DispatcherEntity user = dispatcherRepository.findByEmailIgnoreCase(resetToken.getEmail())
+                .orElseThrow(() -> new ValidationException(AuthConstant.INVALID_TOKEN));
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new ValidationException(AuthConstant.PASSWORD_MUST_BE_DIFFERENT);
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        dispatcherRepository.save(user);
+
+        resetToken.setUsedAt(Instant.now());
+        passwordResetTokenRepository.save(resetToken);
+        refreshTokenRepository.deleteByUsername(user.getUsername());
     }
 
     /**

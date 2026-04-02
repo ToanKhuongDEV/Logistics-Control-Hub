@@ -13,19 +13,19 @@ VALUES
 -- 2. Dispatchers
 -- =====================================================
 
-INSERT INTO dispatchers (username, password, full_name, role)
+INSERT INTO dispatchers (username, password, email, full_name, role)
 VALUES
-('dispatcher01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Nguyễn Văn An', 'DISPATCHER'),
-('dispatcher02', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Trần Thị Bích', 'DISPATCHER'),
-('dispatcher03', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Lê Minh Châu', 'DISPATCHER'),
-('dispatcher04', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Phạm Quốc Duy', 'DISPATCHER'),
-('dispatcher05', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Hoàng Thu Hà', 'DISPATCHER'),
-('dispatcher06', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Đỗ Văn Hùng', 'DISPATCHER'),
-('dispatcher07', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Vũ Thị Lan', 'DISPATCHER'),
-('dispatcher08', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Bùi Minh Nam', 'DISPATCHER'),
-('dispatcher09', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Mai Thu Phương', 'DISPATCHER'),
-('dispatcher10', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Ngô Văn Quang', 'DISPATCHER'),
-('admin01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'Trần Thị Hương', 'ADMIN');
+('dispatcher01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher01@logitower.vn', 'Nguyễn Văn An', 'DISPATCHER'),
+('dispatcher02', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher02@logitower.vn', 'Trần Thị Bích', 'DISPATCHER'),
+('dispatcher03', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher03@logitower.vn', 'Lê Minh Châu', 'DISPATCHER'),
+('dispatcher04', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher04@logitower.vn', 'Phạm Quốc Duy', 'DISPATCHER'),
+('dispatcher05', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher05@logitower.vn', 'Hoàng Thu Hà', 'DISPATCHER'),
+('dispatcher06', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher06@logitower.vn', 'Đỗ Văn Hùng', 'DISPATCHER'),
+('dispatcher07', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher07@logitower.vn', 'Vũ Thị Lan', 'DISPATCHER'),
+('dispatcher08', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher08@logitower.vn', 'Bùi Minh Nam', 'DISPATCHER'),
+('dispatcher09', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher09@logitower.vn', 'Mai Thu Phương', 'DISPATCHER'),
+('dispatcher10', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher10@logitower.vn', 'Ngô Văn Quang', 'DISPATCHER'),
+('admin01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'admin01@logitower.vn', 'Trần Thị Hương', 'ADMIN');
 
 -- =====================================================
 -- 3. Drivers

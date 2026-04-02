@@ -12,6 +12,10 @@ public class UrlConstant {
         public static final String REFRESH = "/refresh";
         public static final String LOGOUT = "/logout";
         public static final String ME = "/me";
+        public static final String CREATE_ACCOUNT = "/accounts";
+        public static final String CHANGE_PASSWORD = "/change-password";
+        public static final String FORGOT_PASSWORD = "/forgot-password";
+        public static final String RESET_PASSWORD = "/reset-password";
 
         private Auth() {
         }

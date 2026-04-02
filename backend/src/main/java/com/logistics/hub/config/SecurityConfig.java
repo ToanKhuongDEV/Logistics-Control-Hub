@@ -1,5 +1,6 @@
 package com.logistics.hub.config;
 
+import com.logistics.hub.common.constant.UrlConstant;
 import com.logistics.hub.feature.auth.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +33,11 @@ public class SecurityConfig {
 
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/v1/auth/**",
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.LOGIN,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.REFRESH,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.LOGOUT,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.FORGOT_PASSWORD,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.RESET_PASSWORD,
             "/actuator/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

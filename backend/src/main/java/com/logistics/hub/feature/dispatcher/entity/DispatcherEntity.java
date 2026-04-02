@@ -24,6 +24,9 @@ public class DispatcherEntity {
     @Column(nullable = false)
     private String password;
 
+    @Column(unique = true, length = 255)
+    private String email;
+
     @Column(name = "full_name", length = 100)
     private String fullName;
 

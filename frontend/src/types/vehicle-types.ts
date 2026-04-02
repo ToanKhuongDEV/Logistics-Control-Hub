@@ -67,4 +67,10 @@ export interface VehicleFilterParams {
 	size?: number;
 	status?: VehicleStatus | "all";
 	search?: string;
+	depotId?: number;
+}
+
+export interface BulkVehicleDepotUpdateRequest {
+	vehicleIds: number[];
+	depotId: number;
 }

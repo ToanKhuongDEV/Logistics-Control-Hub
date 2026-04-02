@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface DriverService {
 
-    Page<DriverResponse> findAll(Pageable pageable, String search);
+    Page<DriverResponse> findAll(Pageable pageable, String search, Long depotId);
 
     DriverResponse findById(Long id);
 

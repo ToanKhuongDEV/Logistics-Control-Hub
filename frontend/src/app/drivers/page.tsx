@@ -11,7 +11,9 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
 import { driverApi } from "@/lib/driver-api";
+import { depotApi } from "@/lib/depot-api";
 import { Driver, DriverRequest, DriverStatistics } from "@/types/driver-types";
+import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
@@ -27,6 +29,8 @@ export default function DriversPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [depotFilter, setDepotFilter] = useState("all");
+	const [depots, setDepots] = useState<Depot[]>([]);
 
 	const fetchDrivers = async () => {
 		setIsLoading(true);
@@ -35,6 +39,7 @@ export default function DriversPage() {
 				page: currentPage - 1,
 				size: ITEMS_PER_PAGE,
 				search: searchQuery || undefined,
+				depotId: depotFilter !== "all" ? Number(depotFilter) : undefined,
 			});
 
 			setDrivers(response.data);
@@ -42,7 +47,7 @@ export default function DriversPage() {
 			setTotalElements(response.pagination.totalElements);
 		} catch (error: any) {
 			console.error("Error fetching drivers:", error);
-			toast.error(error?.response?.data?.message || "Không thể tải danh sách tài xế");
+			toast.error(error?.response?.data?.message || "Khong the tai danh sach tai xe");
 		} finally {
 			setIsLoading(false);
 		}
@@ -57,12 +62,23 @@ export default function DriversPage() {
 		}
 	};
 
+	const fetchDepots = async () => {
+		try {
+			const response = await depotApi.getDepots({ page: 0, size: 100 });
+			setDepots(response.data.filter((depot) => depot.isActive));
+		} catch (error: any) {
+			console.error("Error fetching depots:", error);
+			toast.error(error?.response?.data?.message || "Khong the tai danh sach kho");
+		}
+	};
+
 	useEffect(() => {
 		fetchDrivers();
-	}, [currentPage, searchQuery]);
+	}, [currentPage, searchQuery, depotFilter]);
 
 	useEffect(() => {
 		fetchStatistics();
+		fetchDepots();
 	}, []);
 
 	const handleCreate = () => {
@@ -76,18 +92,18 @@ export default function DriversPage() {
 	};
 
 	const handleDelete = async (id: number) => {
-		if (!confirm("Bạn có chắc chắn muốn xóa tài xế này?")) {
+		if (!confirm("Ban co chac chan muon xoa tai xe nay?")) {
 			return;
 		}
 
 		try {
 			await driverApi.delete(id);
-			toast.success("Xóa tài xế thành công");
+			toast.success("Xoa tai xe thanh cong");
 			await fetchDrivers();
 			await fetchStatistics();
 		} catch (error: any) {
 			console.error("Error deleting driver:", error);
-			toast.error(error?.response?.data?.message || "Không thể xóa tài xế");
+			toast.error(error?.response?.data?.message || "Khong the xoa tai xe");
 		}
 	};
 
@@ -96,17 +112,17 @@ export default function DriversPage() {
 		try {
 			if (editingDriver) {
 				await driverApi.update(editingDriver.id, data);
-				toast.success("Cập nhật tài xế thành công");
+				toast.success("Cap nhat tai xe thanh cong");
 			} else {
 				await driverApi.create(data);
-				toast.success("Thêm tài xế mới thành công");
+				toast.success("Them tai xe moi thanh cong");
 			}
 			setIsFormOpen(false);
 			await fetchDrivers();
 			await fetchStatistics();
 		} catch (error: any) {
 			console.error("Error saving driver:", error);
-			const errorMessage = error?.response?.data?.message || (editingDriver ? "Không thể cập nhật tài xế" : "Không thể thêm tài xế mới");
+			const errorMessage = error?.response?.data?.message || (editingDriver ? "Khong the cap nhat tai xe" : "Khong the them tai xe moi");
 			toast.error(errorMessage);
 			throw error;
 		} finally {
@@ -119,8 +135,14 @@ export default function DriversPage() {
 		setCurrentPage(1);
 	};
 
+	const handleDepotChange = (value: string) => {
+		setDepotFilter(value);
+		setCurrentPage(1);
+	};
+
 	const handleClearFilters = () => {
 		setSearchQuery("");
+		setDepotFilter("all");
 		setCurrentPage(1);
 	};
 
@@ -130,32 +152,36 @@ export default function DriversPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
-							<h1 className="text-3xl font-bold text-foreground">Quản lý tài xế</h1>
-							<p className="text-muted-foreground mt-2">Quản lý và theo dõi toàn bộ tài xế của công ty</p>
+							<h1 className="text-3xl font-bold text-foreground">Quan ly tai xe</h1>
+							<p className="text-muted-foreground mt-2">Quan ly va theo doi toan bo tai xe cua cong ty</p>
 						</div>
 					</div>
 
 					<div className="p-8 space-y-6">
-						{/* Statistics Cards */}
 						<DriverStats statistics={statistics} />
 
-						{/* Filters */}
-						{/* Filters and Actions */}
-						<DriverFilters searchQuery={searchQuery} onSearchChange={handleSearchChange} onClearFilters={handleClearFilters}>
+						<DriverFilters
+							searchQuery={searchQuery}
+							onSearchChange={handleSearchChange}
+							depotId={depotFilter}
+							onDepotChange={handleDepotChange}
+							depots={depots}
+							onClearFilters={handleClearFilters}
+						>
 							<Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
 								<Plus className="w-4 h-4" />
-								Thêm tài xế mới
+								Them tai xe moi
 							</Button>
 						</DriverFilters>
 
-						{/* Table and Pagination */}
 						<div className="space-y-4">
 							<DriverTable drivers={drivers} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
 
-							{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={setCurrentPage} entityName="tài xế" />}
+							{totalElements > 0 && (
+								<Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={setCurrentPage} entityName="tai xe" />
+							)}
 						</div>
 
-						{/* Driver Form Modal */}
 						{isFormOpen && <DriverForm driver={editingDriver} onSubmit={handleFormSubmit} onClose={() => setIsFormOpen(false)} isSubmitting={isFormSubmitting} />}
 					</div>
 				</div>

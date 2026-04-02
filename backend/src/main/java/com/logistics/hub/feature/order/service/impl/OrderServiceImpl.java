@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -157,6 +159,27 @@ public class OrderServiceImpl implements OrderService {
 
         OrderEntity saved = orderRepository.save(entity);
         return findById(saved.getId());
+    }
+
+    @Override
+    public void updateStatusBulk(List<Long> orderIds, OrderStatus status) {
+        List<OrderEntity> orders = orderRepository.findAllById(orderIds);
+
+        if (orders.size() != orderIds.size()) {
+            Set<Long> foundIds = orders.stream()
+                    .map(OrderEntity::getId)
+                    .collect(Collectors.toSet());
+
+            String missingIds = orderIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(", "));
+
+            throw new ValidationException(OrderConstant.ORDER_IDS_NOT_FOUND + missingIds);
+        }
+
+        orders.forEach(order -> order.setStatus(status));
+        orderRepository.saveAll(orders);
     }
 
     private void assignNearestDepot(OrderEntity order) {

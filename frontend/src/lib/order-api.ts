@@ -1,5 +1,5 @@
 import apiClient from "./api";
-import { Order, OrderRequest, OrderStatistics, PaginatedOrderResponse, ApiResponse, OrderFilterParams } from "@/types/order-types";
+import { Order, OrderRequest, OrderStatistics, PaginatedOrderResponse, ApiResponse, OrderFilterParams, BulkOrderStatusUpdateRequest } from "@/types/order-types";
 
 const ORDER_API_BASE = "/api/v1/orders";
 
@@ -48,6 +48,10 @@ export const orderApi = {
 	async updateOrder(id: number, data: OrderRequest): Promise<Order> {
 		const response = await apiClient.put<ApiResponse<Order>>(`${ORDER_API_BASE}/${id}`, data);
 		return response.data.data;
+	},
+
+	async updateOrdersStatusBulk(data: BulkOrderStatusUpdateRequest): Promise<void> {
+		await apiClient.patch<ApiResponse<null>>(`${ORDER_API_BASE}/bulk/status`, data);
 	},
 
 	async deleteOrder(id: number): Promise<void> {

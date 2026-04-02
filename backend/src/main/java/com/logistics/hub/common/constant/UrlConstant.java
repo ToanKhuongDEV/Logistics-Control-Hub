@@ -21,6 +21,7 @@ public class UrlConstant {
         public static final String PREFIX = API_V1 + "/orders";
         public static final String BY_ID = "/{id}";
         public static final String STATISTICS = "/statistics";
+        public static final String BULK_STATUS = "/bulk/status";
 
         private Order() {
         }
@@ -38,6 +39,7 @@ public class UrlConstant {
         public static final String PREFIX = API_V1 + "/vehicles";
         public static final String BY_ID = "/{id}";
         public static final String STATISTICS = "/statistics";
+        public static final String BULK_DEPOT = "/bulk/depot";
 
         private Vehicle() {
         }

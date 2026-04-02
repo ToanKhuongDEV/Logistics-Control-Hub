@@ -3,6 +3,7 @@ package com.logistics.hub.feature.order.controller;
 import com.logistics.hub.common.base.ApiResponse;
 import com.logistics.hub.common.base.PaginatedResponse;
 import com.logistics.hub.feature.order.constant.OrderConstant;
+import com.logistics.hub.feature.order.dto.request.BulkOrderStatusUpdateRequest;
 import com.logistics.hub.feature.order.dto.request.OrderRequest;
 import com.logistics.hub.feature.order.dto.response.OrderResponse;
 import com.logistics.hub.feature.order.dto.response.OrderStatisticsResponse;
@@ -144,6 +145,13 @@ public class OrderController {
     public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody OrderRequest request) {
         OrderResponse updatedOrder = orderService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_UPDATED_SUCCESS, updatedOrder));
+    }
+
+    @PatchMapping(UrlConstant.Order.BULK_STATUS)
+    @Operation(summary = "Update orders status in bulk", description = "Updates status for multiple selected orders")
+    public ResponseEntity<ApiResponse<?>> updateStatusBulk(@Valid @RequestBody BulkOrderStatusUpdateRequest request) {
+        orderService.updateStatusBulk(request.getOrderIds(), request.getStatus());
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDERS_STATUS_UPDATED_SUCCESS, null));
     }
 
     @DeleteMapping(UrlConstant.Order.BY_ID)

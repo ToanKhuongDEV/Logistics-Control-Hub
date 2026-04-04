@@ -2,6 +2,8 @@ package com.logistics.hub.feature.order.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.location.service.LocationService;
 import com.logistics.hub.feature.order.constant.OrderConstant;
@@ -39,17 +41,38 @@ public class OrderServiceImpl implements OrderService {
     private final LocationService locationService;
     private final DepotRepository depotRepository;
     private final HaversineDistanceService haversineDistanceService;
+    private final AuthorizationService authorizationService;
 
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> findAll(Pageable pageable, OrderStatus status, String search, Long depotId) {
-        return orderRepository.findAll(OrderSpecification.withFilters(status, search, depotId), pageable)
+        if (authorizationService.isAdmin()) {
+            return orderRepository.findAll(OrderSpecification.withFilters(status, search, depotId), pageable)
+                    .map(this::toResponse);
+        }
+
+        if (depotId != null) {
+            authorizationService.requireDepotAccess(depotId);
+            return orderRepository.findAll(OrderSpecification.withFilters(status, search, depotId), pageable)
+                    .map(this::toResponse);
+        }
+
+        if (authorizationService.getAccessibleDepotIds().isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return orderRepository.findAll(
+                        OrderSpecification.withFilters(status, search, authorizationService.getAccessibleDepotIds()),
+                        pageable)
                 .map(this::toResponse);
     }
 
     @Override
     public OrderStatisticsResponse getStatistics() {
-        List<OrderEntity> allOrders = orderRepository.findAll();
+        List<OrderEntity> allOrders = authorizationService.isAdmin()
+                ? orderRepository.findAll()
+                : orderRepository.findAll(
+                        OrderSpecification.withFilters(null, null, authorizationService.getAccessibleDepotIds()));
 
         long activeCount = allOrders.stream()
                 .filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.CANCELLED)
@@ -73,6 +96,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public OrderResponse findById(Long id) {
+        OrderEntity order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
+        authorizationService.requireOrderAccess(order);
+
         return orderRepository.findByIdWithLocation(id)
                 .map(OrderResponse::fromProjection)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
@@ -80,6 +107,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse create(OrderRequest request) {
+        if (request.getDepotId() != null) {
+            authorizationService.requireDepotAccess(request.getDepotId());
+        } else if (!authorizationService.isAdmin()) {
+            throw new ValidationException("Dispatcher phải chọn kho phụ trách khi tạo đơn hàng.");
+        }
+
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
             request.setCode(generateOrderCode());
         } else if (orderRepository.existsByCode(request.getCode())) {
@@ -98,6 +131,7 @@ public class OrderServiceImpl implements OrderService {
             DepotEntity depot = depotRepository.findById(request.getDepotId())
                     .orElseThrow(
                             () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+            authorizationService.requireDepotAccess(depot.getId());
             entity.setDepot(depot);
         }
 
@@ -130,6 +164,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse update(Long id, OrderRequest request) {
         OrderEntity entity = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
+        authorizationService.requireOrderAccess(entity);
 
         if (!entity.getCode().equals(request.getCode()) && orderRepository.existsByCode(request.getCode())) {
             throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
@@ -138,6 +173,11 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.updateEntityFromRequest(request, entity);
 
         if (request.getStatus() != null) {
+            if (!authorizationService.isAdmin()
+                    && request.getStatus() == OrderStatus.CANCELLED
+                    && entity.getStatus() != OrderStatus.CREATED) {
+                throw new ForbiddenException("Dispatcher không được hủy đơn đã xác nhận hoặc đang xử lý.");
+            }
             entity.setStatus(request.getStatus());
         }
 
@@ -151,9 +191,15 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (request.getDepotId() != null) {
+            if (!authorizationService.isAdmin()
+                    && entity.getDepot() != null
+                    && !entity.getDepot().getId().equals(request.getDepotId())) {
+                throw new ForbiddenException("Điều chuyển đơn sang kho khác cần admin xử lý.");
+            }
             DepotEntity depot = depotRepository.findById(request.getDepotId())
                     .orElseThrow(
                             () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+            authorizationService.requireDepotAccess(depot.getId());
             entity.setDepot(depot);
         }
 
@@ -164,6 +210,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void updateStatusBulk(List<Long> orderIds, OrderStatus status) {
         List<OrderEntity> orders = orderRepository.findAllById(orderIds);
+
+        if (!authorizationService.isAdmin() && status == OrderStatus.CANCELLED) {
+            throw new ForbiddenException("Dispatcher không được hủy đơn hàng loạt.");
+        }
 
         if (orders.size() != orderIds.size()) {
             Set<Long> foundIds = orders.stream()
@@ -178,6 +228,7 @@ public class OrderServiceImpl implements OrderService {
             throw new ValidationException(OrderConstant.ORDER_IDS_NOT_FOUND + missingIds);
         }
 
+        orders.forEach(authorizationService::requireOrderAccess);
         orders.forEach(order -> order.setStatus(status));
         orderRepository.saveAll(orders);
     }
@@ -189,6 +240,8 @@ public class OrderServiceImpl implements OrderService {
 
         List<DepotEntity> activeDepots = depotRepository.findAll().stream()
                 .filter(DepotEntity::getIsActive)
+                .filter(depot -> authorizationService.isAdmin()
+                        || authorizationService.getAccessibleDepotIds().contains(depot.getId()))
                 .toList();
 
         if (activeDepots.isEmpty()) {
@@ -224,9 +277,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void delete(Long id) {
-        if (!orderRepository.existsById(id)) {
-            throw new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id);
-        }
+        OrderEntity order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
+        authorizationService.requireOrderAccess(order);
         orderRepository.deleteById(id);
     }
 

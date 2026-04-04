@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,12 +31,25 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
                         @Param("depotId") Long depotId,
                         Pageable pageable);
 
+        @Query("SELECT v FROM VehicleEntity v WHERE " +
+                        "(:status IS NULL OR v.status = :status) AND " +
+                        "v.depot.id IN :depotIds AND " +
+                        "(:search IS NULL OR :search = '' OR " +
+                        "LOWER(v.code) LIKE LOWER(CONCAT('%', :search, '%')))")
+        Page<VehicleEntity> findByStatusAndSearchAndDepotIds(
+                        @Param("status") VehicleStatus status,
+                        @Param("search") String search,
+                        @Param("depotIds") Collection<Long> depotIds,
+                        Pageable pageable);
+
         @Query("SELECT v.code FROM VehicleEntity v WHERE v.code LIKE CONCAT(:prefix, '%') ORDER BY v.code DESC LIMIT 1")
         String findLatestCodeByPrefix(@Param("prefix") String prefix);
 
         long countByStatus(VehicleStatus status);
 
         long countByStatusAndDepot_Id(VehicleStatus status, Long depotId);
+
+        long countByDepot_IdIn(Collection<Long> depotIds);
 
         boolean existsByDriver_Id(Long driverId);
 

@@ -1,6 +1,7 @@
 package com.logistics.hub.feature.depot.entity;
 
 import com.logistics.hub.feature.location.entity.LocationEntity;
+import com.logistics.hub.feature.user.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +33,10 @@ public class DepotEntity {
 
   @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
   private Boolean isActive = true;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "dispatcher_id")
+  private UserEntity dispatcher;
 
   @CreationTimestamp
   @Column(name = "created_at")

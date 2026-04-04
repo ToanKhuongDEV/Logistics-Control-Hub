@@ -10,6 +10,7 @@ import { DepotFilters } from "@/components/depot-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
+import { useAuth } from "@/contexts/auth-context";
 import { depotApi } from "@/lib/depot-api";
 import { Depot, DepotRequest, DepotStatistics } from "@/types/depot-types";
 import { toast } from "sonner";
@@ -17,6 +18,8 @@ import { toast } from "sonner";
 const ITEMS_PER_PAGE = 10;
 
 export default function DepotsPage() {
+	const { user } = useAuth();
+	const canManageDepots = user?.role === "ADMIN";
 	const [depots, setDepots] = useState<Depot[]>([]);
 	const [statistics, setStatistics] = useState<DepotStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -131,30 +134,28 @@ export default function DepotsPage() {
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
 							<h1 className="text-3xl font-bold text-foreground">Quản lý kho</h1>
-							<p className="text-muted-foreground mt-2">Quản lý và theo dõi toàn bộ kho của công ty</p>
+							<p className="text-muted-foreground mt-2">Danh sách kho theo phạm vi được phân công</p>
 						</div>
 					</div>
 
 					<div className="p-8 space-y-6">
-						{/* Statistics Cards */}
 						<DepotStats statistics={statistics} />
 
-						{/* Filters and Actions */}
 						<DepotFilters searchQuery={searchQuery} onSearchChange={handleSearchChange} onClearFilters={handleClearFilters}>
-							<Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-								<Plus className="w-4 h-4" />
-								Thêm kho mới
-							</Button>
+							{canManageDepots && (
+								<Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+									<Plus className="w-4 h-4" />
+									Thêm kho mới
+								</Button>
+							)}
 						</DepotFilters>
 
-						{/* Table and Pagination */}
 						<div className="space-y-4">
-							<DepotTable depots={depots} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
+							<DepotTable depots={depots} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} canManage={canManageDepots} />
 
 							{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={setCurrentPage} entityName="kho" />}
 						</div>
 
-						{/* Depot Form Modal */}
 						{isFormOpen && <DepotForm depot={editingDepot} onSubmit={handleFormSubmit} onClose={() => setIsFormOpen(false)} isSubmitting={isFormSubmitting} />}
 					</div>
 				</div>

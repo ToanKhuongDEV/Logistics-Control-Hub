@@ -5,6 +5,8 @@ import com.logistics.hub.feature.order.enums.OrderStatus;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.Collection;
+
 public final class OrderSpecification {
 
     private OrderSpecification() {
@@ -14,6 +16,13 @@ public final class OrderSpecification {
         return Specification.where(fetchRelations())
                 .and(hasStatus(status))
                 .and(hasDepotId(depotId))
+                .and(matchesSearch(search));
+    }
+
+    public static Specification<OrderEntity> withFilters(OrderStatus status, String search, Collection<Long> depotIds) {
+        return Specification.where(fetchRelations())
+                .and(hasStatus(status))
+                .and(hasDepotIds(depotIds))
                 .and(matchesSearch(search));
     }
 
@@ -37,6 +46,16 @@ public final class OrderSpecification {
     private static Specification<OrderEntity> hasDepotId(Long depotId) {
         return (root, query, criteriaBuilder) ->
                 depotId == null ? criteriaBuilder.conjunction() : criteriaBuilder.equal(root.get("depot").get("id"), depotId);
+    }
+
+    private static Specification<OrderEntity> hasDepotIds(Collection<Long> depotIds) {
+        return (root, query, criteriaBuilder) -> {
+            if (depotIds == null || depotIds.isEmpty()) {
+                return criteriaBuilder.disjunction();
+            }
+
+            return root.get("depot").get("id").in(depotIds);
+        };
     }
 
     private static Specification<OrderEntity> matchesSearch(String search) {

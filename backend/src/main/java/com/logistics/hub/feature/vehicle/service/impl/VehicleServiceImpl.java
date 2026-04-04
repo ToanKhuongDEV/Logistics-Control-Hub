@@ -2,6 +2,8 @@ package com.logistics.hub.feature.vehicle.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.driver.entity.DriverEntity;
@@ -40,11 +42,27 @@ public class VehicleServiceImpl implements VehicleService {
     private final VehicleMapper vehicleMapper;
     private final DepotRepository depotRepository;
     private final DriverRepository driverRepository;
+    private final AuthorizationService authorizationService;
 
     @Override
     @Transactional(readOnly = true)
     public Page<VehicleResponse> findAll(Pageable pageable, VehicleStatus status, String search, Long depotId) {
-        Page<VehicleEntity> vehiclePage = vehicleRepository.findByStatusAndSearchAndDepot(status, search, depotId, pageable);
+        Page<VehicleEntity> vehiclePage;
+        if (authorizationService.isAdmin()) {
+            vehiclePage = vehicleRepository.findByStatusAndSearchAndDepot(status, search, depotId, pageable);
+        } else if (depotId != null) {
+            authorizationService.requireDepotAccess(depotId);
+            vehiclePage = vehicleRepository.findByStatusAndSearchAndDepot(status, search, depotId, pageable);
+        } else {
+            if (authorizationService.getAccessibleDepotIds().isEmpty()) {
+                return Page.empty(pageable);
+            }
+            vehiclePage = vehicleRepository.findByStatusAndSearchAndDepotIds(
+                    status,
+                    search,
+                    authorizationService.getAccessibleDepotIds(),
+                    pageable);
+        }
         return vehiclePage.map(this::enrichResponse);
     }
 
@@ -54,6 +72,7 @@ public class VehicleServiceImpl implements VehicleService {
     public VehicleResponse findById(Long id) {
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
+        authorizationService.requireVehicleAccess(entity);
         return enrichResponse(entity);
     }
 
@@ -64,6 +83,12 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public VehicleResponse create(VehicleRequest request) {
+        if (request.getDepotId() != null) {
+            authorizationService.requireDepotAccess(request.getDepotId());
+        } else {
+            authorizationService.requireAdmin();
+        }
+
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
             request.setCode(generateVehicleCode(request.getMaxWeightKg()));
         } else if (vehicleRepository.existsByCode(request.getCode())) {
@@ -114,6 +139,14 @@ public class VehicleServiceImpl implements VehicleService {
     public VehicleResponse update(Long id, VehicleRequest request) {
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
+        authorizationService.requireVehicleAccess(entity);
+
+        if (!authorizationService.isAdmin()
+                && request.getDepotId() != null
+                && entity.getDepot() != null
+                && !entity.getDepot().getId().equals(request.getDepotId())) {
+            throw new ForbiddenException("Điều chuyển phương tiện sang kho khác cần admin xử lý.");
+        }
 
         if (!entity.getCode().equals(request.getCode()) && vehicleRepository.existsByCode(request.getCode())) {
             throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
@@ -136,6 +169,7 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void updateDepotBulk(Long depotId, List<Long> vehicleIds) {
+        authorizationService.requireAdmin();
         DepotEntity depot = depotRepository.findById(depotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + depotId));
 
@@ -154,12 +188,14 @@ public class VehicleServiceImpl implements VehicleService {
             throw new ValidationException(VehicleConstant.VEHICLE_IDS_NOT_FOUND + missingIds);
         }
 
+        vehicles.forEach(authorizationService::requireVehicleAccess);
         vehicles.forEach(vehicle -> vehicle.setDepot(depot));
         vehicleRepository.saveAll(vehicles);
     }
 
     private void resolveAndSetDepotDriver(VehicleRequest request, VehicleEntity entity) {
         if (request.getDepotId() != null) {
+            authorizationService.requireDepotAccess(request.getDepotId());
             DepotEntity depot = depotRepository.findById(request.getDepotId())
                     .orElseThrow(
                             () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
@@ -185,22 +221,27 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void delete(Long id) {
-        if (!vehicleRepository.existsById(id)) {
-            throw new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id);
-        }
+        VehicleEntity vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
+        authorizationService.requireVehicleAccess(vehicle);
         vehicleRepository.deleteById(id);
     }
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstant.VEHICLE_STATS, key = "'all'")
     public VehicleStatisticsResponse getStatistics() {
-        List<VehicleEntity> allVehicles = vehicleRepository.findAll();
+        List<VehicleEntity> allVehicles = authorizationService.isAdmin()
+                ? vehicleRepository.findAll()
+                : vehicleRepository.findByStatusAndSearchAndDepotIds(
+                        null,
+                        null,
+                        authorizationService.getAccessibleDepotIds(),
+                        Pageable.unpaged()).getContent();
 
         long total = allVehicles.size();
-        long active = vehicleRepository.countByStatus(VehicleStatus.ACTIVE);
-        long maintenance = vehicleRepository.countByStatus(VehicleStatus.MAINTENANCE);
-        long idle = vehicleRepository.countByStatus(VehicleStatus.IDLE);
+        long active = allVehicles.stream().filter(vehicle -> vehicle.getStatus() == VehicleStatus.ACTIVE).count();
+        long maintenance = allVehicles.stream().filter(vehicle -> vehicle.getStatus() == VehicleStatus.MAINTENANCE).count();
+        long idle = allVehicles.stream().filter(vehicle -> vehicle.getStatus() == VehicleStatus.IDLE).count();
 
         BigDecimal averageCostPerKm = allVehicles.stream()
                 .map(VehicleEntity::getCostPerKm)

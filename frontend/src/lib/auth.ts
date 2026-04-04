@@ -1,5 +1,12 @@
 import apiClient from "./api";
 
+export type UserRole = "ADMIN" | "DISPATCHER";
+
+export interface AssignedDepot {
+	id: number;
+	name: string;
+}
+
 export interface LoginRequest {
 	username: string;
 	password: string;
@@ -14,7 +21,8 @@ export interface User {
 	username: string;
 	email: string;
 	fullName: string;
-	role: string;
+	role: UserRole;
+	assignedDepots?: AssignedDepot[];
 }
 
 export interface CreateAccountRequest {
@@ -22,6 +30,15 @@ export interface CreateAccountRequest {
 	fullName: string;
 	email: string;
 	password: string;
+	role: UserRole;
+	assignedDepotIds?: number[];
+}
+
+export interface UpdateAccountRequest {
+	fullName: string;
+	email: string;
+	role: UserRole;
+	assignedDepotIds?: number[];
 }
 
 export interface ChangePasswordRequest {
@@ -46,10 +63,7 @@ class AuthService {
 		});
 
 		const { accessToken } = response.data.data;
-
-		// Access token is stored client-side; refresh token is handled via HttpOnly cookie.
 		localStorage.setItem("accessToken", accessToken);
-
 		return response.data.data;
 	}
 
@@ -78,6 +92,16 @@ class AuthService {
 
 	async createAccount(payload: CreateAccountRequest): Promise<User> {
 		const response = await apiClient.post<{ data: User }>("/api/v1/auth/accounts", payload);
+		return response.data.data;
+	}
+
+	async getAccounts(): Promise<User[]> {
+		const response = await apiClient.get<{ data: User[] }>("/api/v1/auth/accounts");
+		return response.data.data;
+	}
+
+	async updateAccount(id: number, payload: UpdateAccountRequest): Promise<User> {
+		const response = await apiClient.put<{ data: User }>(`/api/v1/auth/accounts/${id}`, payload);
 		return response.data.data;
 	}
 

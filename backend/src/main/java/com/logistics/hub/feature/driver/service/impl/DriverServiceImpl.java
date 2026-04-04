@@ -2,6 +2,7 @@ package com.logistics.hub.feature.driver.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.driver.constant.DriverConstant;
 import com.logistics.hub.feature.driver.dto.request.DriverRequest;
 import com.logistics.hub.feature.driver.dto.response.DriverResponse;
@@ -22,7 +23,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -32,11 +35,27 @@ public class DriverServiceImpl implements DriverService {
     private final DriverMapper driverMapper;
     private final VehicleRepository vehicleRepository;
     private final OrderRepository orderRepository;
+    private final AuthorizationService authorizationService;
 
     @Override
     @Transactional(readOnly = true)
     public Page<DriverResponse> findAll(Pageable pageable, String search, Long depotId) {
-        return driverRepository.findBySearchAndDepot(search, depotId, pageable)
+        if (authorizationService.isAdmin()) {
+            return driverRepository.findBySearchAndDepot(search, depotId, pageable)
+                    .map(driverMapper::toResponse);
+        }
+
+        if (depotId != null) {
+            authorizationService.requireDepotAccess(depotId);
+            return driverRepository.findBySearchAndDepot(search, depotId, pageable)
+                    .map(driverMapper::toResponse);
+        }
+
+        Set<Long> accessibleDepotIds = authorizationService.getAccessibleDepotIds();
+        if (accessibleDepotIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        return driverRepository.findBySearchAndDepotIds(search, accessibleDepotIds, pageable)
                 .map(driverMapper::toResponse);
     }
 
@@ -57,6 +76,7 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public DriverResponse create(DriverRequest request) {
+        authorizationService.requireAdmin();
         normalizeRequest(request);
         validateDriverRequest(request, null);
         DriverEntity driver = driverMapper.toEntity(request);
@@ -72,6 +92,7 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public DriverResponse update(Long id, DriverRequest request) {
+        authorizationService.requireAdmin();
         DriverEntity driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
 
@@ -91,6 +112,7 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void delete(Long id) {
+        authorizationService.requireAdmin();
         if (!driverRepository.existsById(id)) {
             throw new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND);
         }
@@ -144,12 +166,21 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstant.DRIVER_STATS, key = "'all'")
     public com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse getStatistics() {
-        long total = driverRepository.count();
-        List<DriverEntity> availableDrivers = driverRepository.findAvailableDrivers(null);
-        long available = availableDrivers.size();
-        long assigned = total - available;
+        long total;
+        long available;
+        long assigned;
+
+        if (authorizationService.isAdmin()) {
+            total = driverRepository.count();
+            List<DriverEntity> availableDrivers = driverRepository.findAvailableDrivers(null);
+            available = availableDrivers.size();
+            assigned = total - available;
+        } else {
+            total = driverRepository.countDistinctByDepotIds(authorizationService.getAccessibleDepotIds());
+            available = 0;
+            assigned = total;
+        }
 
         return new com.logistics.hub.feature.driver.dto.response.DriverStatisticsResponse(
                 total,

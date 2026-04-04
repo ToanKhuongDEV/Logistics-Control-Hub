@@ -10,22 +10,26 @@ INSERT INTO companies (name, address, phone, email, website, tax_id, description
 VALUES
 ('LogiTower Hanoi', 'Phố Hàng Trống, Quận Hoàn Kiếm, Hà Nội', '+84 24 1234 5678', 'contact@logitower.vn', 'www.logitower.vn', '0123456789', 'Công ty logistics hàng đầu tại Thủ đô');
 -- =====================================================
--- 2. Dispatchers
+-- 2. Users
 -- =====================================================
 
-INSERT INTO dispatchers (username, password, email, full_name, role)
+INSERT INTO users (username, password, email, full_name, role)
 VALUES
-('dispatcher01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher01@logitower.vn', 'Nguyễn Văn An', 'DISPATCHER'),
-('dispatcher02', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher02@logitower.vn', 'Trần Thị Bích', 'DISPATCHER'),
-('dispatcher03', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher03@logitower.vn', 'Lê Minh Châu', 'DISPATCHER'),
-('dispatcher04', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher04@logitower.vn', 'Phạm Quốc Duy', 'DISPATCHER'),
-('dispatcher05', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher05@logitower.vn', 'Hoàng Thu Hà', 'DISPATCHER'),
-('dispatcher06', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher06@logitower.vn', 'Đỗ Văn Hùng', 'DISPATCHER'),
-('dispatcher07', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher07@logitower.vn', 'Vũ Thị Lan', 'DISPATCHER'),
-('dispatcher08', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher08@logitower.vn', 'Bùi Minh Nam', 'DISPATCHER'),
-('dispatcher09', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher09@logitower.vn', 'Mai Thu Phương', 'DISPATCHER'),
-('dispatcher10', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'dispatcher10@logitower.vn', 'Ngô Văn Quang', 'DISPATCHER'),
+('user01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user01@logitower.vn', 'Nguyễn Văn An', 'DISPATCHER'),
+('user02', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user02@logitower.vn', 'Trần Thị Bích', 'DISPATCHER'),
+('user03', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user03@logitower.vn', 'Lê Minh Châu', 'DISPATCHER'),
+('user04', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user04@logitower.vn', 'Phạm Quốc Duy', 'DISPATCHER'),
+('user05', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user05@logitower.vn', 'Hoàng Thu Hà', 'DISPATCHER'),
+('user06', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user06@logitower.vn', 'Đỗ Văn Hùng', 'DISPATCHER'),
+('user07', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user07@logitower.vn', 'Vũ Thị Lan', 'DISPATCHER'),
+('user08', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user08@logitower.vn', 'Bùi Minh Nam', 'DISPATCHER'),
+('user09', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user09@logitower.vn', 'Mai Thu Phương', 'DISPATCHER'),
+('user10', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user10@logitower.vn', 'Ngô Văn Quang', 'DISPATCHER'),
 ('admin01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'admin01@logitower.vn', 'Trần Thị Hương', 'ADMIN');
+
+-- Demo login accounts:
+-- admin01 / password123 -> admin demo
+-- user01 / password123  -> dispatcher demo (assigned to depots 1 and 2)
 
 -- =====================================================
 -- 3. Drivers
@@ -113,12 +117,12 @@ VALUES
 -- =====================================================
 -- 5. Depots (Updated to Hanoi locations)
 -- =====================================================
-INSERT INTO depots (name, location_id, description, is_active)
+INSERT INTO depots (name, location_id, dispatcher_id, description, is_active)
 VALUES
-('Kho Trung Tâm Hoàn Kiếm', 1, 'Kho chính tại khu vực Hoàn Kiếm - điểm xuất phát trung tâm cho các tuyến giao hàng nội thành', TRUE),
-('Kho Ba Đình', 2, 'Kho phân phối khu vực Ba Đình - phục vụ khu hành chính trung tâm', TRUE),
-('Kho Cầu Giấy', 3, 'Kho phân phối khu vực Cầu Giấy - phục vụ phía Tây Bắc nội thành', TRUE),
-('Kho Mỹ Đình', 4, 'Kho logistics khu vực Mỹ Đình - Nam Từ Liêm', TRUE);
+('Kho Trung Tâm Hoàn Kiếm', 1, 1, 'Kho chính tại khu vực Hoàn Kiếm - điểm xuất phát trung tâm cho các tuyến giao hàng nội thành', TRUE),
+('Kho Ba Đình', 2, 1, 'Kho phân phối khu vực Ba Đình - phục vụ khu hành chính trung tâm', TRUE),
+('Kho Cầu Giấy', 3, 2, 'Kho phân phối khu vực Cầu Giấy - phục vụ phía Tây Bắc nội thành', TRUE),
+('Kho Mỹ Đình', 4, 3, 'Kho logistics khu vực Mỹ Đình - Nam Từ Liêm', TRUE);
 
 -- =====================================================
 -- 6. Vehicles (All vehicles at Depot 1 - Kho Trung Tâm Hoàn Kiếm)
@@ -212,3 +216,4 @@ VALUES
 -- =====================================================
 -- END OF SEED DATA
 -- =====================================================
+

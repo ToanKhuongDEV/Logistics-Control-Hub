@@ -2,6 +2,7 @@ package com.logistics.hub.feature.depot.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.constant.DepotConstant;
 import com.logistics.hub.feature.depot.dto.request.DepotRequest;
 import com.logistics.hub.feature.depot.dto.response.DepotResponse;
@@ -26,6 +27,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -35,6 +38,7 @@ public class DepotServiceImpl implements DepotService {
   private final DepotMapper depotMapper;
   private final LocationService locationService;
   private final VehicleRepository vehicleRepository;
+  private final AuthorizationService authorizationService;
 
   @Override
   @Transactional(readOnly = true)
@@ -48,10 +52,18 @@ public class DepotServiceImpl implements DepotService {
         sort);
 
     Page<DepotEntity> depotPage;
-    if (search != null && !search.trim().isEmpty()) {
-      depotPage = depotRepository.searchDepots(search, sortedPageable);
+    if (authorizationService.isAdmin()) {
+      depotPage = (search != null && !search.trim().isEmpty())
+          ? depotRepository.searchDepots(search, sortedPageable)
+          : depotRepository.findAll(sortedPageable);
     } else {
-      depotPage = depotRepository.findAll(sortedPageable);
+      Set<Long> accessibleDepotIds = authorizationService.getAccessibleDepotIds();
+      if (accessibleDepotIds.isEmpty()) {
+        return Page.empty(sortedPageable);
+      }
+      depotPage = (search != null && !search.trim().isEmpty())
+          ? depotRepository.searchDepotsByIds(search, accessibleDepotIds, sortedPageable)
+          : depotRepository.findByIdIn(accessibleDepotIds, sortedPageable);
     }
     return depotPage.map(this::enrichResponse);
   }
@@ -60,6 +72,7 @@ public class DepotServiceImpl implements DepotService {
   @Transactional(readOnly = true)
   @Cacheable(value = CacheConstant.DEPOTS, key = "'id:' + #id")
   public DepotResponse findById(Long id) {
+    authorizationService.requireDepotAccess(id);
     DepotEntity entity = depotRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id));
     return enrichResponse(entity);
@@ -72,6 +85,7 @@ public class DepotServiceImpl implements DepotService {
       @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
   })
   public DepotResponse create(DepotRequest request) {
+    authorizationService.requireAdmin();
     LocationEntity location = locationService.getOrCreateLocation(request.getLocationRequest());
     Long locationId = location.getId();
 
@@ -93,6 +107,7 @@ public class DepotServiceImpl implements DepotService {
       @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
   })
   public DepotResponse update(Long id, DepotRequest request) {
+    authorizationService.requireAdmin();
     DepotEntity entity = depotRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id));
 
@@ -117,6 +132,7 @@ public class DepotServiceImpl implements DepotService {
       @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
   })
   public void delete(Long id) {
+    authorizationService.requireAdmin();
     if (!depotRepository.existsById(id)) {
       throw new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id);
     }
@@ -134,11 +150,21 @@ public class DepotServiceImpl implements DepotService {
 
   @Override
   @Transactional(readOnly = true)
-  @Cacheable(value = CacheConstant.DEPOT_STATS, key = "'all'")
   public DepotStatisticsResponse getStatistics() {
-    long total = depotRepository.count();
-    long active = depotRepository.countByIsActive(true);
-    long inactive = depotRepository.countByIsActive(false);
+    long total;
+    long active;
+    long inactive;
+
+    if (authorizationService.isAdmin()) {
+      total = depotRepository.count();
+      active = depotRepository.countByIsActive(true);
+      inactive = depotRepository.countByIsActive(false);
+    } else {
+      Set<Long> accessibleDepotIds = authorizationService.getAccessibleDepotIds();
+      total = depotRepository.countByIdIn(accessibleDepotIds);
+      active = depotRepository.countByIsActiveAndIdIn(true, accessibleDepotIds);
+      inactive = depotRepository.countByIsActiveAndIdIn(false, accessibleDepotIds);
+    }
 
     return new DepotStatisticsResponse(total, active, inactive);
   }

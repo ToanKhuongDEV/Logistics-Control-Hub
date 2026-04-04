@@ -1,7 +1,7 @@
 package com.logistics.hub.feature.auth.security;
 
-import com.logistics.hub.feature.dispatcher.entity.DispatcherEntity;
-import com.logistics.hub.feature.dispatcher.repository.DispatcherRepository;
+import com.logistics.hub.feature.user.entity.UserEntity;
+import com.logistics.hub.feature.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -16,17 +16,17 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final DispatcherRepository dispatcherRepository;
+    private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        DispatcherEntity dispatcher = dispatcherRepository.findByUsername(username)
+        UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
         return new User(
-                dispatcher.getUsername(),
-                dispatcher.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + dispatcher.getRole())));
+                user.getUsername(),
+                user.getPassword(),
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole())));
     }
 }

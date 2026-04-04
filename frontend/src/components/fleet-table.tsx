@@ -11,6 +11,7 @@ interface FleetTableProps {
 	isLoading?: boolean;
 	selectedVehicleIds: number[];
 	onToggleVehicleSelection: (vehicleId: number) => void;
+	canManage?: boolean;
 }
 
 export function FleetTable({
@@ -20,16 +21,15 @@ export function FleetTable({
 	isLoading = false,
 	selectedVehicleIds,
 	onToggleVehicleSelection,
+	canManage = true,
 }: FleetTableProps) {
-	const formatNumber = (num: number) => {
-		return new Intl.NumberFormat("vi-VN").format(num);
-	};
+	const formatNumber = (num: number) => new Intl.NumberFormat("vi-VN").format(num);
 
 	if (isLoading) {
 		return (
 			<div className="bg-card rounded-lg border border-border p-12 text-center">
 				<Loader2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 animate-spin" />
-				<p className="text-muted-foreground">Dang tai du lieu...</p>
+				<p className="text-muted-foreground">Đang tải dữ liệu...</p>
 			</div>
 		);
 	}
@@ -38,7 +38,7 @@ export function FleetTable({
 		return (
 			<div className="bg-card rounded-lg border border-border p-12 text-center">
 				<Truck className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-				<p className="text-muted-foreground">Chua co xe nao trong doi</p>
+				<p className="text-muted-foreground">Chưa có xe nào trong đội</p>
 			</div>
 		);
 	}
@@ -48,22 +48,22 @@ export function FleetTable({
 			<table className="w-full">
 				<thead className="bg-muted border-b border-border">
 					<tr>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Ma xe</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Loai xe</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tai trong (kg)</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">The tich (m3)</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Kho truc thuoc</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Trang thai</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tai xe</th>
-						<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tac</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Mã xe</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Loại xe</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tải trọng (kg)</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Thể tích (m3)</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Kho trực thuộc</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Trạng thái</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tài xế</th>
+						{canManage && <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>}
 					</tr>
 				</thead>
 				<tbody className="divide-y divide-border">
 					{vehicles.map((vehicle) => {
 						const getStatusConfig = (status: VehicleStatus) => {
-							if (status === VehicleStatus.ACTIVE) return { label: "Dang hoat dong", color: "bg-green-500/10 text-green-600 border-green-500/20" };
-							if (status === VehicleStatus.MAINTENANCE) return { label: "Bao tri", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" };
-							if (status === VehicleStatus.IDLE) return { label: "Nhan roi", color: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
+							if (status === VehicleStatus.ACTIVE) return { label: "Đang hoạt động", color: "bg-green-500/10 text-green-600 border-green-500/20" };
+							if (status === VehicleStatus.MAINTENANCE) return { label: "Bảo trì", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" };
+							if (status === VehicleStatus.IDLE) return { label: "Nhàn rỗi", color: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
 							return { label: status, color: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
 						};
 
@@ -80,39 +80,41 @@ export function FleetTable({
 								<td className="px-6 py-4 text-sm text-foreground">{vehicle.type || "-"}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{formatNumber(vehicle.maxWeightKg)}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{Number(vehicle.maxVolumeM3).toFixed(2)}</td>
-								<td className="px-6 py-4 text-sm text-foreground">{vehicle.depotName || "Chua gan"}</td>
+								<td className="px-6 py-4 text-sm text-foreground">{vehicle.depotName || "Chưa gán"}</td>
 								<td className="px-6 py-4">
 									<span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>{statusConfig.label}</span>
 								</td>
 								<td className="px-6 py-4 text-sm text-muted-foreground">{vehicle.driverName || "-"}</td>
-								<td className="px-6 py-4 text-right">
-									<div className="flex items-center justify-end gap-2">
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={(e) => {
-												e.stopPropagation();
-												onEdit(vehicle);
-											}}
-											className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground"
-										>
-											<Edit2 className="w-4 h-4" />
-										</Button>
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={(e) => {
-												e.stopPropagation();
-												if (window.confirm(`Ban co chac muon xoa xe ${vehicle.code}?`)) {
-													onDelete(vehicle.id);
-												}
-											}}
-											className="h-8 w-8 p-0 hover:bg-red-500/20 hover:text-red-500 text-red-500"
-										>
-											<Trash2 className="w-4 h-4" />
-										</Button>
-									</div>
-								</td>
+								{canManage && (
+									<td className="px-6 py-4 text-right">
+										<div className="flex items-center justify-end gap-2">
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={(e) => {
+													e.stopPropagation();
+													onEdit(vehicle);
+												}}
+												className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground"
+											>
+												<Edit2 className="w-4 h-4" />
+											</Button>
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={(e) => {
+													e.stopPropagation();
+													if (window.confirm(`Bạn có chắc muốn xóa xe ${vehicle.code}?`)) {
+														onDelete(vehicle.id);
+													}
+												}}
+												className="h-8 w-8 p-0 hover:bg-red-500/20 hover:text-red-500 text-red-500"
+											>
+												<Trash2 className="w-4 h-4" />
+											</Button>
+										</div>
+									</td>
+								)}
 							</tr>
 						);
 					})}

@@ -5,6 +5,7 @@ import com.google.ortools.constraintsolver.*;
 import com.google.protobuf.Duration;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.location.entity.LocationEntity;
@@ -50,6 +51,7 @@ public class RoutingServiceImpl implements RoutingService {
     private final LocationRepository locationRepository;
     private final DepotRepository depotRepository;
     private final RoutingRunRepository routingRunRepository;
+    private final AuthorizationService authorizationService;
 
     static {
         try {
@@ -479,6 +481,8 @@ public class RoutingServiceImpl implements RoutingService {
             throw new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED);
         }
 
+        authorizationService.requireDepotAccess(depotId);
+
         depotRepository.findById(depotId)
                 .orElseThrow(() -> new ResourceNotFoundException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
 
@@ -504,6 +508,7 @@ public class RoutingServiceImpl implements RoutingService {
     @Override
     @Transactional(readOnly = true)
     public Optional<RoutingRunEntity> getLatestRunByDepot(Long depotId) {
+        authorizationService.requireDepotAccess(depotId);
         List<RoutingRunEntity> runs = routingRunRepository.findLatestByDepot_Id(depotId, RoutingRunStatus.COMPLETED);
         return runs.isEmpty() ? Optional.empty() : Optional.of(runs.get(0));
     }
@@ -511,6 +516,7 @@ public class RoutingServiceImpl implements RoutingService {
     @Override
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<RoutingRunEntity> getHistoryByDepot(Long depotId, int page, int size) {
+        authorizationService.requireDepotAccess(depotId);
         depotRepository.findById(depotId)
                 .orElseThrow(() -> new ResourceNotFoundException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);

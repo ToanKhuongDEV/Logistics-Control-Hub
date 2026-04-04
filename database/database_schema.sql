@@ -13,8 +13,8 @@ CREATE TABLE companies (
     updated_at TIMESTAMPTZ
 );
 
--- 2. Dispatcher 
-CREATE TABLE dispatchers (
+-- 2. Users
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
@@ -56,6 +56,7 @@ CREATE TABLE depots (
     name VARCHAR(255) NOT NULL,
 
     location_id BIGINT NOT NULL UNIQUE,
+    dispatcher_id BIGINT,
 
     description VARCHAR(500),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -64,7 +65,11 @@ CREATE TABLE depots (
 
     CONSTRAINT fk_depots_location
         FOREIGN KEY (location_id)
-        REFERENCES locations(id)
+        REFERENCES locations(id),
+
+    CONSTRAINT fk_depots_dispatcher
+        FOREIGN KEY (dispatcher_id)
+        REFERENCES users(id)
 );
 
 -- 6. Vehicles

@@ -103,7 +103,7 @@ The system integrates with **OSRM** (Open Source Routing Machine) for real-world
 ### 🔐 Authentication
 
 - JWT-based authentication with refresh token
-- Role-based access: `DISPATCHER`, `ADMIN`
+- Role-based access: `USER`, `ADMIN`
 - Secure password hashing with BCrypt
 
 ### ⚡ Redis Caching
@@ -271,7 +271,7 @@ Logistics-Control-Hub/
 │   │   │   ├── company/        # Company management
 │   │   │   ├── dashboard/      # Dashboard statistics
 │   │   │   ├── depot/          # Depot management
-│   │   │   ├── dispatcher/     # Dispatcher accounts
+│   │   │   ├── user/           # User accounts
 │   │   │   ├── driver/         # Driver management
 │   │   │   ├── geocoding/      # Address geocoding
 │   │   │   ├── location/       # Location management
@@ -301,8 +301,8 @@ Logistics-Control-Hub/
 
 | Role       | Username       | Password |
 | ---------- | -------------- | -------- |
-| Admin      | `admin01`      | `123456` |
-| Dispatcher | `dispatcher01` | `123456` |
+| Admin      | `admin01`      | `password123` |
+| User | `user01` | `password123` |
 
 ---
 

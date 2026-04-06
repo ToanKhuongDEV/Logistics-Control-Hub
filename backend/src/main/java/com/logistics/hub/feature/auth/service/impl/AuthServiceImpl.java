@@ -1,9 +1,9 @@
 package com.logistics.hub.feature.auth.service.impl;
 
+import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.UnauthorizedException;
 import com.logistics.hub.common.exception.ValidationException;
-import com.logistics.hub.common.exception.ResourceNotFoundException;
-import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.feature.audit.constant.AuditAction;
 import com.logistics.hub.feature.audit.constant.AuditResourceType;
 import com.logistics.hub.feature.audit.constant.AuditStatus;
@@ -19,13 +19,14 @@ import com.logistics.hub.feature.auth.dto.response.AssignedDepotResponse;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.entity.PasswordResetTokenEntity;
-import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.entity.RefreshTokenEntity;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.repository.PasswordResetTokenRepository;
 import com.logistics.hub.feature.auth.repository.RefreshTokenRepository;
 import com.logistics.hub.feature.auth.service.AuthService;
-import com.logistics.hub.feature.auth.util.JwtUtils;
+import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.auth.service.PasswordResetMailService;
+import com.logistics.hub.feature.auth.util.JwtUtils;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.user.entity.UserEntity;
@@ -33,6 +34,8 @@ import com.logistics.hub.feature.user.mapper.UserMapper;
 import com.logistics.hub.feature.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -63,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetMailService passwordResetMailService;
     private final DepotRepository depotRepository;
     private final AuditLogService auditLogService;
+    private final AuthorizationService authorizationService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -108,15 +112,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         UserDetails userDetails = new User(user.getUsername(), user.getPassword(), new ArrayList<>());
-
-        // Xóa tất cả refresh token cũ của user
         refreshTokenRepository.deleteByUsername(user.getUsername());
 
-        // Tạo token mới
         String accessToken = jwtUtils.generateToken(userDetails);
         String refreshToken = jwtUtils.generateRefreshToken(userDetails);
 
-        // Lưu refresh token vào DB
         saveRefreshToken(refreshToken, user.getUsername());
 
         auditLogService.log(
@@ -138,7 +138,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public RefreshResult refreshToken(String refreshToken) {
-        // Extract jti và username từ refresh token
         String jti;
         String username;
         try {
@@ -148,33 +147,26 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException(AuthConstant.INVALID_TOKEN);
         }
 
-        // Kiểm tra token có tồn tại trong DB
         RefreshTokenEntity storedToken = refreshTokenRepository.findByJti(jti)
                 .orElseThrow(() -> new RuntimeException(AuthConstant.REFRESH_TOKEN_NOT_FOUND));
 
-        // Kiểm tra username khớp
         if (!storedToken.getUsername().equals(username)) {
             throw new RuntimeException(AuthConstant.INVALID_TOKEN);
         }
 
-        // Load user và validate JWT
         UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException(AuthConstant.INVALID_TOKEN));
 
         UserDetails userDetails = new User(user.getUsername(), user.getPassword(), new ArrayList<>());
         if (!jwtUtils.isRefreshTokenValid(refreshToken, userDetails)) {
-            // Token hết hạn hoặc invalid → xóa khỏi DB
             refreshTokenRepository.deleteByJti(jti);
             throw new RuntimeException(AuthConstant.INVALID_TOKEN);
         }
 
-        // Token rotation: xóa token cũ, tạo token mới
         refreshTokenRepository.deleteByJti(jti);
 
         String newAccessToken = jwtUtils.generateToken(userDetails);
         String newRefreshToken = jwtUtils.generateRefreshToken(userDetails);
-
-        // Lưu refresh token mới vào DB
         saveRefreshToken(newRefreshToken, user.getUsername());
 
         return new RefreshResult(new AuthTokensResponse(newAccessToken), newRefreshToken);
@@ -199,15 +191,14 @@ public class AuthServiceImpl implements AuthService {
                     null,
                     null,
                     Map.of("username", user.getUsername())));
-        } catch (Exception e) {
-            // Token không hợp lệ → bỏ qua, vẫn clear cookie ở controller
+        } catch (Exception ignored) {
         }
     }
 
     @Override
     public UserResponse getCurrentUser(String username) {
         UserEntity user = userRepository.findByUsernameWithAssignedDepots(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException(AuthConstant.ACCOUNT_NOT_FOUND));
 
         UserResponse response = userMapper.toResponse(user);
         response.setPermissions(new ArrayList<>(AuthorizationPolicy.permissionsForRole(user.getRole())));
@@ -219,11 +210,11 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public UserResponse createAccount(CreateAccountRequest request) {
         try {
-            if (userRepository.existsByUsername(request.getUsername())) {
+            if (userRepository.existsByUsername(request.getUsername().trim())) {
                 throw new ValidationException(AuthConstant.USERNAME_ALREADY_EXISTS);
             }
 
-            if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
+            if (userRepository.existsByEmailIgnoreCase(request.getEmail().trim())) {
                 throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
             }
 
@@ -237,6 +228,7 @@ public class AuthServiceImpl implements AuthService {
             UserEntity savedUser = userRepository.save(user);
             syncAssignedDepots(savedUser, request.getAssignedDepotIds());
             UserEntity createdUser = userRepository.findByIdWithAssignedDepots(savedUser.getId()).orElse(savedUser);
+
             auditLogService.log(
                     getCurrentActorForAudit(),
                     AuditAction.CREATE,
@@ -249,6 +241,7 @@ public class AuthServiceImpl implements AuthService {
                     null,
                     userAuditSnapshot(createdUser),
                     Map.of("role", createdUser.getRole()));
+
             return getCurrentUserResponse(savedUser.getId());
         } catch (RuntimeException ex) {
             logUserFailure(AuditAction.CREATE, null, request.getUsername(), null, accountRequestSnapshot(request), ex);
@@ -258,10 +251,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserResponse> getAccounts() {
-        return userRepository.findAllWithAssignedDepots().stream()
-                .map(this::toUserResponse)
-                .toList();
+    public Page<UserResponse> getAccounts(Pageable pageable, String search, String role, Long depotId) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ACCOUNT_MANAGE);
+        return userRepository.searchAccounts(normalizeSearch(search), normalizeRoleFilter(role), depotId, pageable)
+                .map(this::toUserResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getAccountById(Long id) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ACCOUNT_MANAGE);
+        return getCurrentUserResponse(id);
     }
 
     @Override
@@ -270,8 +270,9 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = null;
         Map<String, Object> beforeData = null;
         try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ACCOUNT_MANAGE);
             user = userRepository.findByIdWithAssignedDepots(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                    .orElseThrow(() -> new ResourceNotFoundException(AuthConstant.ACCOUNT_NOT_FOUND));
             beforeData = userAuditSnapshot(user);
 
             if (userRepository.findByEmailIgnoreCase(request.getEmail().trim())
@@ -280,6 +281,8 @@ public class AuthServiceImpl implements AuthService {
                 throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
             }
 
+            validateAdminRetention(user, request.getRole());
+
             user.setFullName(request.getFullName().trim());
             user.setEmail(request.getEmail().trim().toLowerCase());
             user.setRole(normalizeRole(request.getRole()));
@@ -287,6 +290,7 @@ public class AuthServiceImpl implements AuthService {
             userRepository.save(user);
             syncAssignedDepots(user, request.getAssignedDepotIds());
             UserEntity updatedUser = userRepository.findByIdWithAssignedDepots(user.getId()).orElse(user);
+
             auditLogService.log(
                     getCurrentActorForAudit(),
                     AuditAction.UPDATE,
@@ -299,9 +303,50 @@ public class AuthServiceImpl implements AuthService {
                     beforeData,
                     userAuditSnapshot(updatedUser),
                     Map.of("role", updatedUser.getRole()));
+
             return getCurrentUserResponse(user.getId());
         } catch (RuntimeException ex) {
             logUserFailure(AuditAction.UPDATE, String.valueOf(id), user != null ? user.getUsername() : null, beforeData, updateAccountRequestSnapshot(request), ex);
+            throw ex;
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccount(Long id) {
+        UserEntity user = null;
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ACCOUNT_MANAGE);
+            user = userRepository.findByIdWithAssignedDepots(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(AuthConstant.ACCOUNT_NOT_FOUND));
+
+            UserEntity actor = authorizationService.getCurrentUser();
+            if (actor.getId().equals(id)) {
+                throw new ValidationException(AuthConstant.CANNOT_DELETE_OWN_ACCOUNT);
+            }
+
+            validateAdminRetention(user, null);
+
+            Map<String, Object> beforeData = userAuditSnapshot(user);
+            clearAssignedDepots(user);
+            refreshTokenRepository.deleteByUsername(user.getUsername());
+            passwordResetTokenRepository.deleteByEmailIgnoreCase(user.getEmail());
+            userRepository.delete(user);
+
+            auditLogService.log(
+                    actor,
+                    AuditAction.DELETE,
+                    AuditResourceType.USER,
+                    user.getId().toString(),
+                    user.getUsername(),
+                    null,
+                    AuditStatus.SUCCESS,
+                    "Deleted employee account",
+                    beforeData,
+                    null,
+                    Map.of("role", user.getRole()));
+        } catch (RuntimeException ex) {
+            logUserFailure(AuditAction.DELETE, String.valueOf(id), user != null ? user.getUsername() : null, user != null ? userAuditSnapshot(user) : null, null, ex);
             throw ex;
         }
     }
@@ -401,9 +446,6 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.deleteByUsername(user.getUsername());
     }
 
-    /**
-     * Lưu refresh token mới vào database.
-     */
     private void saveRefreshToken(String token, String username) {
         String jti = jwtUtils.extractJtiFromRefreshToken(token);
 
@@ -418,7 +460,7 @@ public class AuthServiceImpl implements AuthService {
 
     private UserResponse getCurrentUserResponse(Long id) {
         UserEntity user = userRepository.findByIdWithAssignedDepots(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(AuthConstant.ACCOUNT_NOT_FOUND));
         return toUserResponse(user);
     }
 
@@ -438,6 +480,20 @@ public class AuthServiceImpl implements AuthService {
 
     private String normalizeRole(String role) {
         return AuthorizationPolicy.normalizeRole(role);
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+        return "%" + search.trim().toLowerCase() + "%";
+    }
+
+    private String normalizeRoleFilter(String role) {
+        if (role == null || role.isBlank()) {
+            return null;
+        }
+        return normalizeRole(role);
     }
 
     private void syncAssignedDepots(UserEntity user, List<Long> assignedDepotIds) {
@@ -471,6 +527,31 @@ public class AuthServiceImpl implements AuthService {
 
         if (!currentDepots.isEmpty()) {
             depotRepository.saveAll(currentDepots);
+        }
+    }
+
+    private void clearAssignedDepots(UserEntity user) {
+        List<DepotEntity> currentDepots = depotRepository.findAll().stream()
+                .filter(depot -> depot.getDispatcher() != null && depot.getDispatcher().getId().equals(user.getId()))
+                .toList();
+
+        if (currentDepots.isEmpty()) {
+            return;
+        }
+
+        currentDepots.forEach(depot -> depot.setDispatcher(null));
+        depotRepository.saveAll(currentDepots);
+    }
+
+    private void validateAdminRetention(UserEntity user, String nextRole) {
+        String currentRole = normalizeRole(user.getRole());
+        String targetRole = nextRole == null ? null : normalizeRole(nextRole);
+
+        boolean removingAdminRole = AuthorizationPolicy.ROLE_ADMIN.equals(currentRole)
+                && (targetRole == null || !AuthorizationPolicy.ROLE_ADMIN.equals(targetRole));
+
+        if (removingAdminRole && userRepository.countByRoleIgnoreCase(AuthorizationPolicy.ROLE_ADMIN) <= 1) {
+            throw new ValidationException(AuthConstant.LAST_ADMIN_REQUIRED);
         }
     }
 

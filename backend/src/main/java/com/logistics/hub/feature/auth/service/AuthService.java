@@ -8,8 +8,8 @@ import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.UserResponse;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AuthService {
 
@@ -29,9 +29,13 @@ public interface AuthService {
 
     UserResponse createAccount(CreateAccountRequest request);
 
-    List<UserResponse> getAccounts();
+    Page<UserResponse> getAccounts(Pageable pageable, String search, String role, Long depotId);
+
+    UserResponse getAccountById(Long id);
 
     UserResponse updateAccount(Long id, UpdateAccountRequest request);
+
+    void deleteAccount(Long id);
 
     void changePassword(String username, ChangePasswordRequest request);
 

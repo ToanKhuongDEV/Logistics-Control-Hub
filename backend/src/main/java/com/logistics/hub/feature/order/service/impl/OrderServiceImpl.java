@@ -1,8 +1,8 @@
 package com.logistics.hub.feature.order.service.impl;
 
+import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
-import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.feature.audit.constant.AuditAction;
 import com.logistics.hub.feature.audit.constant.AuditResourceType;
 import com.logistics.hub.feature.audit.constant.AuditStatus;
@@ -10,6 +10,8 @@ import com.logistics.hub.feature.audit.service.AuditActorService;
 import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
+import com.logistics.hub.feature.depot.entity.DepotEntity;
+import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.location.service.LocationService;
 import com.logistics.hub.feature.order.constant.OrderConstant;
@@ -22,8 +24,6 @@ import com.logistics.hub.feature.order.mapper.OrderMapper;
 import com.logistics.hub.feature.order.repository.OrderRepository;
 import com.logistics.hub.feature.order.repository.OrderSpecification;
 import com.logistics.hub.feature.order.service.OrderService;
-import com.logistics.hub.feature.depot.entity.DepotEntity;
-import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.routing.service.impl.HaversineDistanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,8 +83,7 @@ public class OrderServiceImpl implements OrderService {
         authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_READ);
         List<OrderEntity> allOrders = authorizationService.hasGlobalScope()
                 ? orderRepository.findAll()
-                : orderRepository.findAll(
-                        OrderSpecification.withFilters(null, null, authorizationService.getAccessibleDepotIds()));
+                : orderRepository.findAll(OrderSpecification.withFilters(null, null, authorizationService.getAccessibleDepotIds()));
 
         long activeCount = allOrders.stream()
                 .filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.CANCELLED)
@@ -119,49 +118,53 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse create(OrderRequest request) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
-        if (request.getDepotId() != null) {
-            authorizationService.requireDepotAccess(request.getDepotId());
-        } else if (!authorizationService.hasGlobalScope()) {
-            throw new ValidationException("Nhân sự có scope phải chọn kho phụ trách khi tạo đơn hàng.");
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
+            if (request.getDepotId() != null) {
+                authorizationService.requireDepotAccess(request.getDepotId());
+            } else if (!authorizationService.hasGlobalScope()) {
+                throw new ValidationException("Scoped staff must choose a depot when creating an order.");
+            }
+
+            if (request.getCode() == null || request.getCode().trim().isEmpty()) {
+                request.setCode(generateOrderCode());
+            } else if (orderRepository.existsByCode(request.getCode())) {
+                throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
+            }
+
+            OrderEntity entity = orderMapper.toEntity(request);
+            entity.setStatus(OrderStatus.CREATED);
+
+            LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
+            entity.setDeliveryLocation(location);
+
+            if (request.getDepotId() == null) {
+                assignNearestDepot(entity);
+            } else {
+                DepotEntity depot = depotRepository.findById(request.getDepotId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+                authorizationService.requireDepotAccess(depot.getId());
+                entity.setDepot(depot);
+            }
+
+            OrderEntity saved = orderRepository.save(entity);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.CREATE,
+                    AuditResourceType.ORDER,
+                    saved.getId().toString(),
+                    saved.getCode(),
+                    saved.getDepot() != null ? saved.getDepot().getId() : null,
+                    AuditStatus.SUCCESS,
+                    "Created order",
+                    null,
+                    orderAuditSnapshot(saved),
+                    Map.of("autoAssignedDepot", request.getDepotId() == null));
+            return findById(saved.getId());
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.CREATE, null, request.getCode(), null, orderRequestSnapshot(request), ex);
+            throw ex;
         }
-
-        if (request.getCode() == null || request.getCode().trim().isEmpty()) {
-            request.setCode(generateOrderCode());
-        } else if (orderRepository.existsByCode(request.getCode())) {
-            throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
-        }
-
-        OrderEntity entity = orderMapper.toEntity(request);
-        entity.setStatus(OrderStatus.CREATED);
-
-        LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
-        entity.setDeliveryLocation(location);
-
-        if (request.getDepotId() == null) {
-            assignNearestDepot(entity);
-        } else {
-            DepotEntity depot = depotRepository.findById(request.getDepotId())
-                    .orElseThrow(
-                            () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
-            authorizationService.requireDepotAccess(depot.getId());
-            entity.setDepot(depot);
-        }
-
-        OrderEntity saved = orderRepository.save(entity);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.CREATE,
-                AuditResourceType.ORDER,
-                saved.getId().toString(),
-                saved.getCode(),
-                saved.getDepot() != null ? saved.getDepot().getId() : null,
-                AuditStatus.SUCCESS,
-                "Created order",
-                null,
-                orderAuditSnapshot(saved),
-                Map.of("autoAssignedDepot", request.getDepotId() == null));
-        return findById(saved.getId());
     }
 
     private OrderResponse toResponse(OrderEntity entity) {
@@ -187,105 +190,116 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse update(Long id, OrderRequest request) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
-        OrderEntity entity = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
-        authorizationService.requireOrderAccess(entity);
-        Map<String, Object> beforeData = orderAuditSnapshot(entity);
+        OrderEntity entity = null;
+        Map<String, Object> beforeData = null;
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
+            entity = orderRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
+            authorizationService.requireOrderAccess(entity);
+            beforeData = orderAuditSnapshot(entity);
 
-        if (!entity.getCode().equals(request.getCode()) && orderRepository.existsByCode(request.getCode())) {
-            throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
-        }
-
-        orderMapper.updateEntityFromRequest(request, entity);
-
-        if (request.getStatus() != null) {
-            if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_ORDER_CANCEL_CONFIRMED)
-                    && request.getStatus() == OrderStatus.CANCELLED
-                    && entity.getStatus() != OrderStatus.CREATED) {
-                throw new ForbiddenException("Dispatcher không được hủy đơn đã xác nhận hoặc đang xử lý.");
+            if (!entity.getCode().equals(request.getCode()) && orderRepository.existsByCode(request.getCode())) {
+                throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
             }
-            entity.setStatus(request.getStatus());
-        }
 
-        if (request.getDeliveryLocation() != null) {
-            LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
-            entity.setDeliveryLocation(location);
+            orderMapper.updateEntityFromRequest(request, entity);
 
-            if (request.getDepotId() == null) {
-                assignNearestDepot(entity);
+            if (request.getStatus() != null) {
+                if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_ORDER_CANCEL_CONFIRMED)
+                        && request.getStatus() == OrderStatus.CANCELLED
+                        && entity.getStatus() != OrderStatus.CREATED) {
+                    throw new ForbiddenException("Dispatcher cannot cancel a confirmed or active order.");
+                }
+                entity.setStatus(request.getStatus());
             }
-        }
 
-        if (request.getDepotId() != null) {
-            if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN)
-                    && entity.getDepot() != null
-                    && !entity.getDepot().getId().equals(request.getDepotId())) {
-                throw new ForbiddenException("Điều chuyển đơn sang kho khác cần admin xử lý.");
+            if (request.getDeliveryLocation() != null) {
+                LocationEntity location = locationService.getOrCreateLocation(request.getDeliveryLocation());
+                entity.setDeliveryLocation(location);
+
+                if (request.getDepotId() == null) {
+                    assignNearestDepot(entity);
+                }
             }
-            DepotEntity depot = depotRepository.findById(request.getDepotId())
-                    .orElseThrow(
-                            () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
-            authorizationService.requireDepotAccess(depot.getId());
-            entity.setDepot(depot);
-        }
 
-        OrderEntity saved = orderRepository.save(entity);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.UPDATE,
-                AuditResourceType.ORDER,
-                saved.getId().toString(),
-                saved.getCode(),
-                saved.getDepot() != null ? saved.getDepot().getId() : null,
-                AuditStatus.SUCCESS,
-                "Updated order",
-                beforeData,
-                orderAuditSnapshot(saved),
-                null);
-        return findById(saved.getId());
+            if (request.getDepotId() != null) {
+                if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN)
+                        && entity.getDepot() != null
+                        && !entity.getDepot().getId().equals(request.getDepotId())) {
+                    throw new ForbiddenException("Moving an order to another depot requires admin approval.");
+                }
+                DepotEntity depot = depotRepository.findById(request.getDepotId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+                authorizationService.requireDepotAccess(depot.getId());
+                entity.setDepot(depot);
+            }
+
+            OrderEntity saved = orderRepository.save(entity);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.UPDATE,
+                    AuditResourceType.ORDER,
+                    saved.getId().toString(),
+                    saved.getCode(),
+                    saved.getDepot() != null ? saved.getDepot().getId() : null,
+                    AuditStatus.SUCCESS,
+                    "Updated order",
+                    beforeData,
+                    orderAuditSnapshot(saved),
+                    null);
+            return findById(saved.getId());
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.UPDATE, id.toString(), entity != null ? entity.getCode() : request.getCode(), beforeData, orderRequestSnapshot(request), ex);
+            throw ex;
+        }
     }
 
     @Override
     public void updateStatusBulk(List<Long> orderIds, OrderStatus status) {
-        List<OrderEntity> orders = orderRepository.findAllById(orderIds);
+        try {
+            List<OrderEntity> orders = orderRepository.findAllById(orderIds);
 
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
-        if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_ORDER_CANCEL_CONFIRMED) && status == OrderStatus.CANCELLED) {
-            throw new ForbiddenException("Dispatcher không được hủy đơn hàng loạt.");
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
+            if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_ORDER_CANCEL_CONFIRMED) && status == OrderStatus.CANCELLED) {
+                throw new ForbiddenException("Dispatcher cannot bulk cancel orders.");
+            }
+
+            if (orders.size() != orderIds.size()) {
+                Set<Long> foundIds = orders.stream()
+                        .map(OrderEntity::getId)
+                        .collect(Collectors.toSet());
+
+                String missingIds = orderIds.stream()
+                        .filter(id -> !foundIds.contains(id))
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(", "));
+
+                throw new ValidationException(OrderConstant.ORDER_IDS_NOT_FOUND + missingIds);
+            }
+
+            orders.forEach(authorizationService::requireOrderAccess);
+            List<Map<String, Object>> beforeData = orders.stream()
+                    .map(this::orderAuditSnapshot)
+                    .toList();
+            orders.forEach(order -> order.setStatus(status));
+            orderRepository.saveAll(orders);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.BULK_UPDATE,
+                    AuditResourceType.ORDER,
+                    String.valueOf(orderIds.size()),
+                    "Bulk order status update",
+                    resolveBulkScopeDepotId(orders),
+                    AuditStatus.SUCCESS,
+                    "Bulk updated order status",
+                    beforeData,
+                    orders.stream().map(this::orderAuditSnapshot).toList(),
+                    Map.of("status", status.name(), "orderIds", orderIds));
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.BULK_UPDATE, String.valueOf(orderIds.size()), "Bulk order status update", null, Map.of("status", status.name(), "orderIds", orderIds), ex);
+            throw ex;
         }
-
-        if (orders.size() != orderIds.size()) {
-            Set<Long> foundIds = orders.stream()
-                    .map(OrderEntity::getId)
-                    .collect(Collectors.toSet());
-
-            String missingIds = orderIds.stream()
-                    .filter(id -> !foundIds.contains(id))
-                    .map(String::valueOf)
-                    .collect(Collectors.joining(", "));
-
-            throw new ValidationException(OrderConstant.ORDER_IDS_NOT_FOUND + missingIds);
-        }
-
-        orders.forEach(authorizationService::requireOrderAccess);
-        List<Map<String, Object>> beforeData = orders.stream()
-                .map(this::orderAuditSnapshot)
-                .toList();
-        orders.forEach(order -> order.setStatus(status));
-        orderRepository.saveAll(orders);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.BULK_UPDATE,
-                AuditResourceType.ORDER,
-                String.valueOf(orderIds.size()),
-                "Bulk order status update",
-                resolveBulkScopeDepotId(orders),
-                AuditStatus.SUCCESS,
-                "Bulk updated order status",
-                beforeData,
-                orders.stream().map(this::orderAuditSnapshot).toList(),
-                Map.of("status", status.name(), "orderIds", orderIds));
     }
 
     private void assignNearestDepot(OrderEntity order) {
@@ -332,23 +346,29 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void delete(Long id) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
-        OrderEntity order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
-        authorizationService.requireOrderAccess(order);
-        orderRepository.deleteById(id);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.DELETE,
-                AuditResourceType.ORDER,
-                order.getId().toString(),
-                order.getCode(),
-                order.getDepot() != null ? order.getDepot().getId() : null,
-                AuditStatus.SUCCESS,
-                "Deleted order",
-                orderAuditSnapshot(order),
-                null,
-                null);
+        OrderEntity order = null;
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
+            order = orderRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
+            authorizationService.requireOrderAccess(order);
+            orderRepository.deleteById(id);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.DELETE,
+                    AuditResourceType.ORDER,
+                    order.getId().toString(),
+                    order.getCode(),
+                    order.getDepot() != null ? order.getDepot().getId() : null,
+                    AuditStatus.SUCCESS,
+                    "Deleted order",
+                    orderAuditSnapshot(order),
+                    null,
+                    null);
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.DELETE, id.toString(), order != null ? order.getCode() : null, order != null ? orderAuditSnapshot(order) : null, null, ex);
+            throw ex;
+        }
     }
 
     private String generateOrderCode() {
@@ -394,5 +414,38 @@ public class OrderServiceImpl implements OrderService {
                 "city", entity.getDeliveryLocation().getCity(),
                 "country", entity.getDeliveryLocation().getCountry()));
         return snapshot;
+    }
+
+    private Map<String, Object> orderRequestSnapshot(OrderRequest request) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("code", request.getCode());
+        snapshot.put("weightKg", request.getWeightKg());
+        snapshot.put("volumeM3", request.getVolumeM3());
+        snapshot.put("status", request.getStatus() != null ? request.getStatus().name() : null);
+        snapshot.put("depotId", request.getDepotId());
+        snapshot.put("deliveryLocation", request.getDeliveryLocation() == null ? null : Map.of(
+                "street", request.getDeliveryLocation().getStreet(),
+                "city", request.getDeliveryLocation().getCity(),
+                "country", request.getDeliveryLocation().getCountry()));
+        return snapshot;
+    }
+
+    private void logFailure(String action, String resourceId, String resourceName, Object beforeData, Object afterData, RuntimeException ex) {
+        if (!(ex instanceof ValidationException || ex instanceof ForbiddenException || ex instanceof ResourceNotFoundException)) {
+            return;
+        }
+
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                action,
+                AuditResourceType.ORDER,
+                resourceId,
+                resourceName,
+                null,
+                AuditStatus.FAILED,
+                ex.getMessage(),
+                beforeData,
+                afterData,
+                Map.of("exceptionType", ex.getClass().getSimpleName()));
     }
 }

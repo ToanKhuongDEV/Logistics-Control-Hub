@@ -3,6 +3,7 @@ package com.logistics.hub.feature.auth.service.impl;
 import com.logistics.hub.common.exception.UnauthorizedException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
+import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.feature.audit.constant.AuditAction;
 import com.logistics.hub.feature.audit.constant.AuditResourceType;
 import com.logistics.hub.feature.audit.constant.AuditStatus;
@@ -217,37 +218,42 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserResponse createAccount(CreateAccountRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new ValidationException(AuthConstant.USERNAME_ALREADY_EXISTS);
+        try {
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new ValidationException(AuthConstant.USERNAME_ALREADY_EXISTS);
+            }
+
+            if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
+                throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
+            }
+
+            UserEntity user = new UserEntity();
+            user.setUsername(request.getUsername().trim());
+            user.setFullName(request.getFullName().trim());
+            user.setEmail(request.getEmail().trim().toLowerCase());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setRole(normalizeRole(request.getRole()));
+
+            UserEntity savedUser = userRepository.save(user);
+            syncAssignedDepots(savedUser, request.getAssignedDepotIds());
+            UserEntity createdUser = userRepository.findByIdWithAssignedDepots(savedUser.getId()).orElse(savedUser);
+            auditLogService.log(
+                    getCurrentActorForAudit(),
+                    AuditAction.CREATE,
+                    AuditResourceType.USER,
+                    createdUser.getId().toString(),
+                    createdUser.getUsername(),
+                    firstAssignedDepotId(createdUser),
+                    AuditStatus.SUCCESS,
+                    "Created employee account",
+                    null,
+                    userAuditSnapshot(createdUser),
+                    Map.of("role", createdUser.getRole()));
+            return getCurrentUserResponse(savedUser.getId());
+        } catch (RuntimeException ex) {
+            logUserFailure(AuditAction.CREATE, null, request.getUsername(), null, accountRequestSnapshot(request), ex);
+            throw ex;
         }
-
-        if (userRepository.existsByEmailIgnoreCase(request.getEmail())) {
-            throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
-        }
-
-        UserEntity user = new UserEntity();
-        user.setUsername(request.getUsername().trim());
-        user.setFullName(request.getFullName().trim());
-        user.setEmail(request.getEmail().trim().toLowerCase());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(normalizeRole(request.getRole()));
-
-        UserEntity savedUser = userRepository.save(user);
-        syncAssignedDepots(savedUser, request.getAssignedDepotIds());
-        UserEntity createdUser = userRepository.findByIdWithAssignedDepots(savedUser.getId()).orElse(savedUser);
-        auditLogService.log(
-                getCurrentActorForAudit(),
-                AuditAction.CREATE,
-                AuditResourceType.USER,
-                createdUser.getId().toString(),
-                createdUser.getUsername(),
-                firstAssignedDepotId(createdUser),
-                AuditStatus.SUCCESS,
-                "Created employee account",
-                null,
-                userAuditSnapshot(createdUser),
-                Map.of("role", createdUser.getRole()));
-        return getCurrentUserResponse(savedUser.getId());
     }
 
     @Override
@@ -261,67 +267,93 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserResponse updateAccount(Long id, UpdateAccountRequest request) {
-        UserEntity user = userRepository.findByIdWithAssignedDepots(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        Map<String, Object> beforeData = userAuditSnapshot(user);
+        UserEntity user = null;
+        Map<String, Object> beforeData = null;
+        try {
+            user = userRepository.findByIdWithAssignedDepots(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+            beforeData = userAuditSnapshot(user);
 
-        if (userRepository.findByEmailIgnoreCase(request.getEmail().trim())
-                .filter(existingUser -> !existingUser.getId().equals(id))
-                .isPresent()) {
-            throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
+            if (userRepository.findByEmailIgnoreCase(request.getEmail().trim())
+                    .filter(existingUser -> !existingUser.getId().equals(id))
+                    .isPresent()) {
+                throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
+            }
+
+            user.setFullName(request.getFullName().trim());
+            user.setEmail(request.getEmail().trim().toLowerCase());
+            user.setRole(normalizeRole(request.getRole()));
+
+            userRepository.save(user);
+            syncAssignedDepots(user, request.getAssignedDepotIds());
+            UserEntity updatedUser = userRepository.findByIdWithAssignedDepots(user.getId()).orElse(user);
+            auditLogService.log(
+                    getCurrentActorForAudit(),
+                    AuditAction.UPDATE,
+                    AuditResourceType.USER,
+                    updatedUser.getId().toString(),
+                    updatedUser.getUsername(),
+                    firstAssignedDepotId(updatedUser),
+                    AuditStatus.SUCCESS,
+                    "Updated employee account",
+                    beforeData,
+                    userAuditSnapshot(updatedUser),
+                    Map.of("role", updatedUser.getRole()));
+            return getCurrentUserResponse(user.getId());
+        } catch (RuntimeException ex) {
+            logUserFailure(AuditAction.UPDATE, String.valueOf(id), user != null ? user.getUsername() : null, beforeData, updateAccountRequestSnapshot(request), ex);
+            throw ex;
         }
-
-        user.setFullName(request.getFullName().trim());
-        user.setEmail(request.getEmail().trim().toLowerCase());
-        user.setRole(normalizeRole(request.getRole()));
-
-        userRepository.save(user);
-        syncAssignedDepots(user, request.getAssignedDepotIds());
-        UserEntity updatedUser = userRepository.findByIdWithAssignedDepots(user.getId()).orElse(user);
-        auditLogService.log(
-                getCurrentActorForAudit(),
-                AuditAction.UPDATE,
-                AuditResourceType.USER,
-                updatedUser.getId().toString(),
-                updatedUser.getUsername(),
-                firstAssignedDepotId(updatedUser),
-                AuditStatus.SUCCESS,
-                "Updated employee account",
-                beforeData,
-                userAuditSnapshot(updatedUser),
-                Map.of("role", updatedUser.getRole()));
-        return getCurrentUserResponse(user.getId());
     }
 
     @Override
     @Transactional
     public void changePassword(String username, ChangePasswordRequest request) {
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UnauthorizedException(AuthConstant.NOT_AUTHENTICATED));
+        UserEntity user = null;
+        try {
+            user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UnauthorizedException(AuthConstant.NOT_AUTHENTICATED));
 
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new ValidationException(AuthConstant.CURRENT_PASSWORD_INCORRECT);
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                throw new ValidationException(AuthConstant.CURRENT_PASSWORD_INCORRECT);
+            }
+
+            if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+                throw new ValidationException(AuthConstant.PASSWORD_MUST_BE_DIFFERENT);
+            }
+
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+            refreshTokenRepository.deleteByUsername(user.getUsername());
+            auditLogService.log(
+                    user,
+                    AuditAction.CHANGE_PASSWORD,
+                    AuditResourceType.AUTH,
+                    user.getId().toString(),
+                    user.getUsername(),
+                    firstAssignedDepotId(user),
+                    AuditStatus.SUCCESS,
+                    AuthConstant.PASSWORD_CHANGED_SUCCESS,
+                    null,
+                    null,
+                    Map.of("username", user.getUsername()));
+        } catch (RuntimeException ex) {
+            if (user != null && (ex instanceof ValidationException || ex instanceof UnauthorizedException)) {
+                auditLogService.log(
+                        user,
+                        AuditAction.CHANGE_PASSWORD,
+                        AuditResourceType.AUTH,
+                        user.getId().toString(),
+                        user.getUsername(),
+                        firstAssignedDepotId(user),
+                        AuditStatus.FAILED,
+                        ex.getMessage(),
+                        null,
+                        null,
+                        Map.of("exceptionType", ex.getClass().getSimpleName(), "username", username));
+            }
+            throw ex;
         }
-
-        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-            throw new ValidationException(AuthConstant.PASSWORD_MUST_BE_DIFFERENT);
-        }
-
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-        refreshTokenRepository.deleteByUsername(user.getUsername());
-        auditLogService.log(
-                user,
-                AuditAction.CHANGE_PASSWORD,
-                AuditResourceType.AUTH,
-                user.getId().toString(),
-                user.getUsername(),
-                firstAssignedDepotId(user),
-                AuditStatus.SUCCESS,
-                AuthConstant.PASSWORD_CHANGED_SUCCESS,
-                null,
-                null,
-                Map.of("username", user.getUsername()));
     }
 
     @Override
@@ -470,5 +502,43 @@ public class AuthServiceImpl implements AuthService {
                 .sorted()
                 .toList());
         return snapshot;
+    }
+
+    private Map<String, Object> accountRequestSnapshot(CreateAccountRequest request) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("username", request.getUsername());
+        snapshot.put("fullName", request.getFullName());
+        snapshot.put("email", request.getEmail());
+        snapshot.put("role", request.getRole());
+        snapshot.put("assignedDepotIds", request.getAssignedDepotIds());
+        return snapshot;
+    }
+
+    private Map<String, Object> updateAccountRequestSnapshot(UpdateAccountRequest request) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("fullName", request.getFullName());
+        snapshot.put("email", request.getEmail());
+        snapshot.put("role", request.getRole());
+        snapshot.put("assignedDepotIds", request.getAssignedDepotIds());
+        return snapshot;
+    }
+
+    private void logUserFailure(String action, String resourceId, String resourceName, Object beforeData, Object afterData, RuntimeException ex) {
+        if (!(ex instanceof ValidationException || ex instanceof ForbiddenException || ex instanceof ResourceNotFoundException)) {
+            return;
+        }
+
+        auditLogService.log(
+                getCurrentActorForAudit(),
+                action,
+                AuditResourceType.USER,
+                resourceId,
+                resourceName,
+                null,
+                AuditStatus.FAILED,
+                ex.getMessage(),
+                beforeData,
+                afterData,
+                Map.of("exceptionType", ex.getClass().getSimpleName()));
     }
 }

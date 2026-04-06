@@ -1,5 +1,8 @@
 package com.logistics.hub.feature.company.service.impl;
 
+import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.common.exception.ResourceNotFoundException;
+import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.audit.constant.AuditAction;
 import com.logistics.hub.feature.audit.constant.AuditResourceType;
 import com.logistics.hub.feature.audit.constant.AuditStatus;
@@ -38,33 +41,43 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public CompanyResponse createOrUpdateCompanyInfo(CompanyRequest request) {
-        CompanyEntity entity = companyRepository.findTopByOrderByIdAsc()
+        CompanyEntity existingEntity = companyRepository.findTopByOrderByIdAsc()
                 .orElse(new CompanyEntity());
-        boolean isCreate = entity.getId() == null;
-        Map<String, Object> beforeData = isCreate ? null : companyAuditSnapshot(entity);
+        boolean isCreate = existingEntity.getId() == null;
+        Map<String, Object> beforeData = isCreate ? null : companyAuditSnapshot(existingEntity);
 
-        if (isCreate) {
-            // New entity mapping
-            entity = companyMapper.toEntity(request);
-        } else {
-            // Update existing
-            companyMapper.updateEntityFromRequest(request, entity);
+        try {
+            CompanyEntity entity = existingEntity;
+            if (isCreate) {
+                entity = companyMapper.toEntity(request);
+            } else {
+                companyMapper.updateEntityFromRequest(request, entity);
+            }
+
+            CompanyEntity saved = companyRepository.save(entity);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    isCreate ? AuditAction.CREATE : AuditAction.UPDATE,
+                    AuditResourceType.COMPANY,
+                    saved.getId().toString(),
+                    saved.getName(),
+                    null,
+                    AuditStatus.SUCCESS,
+                    isCreate ? "Created company profile" : "Updated company profile",
+                    beforeData,
+                    companyAuditSnapshot(saved),
+                    null);
+            return companyMapper.toResponse(saved);
+        } catch (RuntimeException ex) {
+            logFailure(
+                    isCreate ? AuditAction.CREATE : AuditAction.UPDATE,
+                    existingEntity.getId() != null ? existingEntity.getId().toString() : null,
+                    request.getName(),
+                    beforeData,
+                    companyRequestSnapshot(request),
+                    ex);
+            throw ex;
         }
-
-        CompanyEntity saved = companyRepository.save(entity);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                isCreate ? AuditAction.CREATE : AuditAction.UPDATE,
-                AuditResourceType.COMPANY,
-                saved.getId().toString(),
-                saved.getName(),
-                null,
-                AuditStatus.SUCCESS,
-                isCreate ? "Created company profile" : "Updated company profile",
-                beforeData,
-                companyAuditSnapshot(saved),
-                null);
-        return companyMapper.toResponse(saved);
     }
 
     private Map<String, Object> companyAuditSnapshot(CompanyEntity entity) {
@@ -78,5 +91,37 @@ public class CompanyServiceImpl implements CompanyService {
         snapshot.put("taxId", entity.getTaxId());
         snapshot.put("description", entity.getDescription());
         return snapshot;
+    }
+
+    private Map<String, Object> companyRequestSnapshot(CompanyRequest request) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("name", request.getName());
+        snapshot.put("address", request.getAddress());
+        snapshot.put("phone", request.getPhone());
+        snapshot.put("email", request.getEmail());
+        snapshot.put("website", request.getWebsite());
+        snapshot.put("taxId", request.getTaxId());
+        snapshot.put("description", request.getDescription());
+        return snapshot;
+    }
+
+    private void logFailure(String action, String resourceId, String resourceName, Object beforeData, Object afterData,
+                            RuntimeException ex) {
+        if (!(ex instanceof ValidationException || ex instanceof ForbiddenException || ex instanceof ResourceNotFoundException)) {
+            return;
+        }
+
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                action,
+                AuditResourceType.COMPANY,
+                resourceId,
+                resourceName,
+                null,
+                AuditStatus.FAILED,
+                ex.getMessage(),
+                beforeData,
+                afterData,
+                Map.of("exceptionType", ex.getClass().getSimpleName()));
     }
 }

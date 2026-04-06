@@ -2,6 +2,7 @@ package com.logistics.hub.feature.driver.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.feature.audit.constant.AuditAction;
 import com.logistics.hub.feature.audit.constant.AuditResourceType;
 import com.logistics.hub.feature.audit.constant.AuditStatus;
@@ -87,24 +88,29 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public DriverResponse create(DriverRequest request) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
-        normalizeRequest(request);
-        validateDriverRequest(request, null);
-        DriverEntity driver = driverMapper.toEntity(request);
-        DriverEntity savedDriver = driverRepository.save(driver);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.CREATE,
-                AuditResourceType.DRIVER,
-                savedDriver.getId().toString(),
-                savedDriver.getName(),
-                null,
-                AuditStatus.SUCCESS,
-                "Created driver",
-                null,
-                driverAuditSnapshot(savedDriver),
-                null);
-        return driverMapper.toResponse(savedDriver);
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
+            normalizeRequest(request);
+            validateDriverRequest(request, null);
+            DriverEntity driver = driverMapper.toEntity(request);
+            DriverEntity savedDriver = driverRepository.save(driver);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.CREATE,
+                    AuditResourceType.DRIVER,
+                    savedDriver.getId().toString(),
+                    savedDriver.getName(),
+                    null,
+                    AuditStatus.SUCCESS,
+                    "Created driver",
+                    null,
+                    driverAuditSnapshot(savedDriver),
+                    null);
+            return driverMapper.toResponse(savedDriver);
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.CREATE, null, request.getName(), null, driverRequestSnapshot(request), ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -115,29 +121,36 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public DriverResponse update(Long id, DriverRequest request) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
-        DriverEntity driver = driverRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
-        Map<String, Object> beforeData = driverAuditSnapshot(driver);
+        DriverEntity driver = null;
+        Map<String, Object> beforeData = null;
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
+            driver = driverRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
+            beforeData = driverAuditSnapshot(driver);
 
-        normalizeRequest(request);
-        validateDriverRequest(request, id);
+            normalizeRequest(request);
+            validateDriverRequest(request, id);
 
-        driverMapper.updateEntityFromRequest(request, driver);
-        DriverEntity updatedDriver = driverRepository.save(driver);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.UPDATE,
-                AuditResourceType.DRIVER,
-                updatedDriver.getId().toString(),
-                updatedDriver.getName(),
-                null,
-                AuditStatus.SUCCESS,
-                "Updated driver",
-                beforeData,
-                driverAuditSnapshot(updatedDriver),
-                null);
-        return driverMapper.toResponse(updatedDriver);
+            driverMapper.updateEntityFromRequest(request, driver);
+            DriverEntity updatedDriver = driverRepository.save(driver);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.UPDATE,
+                    AuditResourceType.DRIVER,
+                    updatedDriver.getId().toString(),
+                    updatedDriver.getName(),
+                    null,
+                    AuditStatus.SUCCESS,
+                    "Updated driver",
+                    beforeData,
+                    driverAuditSnapshot(updatedDriver),
+                    null);
+            return driverMapper.toResponse(updatedDriver);
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.UPDATE, id.toString(), driver != null ? driver.getName() : request.getName(), beforeData, driverRequestSnapshot(request), ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -148,34 +161,40 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void delete(Long id) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
-        DriverEntity driver = driverRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
-
-        if (vehicleRepository.existsByDriver_Id(id)) {
-            throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
-        }
-
-        if (orderRepository.existsByDriver_Id(id)) {
-            throw new ValidationException(DriverConstant.DRIVER_HAS_ORDERS);
-        }
-
+        DriverEntity driver = null;
         try {
-            driverRepository.deleteById(id);
-            auditLogService.log(
-                    auditActorService.getCurrentActor(),
-                    AuditAction.DELETE,
-                    AuditResourceType.DRIVER,
-                    driver.getId().toString(),
-                    driver.getName(),
-                    null,
-                    AuditStatus.SUCCESS,
-                    "Deleted driver",
-                    driverAuditSnapshot(driver),
-                    null,
-                    null);
-        } catch (DataIntegrityViolationException e) {
-            throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
+            driver = driverRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
+
+            if (vehicleRepository.existsByDriver_Id(id)) {
+                throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
+            }
+
+            if (orderRepository.existsByDriver_Id(id)) {
+                throw new ValidationException(DriverConstant.DRIVER_HAS_ORDERS);
+            }
+
+            try {
+                driverRepository.deleteById(id);
+                auditLogService.log(
+                        auditActorService.getCurrentActor(),
+                        AuditAction.DELETE,
+                        AuditResourceType.DRIVER,
+                        driver.getId().toString(),
+                        driver.getName(),
+                        null,
+                        AuditStatus.SUCCESS,
+                        "Deleted driver",
+                        driverAuditSnapshot(driver),
+                        null,
+                        null);
+            } catch (DataIntegrityViolationException e) {
+                throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
+            }
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.DELETE, id.toString(), driver != null ? driver.getName() : null, driver != null ? driverAuditSnapshot(driver) : null, null, ex);
+            throw ex;
         }
     }
 
@@ -244,6 +263,34 @@ public class DriverServiceImpl implements DriverService {
         snapshot.put("phoneNumber", driver.getPhoneNumber());
         snapshot.put("email", driver.getEmail());
         return snapshot;
+    }
+
+    private Map<String, Object> driverRequestSnapshot(DriverRequest request) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("name", request.getName());
+        snapshot.put("licenseNumber", request.getLicenseNumber());
+        snapshot.put("phoneNumber", request.getPhoneNumber());
+        snapshot.put("email", request.getEmail());
+        return snapshot;
+    }
+
+    private void logFailure(String action, String resourceId, String resourceName, Object beforeData, Object afterData, RuntimeException ex) {
+        if (!(ex instanceof ValidationException || ex instanceof ForbiddenException || ex instanceof ResourceNotFoundException)) {
+            return;
+        }
+
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                action,
+                AuditResourceType.DRIVER,
+                resourceId,
+                resourceName,
+                null,
+                AuditStatus.FAILED,
+                ex.getMessage(),
+                beforeData,
+                afterData,
+                Map.of("exceptionType", ex.getClass().getSimpleName()));
     }
 
 }

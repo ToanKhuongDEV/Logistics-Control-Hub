@@ -1,8 +1,8 @@
 package com.logistics.hub.feature.vehicle.service.impl;
 
+import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
-import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.feature.audit.constant.AuditAction;
 import com.logistics.hub.feature.audit.constant.AuditResourceType;
 import com.logistics.hub.feature.audit.constant.AuditStatus;
@@ -14,6 +14,7 @@ import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.driver.repository.DriverRepository;
+import com.logistics.hub.feature.redis.constant.CacheConstant;
 import com.logistics.hub.feature.vehicle.constant.VehicleConstant;
 import com.logistics.hub.feature.vehicle.dto.request.VehicleRequest;
 import com.logistics.hub.feature.vehicle.dto.response.VehicleResponse;
@@ -21,7 +22,6 @@ import com.logistics.hub.feature.vehicle.dto.response.VehicleStatisticsResponse;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import com.logistics.hub.feature.vehicle.mapper.VehicleMapper;
-import com.logistics.hub.feature.redis.constant.CacheConstant;
 import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import com.logistics.hub.feature.vehicle.service.VehicleService;
 import lombok.RequiredArgsConstructor;
@@ -94,39 +94,44 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public VehicleResponse create(VehicleRequest request) {
-        if (request.getDepotId() != null) {
-            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
-            authorizationService.requireDepotAccess(request.getDepotId());
-        } else {
-            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN);
-        }
+        try {
+            if (request.getDepotId() != null) {
+                authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
+                authorizationService.requireDepotAccess(request.getDepotId());
+            } else {
+                authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN);
+            }
 
-        if (request.getCode() == null || request.getCode().trim().isEmpty()) {
-            request.setCode(generateVehicleCode(request.getMaxWeightKg()));
-        } else if (vehicleRepository.existsByCode(request.getCode())) {
-            throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
-        }
+            if (request.getCode() == null || request.getCode().trim().isEmpty()) {
+                request.setCode(generateVehicleCode(request.getMaxWeightKg()));
+            } else if (vehicleRepository.existsByCode(request.getCode())) {
+                throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
+            }
 
-        if (request.getDriverId() != null && vehicleRepository.existsByDriver_Id(request.getDriverId())) {
-            throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
-        }
+            if (request.getDriverId() != null && vehicleRepository.existsByDriver_Id(request.getDriverId())) {
+                throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
+            }
 
-        VehicleEntity entity = vehicleMapper.toEntity(request);
-        resolveAndSetDepotDriver(request, entity);
-        VehicleEntity saved = vehicleRepository.save(entity);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.CREATE,
-                AuditResourceType.VEHICLE,
-                saved.getId().toString(),
-                saved.getCode(),
-                saved.getDepot() != null ? saved.getDepot().getId() : null,
-                AuditStatus.SUCCESS,
-                "Created vehicle",
-                null,
-                vehicleAuditSnapshot(saved),
-                null);
-        return enrichResponse(saved);
+            VehicleEntity entity = vehicleMapper.toEntity(request);
+            resolveAndSetDepotDriver(request, entity);
+            VehicleEntity saved = vehicleRepository.save(entity);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.CREATE,
+                    AuditResourceType.VEHICLE,
+                    saved.getId().toString(),
+                    saved.getCode(),
+                    saved.getDepot() != null ? saved.getDepot().getId() : null,
+                    AuditStatus.SUCCESS,
+                    "Created vehicle",
+                    null,
+                    vehicleAuditSnapshot(saved),
+                    null);
+            return enrichResponse(saved);
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.CREATE, null, request.getCode(), null, vehicleRequestSnapshot(request), ex);
+            throw ex;
+        }
     }
 
     private String generateVehicleCode(Integer weightKg) {
@@ -161,43 +166,50 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public VehicleResponse update(Long id, VehicleRequest request) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
-        VehicleEntity entity = vehicleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
-        authorizationService.requireVehicleAccess(entity);
-        Map<String, Object> beforeData = vehicleAuditSnapshot(entity);
+        VehicleEntity entity = null;
+        Map<String, Object> beforeData = null;
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
+            entity = vehicleRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
+            authorizationService.requireVehicleAccess(entity);
+            beforeData = vehicleAuditSnapshot(entity);
 
-        if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN)
-                && request.getDepotId() != null
-                && entity.getDepot() != null
-                && !entity.getDepot().getId().equals(request.getDepotId())) {
-            throw new ForbiddenException("Điều chuyển phương tiện sang kho khác cần admin xử lý.");
+            if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN)
+                    && request.getDepotId() != null
+                    && entity.getDepot() != null
+                    && !entity.getDepot().getId().equals(request.getDepotId())) {
+                throw new ForbiddenException("Dieu chuyen phuong tien sang kho khac can admin xu ly.");
+            }
+
+            if (!entity.getCode().equals(request.getCode()) && vehicleRepository.existsByCode(request.getCode())) {
+                throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
+            }
+
+            if (request.getDriverId() != null && vehicleRepository.existsByDriver_IdAndIdNot(request.getDriverId(), id)) {
+                throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
+            }
+
+            vehicleMapper.updateEntityFromRequest(request, entity);
+            resolveAndSetDepotDriver(request, entity);
+            VehicleEntity saved = vehicleRepository.save(entity);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.UPDATE,
+                    AuditResourceType.VEHICLE,
+                    saved.getId().toString(),
+                    saved.getCode(),
+                    saved.getDepot() != null ? saved.getDepot().getId() : null,
+                    AuditStatus.SUCCESS,
+                    "Updated vehicle",
+                    beforeData,
+                    vehicleAuditSnapshot(saved),
+                    null);
+            return enrichResponse(saved);
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.UPDATE, id.toString(), entity != null ? entity.getCode() : request.getCode(), beforeData, vehicleRequestSnapshot(request), ex);
+            throw ex;
         }
-
-        if (!entity.getCode().equals(request.getCode()) && vehicleRepository.existsByCode(request.getCode())) {
-            throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
-        }
-
-        if (request.getDriverId() != null && vehicleRepository.existsByDriver_IdAndIdNot(request.getDriverId(), id)) {
-            throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
-        }
-
-        vehicleMapper.updateEntityFromRequest(request, entity);
-        resolveAndSetDepotDriver(request, entity);
-        VehicleEntity saved = vehicleRepository.save(entity);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.UPDATE,
-                AuditResourceType.VEHICLE,
-                saved.getId().toString(),
-                saved.getCode(),
-                saved.getDepot() != null ? saved.getDepot().getId() : null,
-                AuditStatus.SUCCESS,
-                "Updated vehicle",
-                beforeData,
-                vehicleAuditSnapshot(saved),
-                null);
-        return enrichResponse(saved);
     }
 
     @Override
@@ -207,51 +219,55 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void updateDepotBulk(Long depotId, List<Long> vehicleIds) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN);
-        DepotEntity depot = depotRepository.findById(depotId)
-                .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + depotId));
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN);
+            DepotEntity depot = depotRepository.findById(depotId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + depotId));
 
-        List<VehicleEntity> vehicles = vehicleRepository.findAllById(vehicleIds);
+            List<VehicleEntity> vehicles = vehicleRepository.findAllById(vehicleIds);
 
-        if (vehicles.size() != vehicleIds.size()) {
-            Set<Long> foundIds = vehicles.stream()
-                    .map(VehicleEntity::getId)
-                    .collect(Collectors.toSet());
+            if (vehicles.size() != vehicleIds.size()) {
+                Set<Long> foundIds = vehicles.stream()
+                        .map(VehicleEntity::getId)
+                        .collect(Collectors.toSet());
 
-            String missingIds = vehicleIds.stream()
-                    .filter(id -> !foundIds.contains(id))
-                    .map(String::valueOf)
-                    .collect(Collectors.joining(", "));
+                String missingIds = vehicleIds.stream()
+                        .filter(id -> !foundIds.contains(id))
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(", "));
 
-            throw new ValidationException(VehicleConstant.VEHICLE_IDS_NOT_FOUND + missingIds);
+                throw new ValidationException(VehicleConstant.VEHICLE_IDS_NOT_FOUND + missingIds);
+            }
+
+            vehicles.forEach(authorizationService::requireVehicleAccess);
+            List<Map<String, Object>> beforeData = vehicles.stream()
+                    .map(this::vehicleAuditSnapshot)
+                    .toList();
+            vehicles.forEach(vehicle -> vehicle.setDepot(depot));
+            vehicleRepository.saveAll(vehicles);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.BULK_UPDATE,
+                    AuditResourceType.VEHICLE,
+                    String.valueOf(vehicleIds.size()),
+                    "Vehicle depot reassignment",
+                    depotId,
+                    AuditStatus.SUCCESS,
+                    "Bulk updated vehicle depot",
+                    beforeData,
+                    vehicles.stream().map(this::vehicleAuditSnapshot).toList(),
+                    Map.of("depotId", depotId, "vehicleIds", vehicleIds));
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.BULK_UPDATE, String.valueOf(vehicleIds.size()), "Vehicle depot reassignment", null, Map.of("depotId", depotId, "vehicleIds", vehicleIds), ex);
+            throw ex;
         }
-
-        vehicles.forEach(authorizationService::requireVehicleAccess);
-        List<Map<String, Object>> beforeData = vehicles.stream()
-                .map(this::vehicleAuditSnapshot)
-                .toList();
-        vehicles.forEach(vehicle -> vehicle.setDepot(depot));
-        vehicleRepository.saveAll(vehicles);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.BULK_UPDATE,
-                AuditResourceType.VEHICLE,
-                String.valueOf(vehicleIds.size()),
-                "Vehicle depot reassignment",
-                depotId,
-                AuditStatus.SUCCESS,
-                "Bulk updated vehicle depot",
-                beforeData,
-                vehicles.stream().map(this::vehicleAuditSnapshot).toList(),
-                Map.of("depotId", depotId, "vehicleIds", vehicleIds));
     }
 
     private void resolveAndSetDepotDriver(VehicleRequest request, VehicleEntity entity) {
         if (request.getDepotId() != null) {
             authorizationService.requireDepotAccess(request.getDepotId());
             DepotEntity depot = depotRepository.findById(request.getDepotId())
-                    .orElseThrow(
-                            () -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + request.getDepotId()));
             entity.setDepot(depot);
         } else {
             entity.setDepot(null);
@@ -259,8 +275,7 @@ public class VehicleServiceImpl implements VehicleService {
 
         if (request.getDriverId() != null) {
             DriverEntity driver = driverRepository.findById(request.getDriverId())
-                    .orElseThrow(
-                            () -> new ResourceNotFoundException("Driver not found with id: " + request.getDriverId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + request.getDriverId()));
             entity.setDriver(driver);
         } else {
             entity.setDriver(null);
@@ -274,23 +289,29 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void delete(Long id) {
-        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
-        VehicleEntity vehicle = vehicleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
-        authorizationService.requireVehicleAccess(vehicle);
-        vehicleRepository.deleteById(id);
-        auditLogService.log(
-                auditActorService.getCurrentActor(),
-                AuditAction.DELETE,
-                AuditResourceType.VEHICLE,
-                vehicle.getId().toString(),
-                vehicle.getCode(),
-                vehicle.getDepot() != null ? vehicle.getDepot().getId() : null,
-                AuditStatus.SUCCESS,
-                "Deleted vehicle",
-                vehicleAuditSnapshot(vehicle),
-                null,
-                null);
+        VehicleEntity vehicle = null;
+        try {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
+            vehicle = vehicleRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
+            authorizationService.requireVehicleAccess(vehicle);
+            vehicleRepository.deleteById(id);
+            auditLogService.log(
+                    auditActorService.getCurrentActor(),
+                    AuditAction.DELETE,
+                    AuditResourceType.VEHICLE,
+                    vehicle.getId().toString(),
+                    vehicle.getCode(),
+                    vehicle.getDepot() != null ? vehicle.getDepot().getId() : null,
+                    AuditStatus.SUCCESS,
+                    "Deleted vehicle",
+                    vehicleAuditSnapshot(vehicle),
+                    null,
+                    null);
+        } catch (RuntimeException ex) {
+            logFailure(AuditAction.DELETE, id.toString(), vehicle != null ? vehicle.getCode() : null, vehicle != null ? vehicleAuditSnapshot(vehicle) : null, null, ex);
+            throw ex;
+        }
     }
 
     @Override
@@ -355,5 +376,37 @@ public class VehicleServiceImpl implements VehicleService {
         snapshot.put("driverId", entity.getDriver() != null ? entity.getDriver().getId() : null);
         snapshot.put("driverName", entity.getDriver() != null ? entity.getDriver().getName() : null);
         return snapshot;
+    }
+
+    private Map<String, Object> vehicleRequestSnapshot(VehicleRequest request) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("code", request.getCode());
+        snapshot.put("status", request.getStatus() != null ? request.getStatus().name() : null);
+        snapshot.put("type", request.getType());
+        snapshot.put("maxWeightKg", request.getMaxWeightKg());
+        snapshot.put("maxVolumeM3", request.getMaxVolumeM3());
+        snapshot.put("costPerKm", request.getCostPerKm());
+        snapshot.put("depotId", request.getDepotId());
+        snapshot.put("driverId", request.getDriverId());
+        return snapshot;
+    }
+
+    private void logFailure(String action, String resourceId, String resourceName, Object beforeData, Object afterData, RuntimeException ex) {
+        if (!(ex instanceof ValidationException || ex instanceof ForbiddenException || ex instanceof ResourceNotFoundException)) {
+            return;
+        }
+
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                action,
+                AuditResourceType.VEHICLE,
+                resourceId,
+                resourceName,
+                null,
+                AuditStatus.FAILED,
+                ex.getMessage(),
+                beforeData,
+                afterData,
+                Map.of("exceptionType", ex.getClass().getSimpleName()));
     }
 }

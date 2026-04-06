@@ -3,6 +3,11 @@ package com.logistics.hub.feature.order.service.impl;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.feature.audit.constant.AuditAction;
+import com.logistics.hub.feature.audit.constant.AuditResourceType;
+import com.logistics.hub.feature.audit.constant.AuditStatus;
+import com.logistics.hub.feature.audit.service.AuditActorService;
+import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.location.entity.LocationEntity;
@@ -27,7 +32,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,6 +50,8 @@ public class OrderServiceImpl implements OrderService {
     private final DepotRepository depotRepository;
     private final HaversineDistanceService haversineDistanceService;
     private final AuthorizationService authorizationService;
+    private final AuditLogService auditLogService;
+    private final AuditActorService auditActorService;
 
     @Override
     @Transactional(readOnly = true)
@@ -140,6 +149,18 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderEntity saved = orderRepository.save(entity);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.CREATE,
+                AuditResourceType.ORDER,
+                saved.getId().toString(),
+                saved.getCode(),
+                saved.getDepot() != null ? saved.getDepot().getId() : null,
+                AuditStatus.SUCCESS,
+                "Created order",
+                null,
+                orderAuditSnapshot(saved),
+                Map.of("autoAssignedDepot", request.getDepotId() == null));
         return findById(saved.getId());
     }
 
@@ -170,6 +191,7 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity entity = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
         authorizationService.requireOrderAccess(entity);
+        Map<String, Object> beforeData = orderAuditSnapshot(entity);
 
         if (!entity.getCode().equals(request.getCode()) && orderRepository.existsByCode(request.getCode())) {
             throw new ValidationException(OrderConstant.ORDER_CODE_EXISTS + request.getCode());
@@ -209,6 +231,18 @@ public class OrderServiceImpl implements OrderService {
         }
 
         OrderEntity saved = orderRepository.save(entity);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.UPDATE,
+                AuditResourceType.ORDER,
+                saved.getId().toString(),
+                saved.getCode(),
+                saved.getDepot() != null ? saved.getDepot().getId() : null,
+                AuditStatus.SUCCESS,
+                "Updated order",
+                beforeData,
+                orderAuditSnapshot(saved),
+                null);
         return findById(saved.getId());
     }
 
@@ -235,8 +269,23 @@ public class OrderServiceImpl implements OrderService {
         }
 
         orders.forEach(authorizationService::requireOrderAccess);
+        List<Map<String, Object>> beforeData = orders.stream()
+                .map(this::orderAuditSnapshot)
+                .toList();
         orders.forEach(order -> order.setStatus(status));
         orderRepository.saveAll(orders);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.BULK_UPDATE,
+                AuditResourceType.ORDER,
+                String.valueOf(orderIds.size()),
+                "Bulk order status update",
+                resolveBulkScopeDepotId(orders),
+                AuditStatus.SUCCESS,
+                "Bulk updated order status",
+                beforeData,
+                orders.stream().map(this::orderAuditSnapshot).toList(),
+                Map.of("status", status.name(), "orderIds", orderIds));
     }
 
     private void assignNearestDepot(OrderEntity order) {
@@ -288,6 +337,18 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
         authorizationService.requireOrderAccess(order);
         orderRepository.deleteById(id);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.DELETE,
+                AuditResourceType.ORDER,
+                order.getId().toString(),
+                order.getCode(),
+                order.getDepot() != null ? order.getDepot().getId() : null,
+                AuditStatus.SUCCESS,
+                "Deleted order",
+                orderAuditSnapshot(order),
+                null,
+                null);
     }
 
     private String generateOrderCode() {
@@ -305,5 +366,33 @@ public class OrderServiceImpl implements OrderService {
                     return "ORD-001";
                 })
                 .orElse("ORD-001");
+    }
+
+    private Long resolveBulkScopeDepotId(List<OrderEntity> orders) {
+        return orders.stream()
+                .map(order -> order.getDepot() != null ? order.getDepot().getId() : null)
+                .distinct()
+                .count() == 1
+                ? orders.stream().map(order -> order.getDepot() != null ? order.getDepot().getId() : null).findFirst().orElse(null)
+                : null;
+    }
+
+    private Map<String, Object> orderAuditSnapshot(OrderEntity entity) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("id", entity.getId());
+        snapshot.put("code", entity.getCode());
+        snapshot.put("status", entity.getStatus() != null ? entity.getStatus().name() : null);
+        snapshot.put("weightKg", entity.getWeightKg());
+        snapshot.put("volumeM3", entity.getVolumeM3());
+        snapshot.put("depotId", entity.getDepot() != null ? entity.getDepot().getId() : null);
+        snapshot.put("depotName", entity.getDepot() != null ? entity.getDepot().getName() : null);
+        snapshot.put("driverId", entity.getDriver() != null ? entity.getDriver().getId() : null);
+        snapshot.put("driverName", entity.getDriver() != null ? entity.getDriver().getName() : null);
+        snapshot.put("deliveryLocationId", entity.getDeliveryLocation() != null ? entity.getDeliveryLocation().getId() : null);
+        snapshot.put("deliveryLocation", entity.getDeliveryLocation() == null ? null : Map.of(
+                "street", entity.getDeliveryLocation().getStreet(),
+                "city", entity.getDeliveryLocation().getCity(),
+                "country", entity.getDeliveryLocation().getCountry()));
+        return snapshot;
     }
 }

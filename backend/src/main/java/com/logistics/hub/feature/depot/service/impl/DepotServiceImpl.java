@@ -2,6 +2,11 @@ package com.logistics.hub.feature.depot.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.audit.constant.AuditAction;
+import com.logistics.hub.feature.audit.constant.AuditResourceType;
+import com.logistics.hub.feature.audit.constant.AuditStatus;
+import com.logistics.hub.feature.audit.service.AuditActorService;
+import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.constant.DepotConstant;
@@ -28,6 +33,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -40,6 +47,8 @@ public class DepotServiceImpl implements DepotService {
   private final LocationService locationService;
   private final VehicleRepository vehicleRepository;
   private final AuthorizationService authorizationService;
+  private final AuditLogService auditLogService;
+  private final AuditActorService auditActorService;
 
   @Override
   @Transactional(readOnly = true)
@@ -99,6 +108,18 @@ public class DepotServiceImpl implements DepotService {
     entity.setLocation(location);
 
     DepotEntity saved = depotRepository.save(entity);
+    auditLogService.log(
+        auditActorService.getCurrentActor(),
+        AuditAction.CREATE,
+        AuditResourceType.DEPOT,
+        saved.getId().toString(),
+        saved.getName(),
+        saved.getId(),
+        AuditStatus.SUCCESS,
+        "Created depot",
+        null,
+        depotAuditSnapshot(saved),
+        null);
     return enrichResponse(saved);
   }
 
@@ -112,6 +133,7 @@ public class DepotServiceImpl implements DepotService {
     authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DEPOT_MANAGE);
     DepotEntity entity = depotRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id));
+    Map<String, Object> beforeData = depotAuditSnapshot(entity);
 
     LocationEntity location = locationService.getOrCreateLocation(request.getLocationRequest());
     Long newLocationId = location.getId();
@@ -124,6 +146,18 @@ public class DepotServiceImpl implements DepotService {
     entity.setLocation(location);
 
     DepotEntity saved = depotRepository.save(entity);
+    auditLogService.log(
+        auditActorService.getCurrentActor(),
+        AuditAction.UPDATE,
+        AuditResourceType.DEPOT,
+        saved.getId().toString(),
+        saved.getName(),
+        saved.getId(),
+        AuditStatus.SUCCESS,
+        "Updated depot",
+        beforeData,
+        depotAuditSnapshot(saved),
+        null);
     return enrichResponse(saved);
   }
 
@@ -135,9 +169,8 @@ public class DepotServiceImpl implements DepotService {
   })
   public void delete(Long id) {
     authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DEPOT_MANAGE);
-    if (!depotRepository.existsById(id)) {
-      throw new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id);
-    }
+    DepotEntity depot = depotRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id));
 
     if (vehicleRepository.existsByDepot_Id(id)) {
       throw new ValidationException(DepotConstant.DEPOT_HAS_VEHICLES);
@@ -145,6 +178,18 @@ public class DepotServiceImpl implements DepotService {
 
     try {
       depotRepository.deleteById(id);
+      auditLogService.log(
+          auditActorService.getCurrentActor(),
+          AuditAction.DELETE,
+          AuditResourceType.DEPOT,
+          depot.getId().toString(),
+          depot.getName(),
+          depot.getId(),
+          AuditStatus.SUCCESS,
+          "Deleted depot",
+          depotAuditSnapshot(depot),
+          null,
+          null);
     } catch (DataIntegrityViolationException e) {
       throw new ValidationException(DepotConstant.DEPOT_HAS_VEHICLES);
     }
@@ -174,5 +219,20 @@ public class DepotServiceImpl implements DepotService {
 
   private DepotResponse enrichResponse(DepotEntity entity) {
     return depotMapper.toResponse(entity);
+  }
+
+  private Map<String, Object> depotAuditSnapshot(DepotEntity entity) {
+    LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+    snapshot.put("id", entity.getId());
+    snapshot.put("name", entity.getName());
+    snapshot.put("description", entity.getDescription());
+    snapshot.put("isActive", entity.getIsActive());
+    snapshot.put("dispatcherId", entity.getDispatcher() != null ? entity.getDispatcher().getId() : null);
+    snapshot.put("locationId", entity.getLocation() != null ? entity.getLocation().getId() : null);
+    snapshot.put("location", entity.getLocation() == null ? null : Map.of(
+        "street", entity.getLocation().getStreet(),
+        "city", entity.getLocation().getCity(),
+        "country", entity.getLocation().getCountry()));
+    return snapshot;
   }
 }

@@ -3,6 +3,11 @@ package com.logistics.hub.feature.vehicle.service.impl;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.feature.audit.constant.AuditAction;
+import com.logistics.hub.feature.audit.constant.AuditResourceType;
+import com.logistics.hub.feature.audit.constant.AuditStatus;
+import com.logistics.hub.feature.audit.service.AuditActorService;
+import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
@@ -30,7 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,6 +51,8 @@ public class VehicleServiceImpl implements VehicleService {
     private final DepotRepository depotRepository;
     private final DriverRepository driverRepository;
     private final AuthorizationService authorizationService;
+    private final AuditLogService auditLogService;
+    private final AuditActorService auditActorService;
 
     @Override
     @Transactional(readOnly = true)
@@ -105,6 +114,18 @@ public class VehicleServiceImpl implements VehicleService {
         VehicleEntity entity = vehicleMapper.toEntity(request);
         resolveAndSetDepotDriver(request, entity);
         VehicleEntity saved = vehicleRepository.save(entity);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.CREATE,
+                AuditResourceType.VEHICLE,
+                saved.getId().toString(),
+                saved.getCode(),
+                saved.getDepot() != null ? saved.getDepot().getId() : null,
+                AuditStatus.SUCCESS,
+                "Created vehicle",
+                null,
+                vehicleAuditSnapshot(saved),
+                null);
         return enrichResponse(saved);
     }
 
@@ -144,6 +165,7 @@ public class VehicleServiceImpl implements VehicleService {
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
         authorizationService.requireVehicleAccess(entity);
+        Map<String, Object> beforeData = vehicleAuditSnapshot(entity);
 
         if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN)
                 && request.getDepotId() != null
@@ -163,6 +185,18 @@ public class VehicleServiceImpl implements VehicleService {
         vehicleMapper.updateEntityFromRequest(request, entity);
         resolveAndSetDepotDriver(request, entity);
         VehicleEntity saved = vehicleRepository.save(entity);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.UPDATE,
+                AuditResourceType.VEHICLE,
+                saved.getId().toString(),
+                saved.getCode(),
+                saved.getDepot() != null ? saved.getDepot().getId() : null,
+                AuditStatus.SUCCESS,
+                "Updated vehicle",
+                beforeData,
+                vehicleAuditSnapshot(saved),
+                null);
         return enrichResponse(saved);
     }
 
@@ -193,8 +227,23 @@ public class VehicleServiceImpl implements VehicleService {
         }
 
         vehicles.forEach(authorizationService::requireVehicleAccess);
+        List<Map<String, Object>> beforeData = vehicles.stream()
+                .map(this::vehicleAuditSnapshot)
+                .toList();
         vehicles.forEach(vehicle -> vehicle.setDepot(depot));
         vehicleRepository.saveAll(vehicles);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.BULK_UPDATE,
+                AuditResourceType.VEHICLE,
+                String.valueOf(vehicleIds.size()),
+                "Vehicle depot reassignment",
+                depotId,
+                AuditStatus.SUCCESS,
+                "Bulk updated vehicle depot",
+                beforeData,
+                vehicles.stream().map(this::vehicleAuditSnapshot).toList(),
+                Map.of("depotId", depotId, "vehicleIds", vehicleIds));
     }
 
     private void resolveAndSetDepotDriver(VehicleRequest request, VehicleEntity entity) {
@@ -230,6 +279,18 @@ public class VehicleServiceImpl implements VehicleService {
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
         authorizationService.requireVehicleAccess(vehicle);
         vehicleRepository.deleteById(id);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.DELETE,
+                AuditResourceType.VEHICLE,
+                vehicle.getId().toString(),
+                vehicle.getCode(),
+                vehicle.getDepot() != null ? vehicle.getDepot().getId() : null,
+                AuditStatus.SUCCESS,
+                "Deleted vehicle",
+                vehicleAuditSnapshot(vehicle),
+                null,
+                null);
     }
 
     @Override
@@ -278,5 +339,21 @@ public class VehicleServiceImpl implements VehicleService {
 
     private VehicleResponse enrichResponse(VehicleEntity entity) {
         return vehicleMapper.toResponse(entity);
+    }
+
+    private Map<String, Object> vehicleAuditSnapshot(VehicleEntity entity) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("id", entity.getId());
+        snapshot.put("code", entity.getCode());
+        snapshot.put("status", entity.getStatus() != null ? entity.getStatus().name() : null);
+        snapshot.put("type", entity.getType());
+        snapshot.put("maxWeightKg", entity.getMaxWeightKg());
+        snapshot.put("maxVolumeM3", entity.getMaxVolumeM3());
+        snapshot.put("costPerKm", entity.getCostPerKm());
+        snapshot.put("depotId", entity.getDepot() != null ? entity.getDepot().getId() : null);
+        snapshot.put("depotName", entity.getDepot() != null ? entity.getDepot().getName() : null);
+        snapshot.put("driverId", entity.getDriver() != null ? entity.getDriver().getId() : null);
+        snapshot.put("driverName", entity.getDriver() != null ? entity.getDriver().getName() : null);
+        return snapshot;
     }
 }

@@ -5,6 +5,11 @@ import com.google.ortools.constraintsolver.*;
 import com.google.protobuf.Duration;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.audit.constant.AuditAction;
+import com.logistics.hub.feature.audit.constant.AuditResourceType;
+import com.logistics.hub.feature.audit.constant.AuditStatus;
+import com.logistics.hub.feature.audit.service.AuditActorService;
+import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
@@ -53,6 +58,8 @@ public class RoutingServiceImpl implements RoutingService {
     private final DepotRepository depotRepository;
     private final RoutingRunRepository routingRunRepository;
     private final AuthorizationService authorizationService;
+    private final AuditLogService auditLogService;
+    private final AuditActorService auditActorService;
 
     static {
         try {
@@ -384,6 +391,7 @@ public class RoutingServiceImpl implements RoutingService {
     @Transactional
     public RoutingRunEntity executeRouting(List<Long> orderIds, List<Long> vehicleIds) {
         log.info("Executing routing for {} orders and {} vehicles", count(orderIds), count(vehicleIds));
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_EXECUTE);
 
         List<OrderEntity> orders = orderRepository.findAllById(orderIds);
         List<VehicleEntity> vehicles = vehicleRepository.findAllById(vehicleIds);
@@ -416,6 +424,7 @@ public class RoutingServiceImpl implements RoutingService {
 
         DepotEntity depot = depotRepository.findById(depotId)
                 .orElseThrow(() -> new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED + depotId));
+        authorizationService.requireDepotAccess(depotId);
         Long locationId = depot.getLocation() != null ? depot.getLocation().getId() : null;
 
         Set<Long> locationIds = new HashSet<>();
@@ -469,6 +478,22 @@ public class RoutingServiceImpl implements RoutingService {
         }
 
         RoutingRunEntity saved = routingRunRepository.save(result);
+        auditLogService.log(
+                auditActorService.getCurrentActor(),
+                AuditAction.EXECUTE,
+                AuditResourceType.ROUTING_RUN,
+                saved.getId().toString(),
+                depot.getName(),
+                depotId,
+                AuditStatus.SUCCESS,
+                "Executed routing optimization",
+                null,
+                routingRunAuditSnapshot(saved),
+                Map.of(
+                        "orderIds", orderIds,
+                        "vehicleIds", vehicleIds,
+                        "orderCount", orders.size(),
+                        "vehicleCount", vehicles.size()));
         return routingRunRepository.findByIdWithRoutes(saved.getId())
                 .orElse(saved);
     }
@@ -527,5 +552,20 @@ public class RoutingServiceImpl implements RoutingService {
 
     private int count(List<?> list) {
         return list == null ? 0 : list.size();
+    }
+
+    private Map<String, Object> routingRunAuditSnapshot(RoutingRunEntity entity) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("id", entity.getId());
+        snapshot.put("status", entity.getStatus() != null ? entity.getStatus().name() : null);
+        snapshot.put("depotId", entity.getDepot() != null ? entity.getDepot().getId() : null);
+        snapshot.put("depotName", entity.getDepot() != null ? entity.getDepot().getName() : null);
+        snapshot.put("routeCount", entity.getRoutes() != null ? entity.getRoutes().size() : 0);
+        snapshot.put("totalDistanceKm", entity.getTotalDistanceKm());
+        snapshot.put("totalCost", entity.getTotalCost());
+        snapshot.put("startTime", entity.getStartTime());
+        snapshot.put("endTime", entity.getEndTime());
+        snapshot.put("configuration", entity.getConfiguration());
+        return snapshot;
     }
 }

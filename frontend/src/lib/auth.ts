@@ -1,5 +1,30 @@
 import apiClient from "./api";
 
+export type UserRole = "ADMIN" | "DISPATCHER" | "USER";
+export type UserPermission =
+	| "account.manage"
+	| "audit.read"
+	| "company.manage"
+	| "dashboard.read"
+	| "depot.read"
+	| "depot.manage"
+	| "driver.read"
+	| "driver.manage"
+	| "order.read"
+	| "order.manage"
+	| "order.cancel.confirmed"
+	| "routing.execute"
+	| "routing.read"
+	| "settings.read"
+	| "vehicle.manage"
+	| "vehicle.read"
+	| "vehicle.reassign";
+
+export interface AssignedDepot {
+	id: number;
+	name: string;
+}
+
 export interface LoginRequest {
 	username: string;
 	password: string;
@@ -14,7 +39,9 @@ export interface User {
 	username: string;
 	email: string;
 	fullName: string;
-	role: string;
+	role: UserRole;
+	permissions?: UserPermission[];
+	assignedDepots?: AssignedDepot[];
 }
 
 export interface CreateAccountRequest {
@@ -22,6 +49,15 @@ export interface CreateAccountRequest {
 	fullName: string;
 	email: string;
 	password: string;
+	role: UserRole;
+	assignedDepotIds?: number[];
+}
+
+export interface UpdateAccountRequest {
+	fullName: string;
+	email: string;
+	role: UserRole;
+	assignedDepotIds?: number[];
 }
 
 export interface ChangePasswordRequest {
@@ -46,10 +82,7 @@ class AuthService {
 		});
 
 		const { accessToken } = response.data.data;
-
-		// Access token is stored client-side; refresh token is handled via HttpOnly cookie.
 		localStorage.setItem("accessToken", accessToken);
-
 		return response.data.data;
 	}
 
@@ -81,6 +114,16 @@ class AuthService {
 		return response.data.data;
 	}
 
+	async getAccounts(): Promise<User[]> {
+		const response = await apiClient.get<{ data: User[] }>("/api/v1/auth/accounts");
+		return response.data.data;
+	}
+
+	async updateAccount(id: number, payload: UpdateAccountRequest): Promise<User> {
+		const response = await apiClient.put<{ data: User }>(`/api/v1/auth/accounts/${id}`, payload);
+		return response.data.data;
+	}
+
 	async changePassword(payload: ChangePasswordRequest): Promise<void> {
 		await apiClient.post("/api/v1/auth/change-password", payload);
 	}
@@ -95,3 +138,7 @@ class AuthService {
 }
 
 export const authService = new AuthService();
+
+export function hasPermission(user: User | null | undefined, permission: UserPermission): boolean {
+	return !!user?.permissions?.includes(permission);
+}

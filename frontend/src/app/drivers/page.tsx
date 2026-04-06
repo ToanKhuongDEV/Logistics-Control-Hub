@@ -10,6 +10,8 @@ import { DriverFilters } from "@/components/driver-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/auth";
 import { driverApi } from "@/lib/driver-api";
 import { depotApi } from "@/lib/depot-api";
 import { Driver, DriverRequest, DriverStatistics } from "@/types/driver-types";
@@ -19,6 +21,8 @@ import { toast } from "sonner";
 const ITEMS_PER_PAGE = 10;
 
 export default function DriversPage() {
+	const { user } = useAuth();
+	const canManageDrivers = hasPermission(user, "driver.manage");
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [statistics, setStatistics] = useState<DriverStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -47,7 +51,7 @@ export default function DriversPage() {
 			setTotalElements(response.pagination.totalElements);
 		} catch (error: any) {
 			console.error("Error fetching drivers:", error);
-			toast.error(error?.response?.data?.message || "Khong the tai danh sach tai xe");
+			toast.error(error?.response?.data?.message || "Không thể tải danh sách tài xế");
 		} finally {
 			setIsLoading(false);
 		}
@@ -68,7 +72,7 @@ export default function DriversPage() {
 			setDepots(response.data.filter((depot) => depot.isActive));
 		} catch (error: any) {
 			console.error("Error fetching depots:", error);
-			toast.error(error?.response?.data?.message || "Khong the tai danh sach kho");
+			toast.error(error?.response?.data?.message || "Không thể tải danh sách kho");
 		}
 	};
 
@@ -92,18 +96,18 @@ export default function DriversPage() {
 	};
 
 	const handleDelete = async (id: number) => {
-		if (!confirm("Ban co chac chan muon xoa tai xe nay?")) {
+		if (!confirm("Bạn có chắc chắn muốn xóa tài xế này?")) {
 			return;
 		}
 
 		try {
 			await driverApi.delete(id);
-			toast.success("Xoa tai xe thanh cong");
+			toast.success("Xóa tài xế thành công");
 			await fetchDrivers();
 			await fetchStatistics();
 		} catch (error: any) {
 			console.error("Error deleting driver:", error);
-			toast.error(error?.response?.data?.message || "Khong the xoa tai xe");
+			toast.error(error?.response?.data?.message || "Không thể xóa tài xế");
 		}
 	};
 
@@ -112,17 +116,17 @@ export default function DriversPage() {
 		try {
 			if (editingDriver) {
 				await driverApi.update(editingDriver.id, data);
-				toast.success("Cap nhat tai xe thanh cong");
+				toast.success("Cập nhật tài xế thành công");
 			} else {
 				await driverApi.create(data);
-				toast.success("Them tai xe moi thanh cong");
+				toast.success("Thêm tài xế mới thành công");
 			}
 			setIsFormOpen(false);
 			await fetchDrivers();
 			await fetchStatistics();
 		} catch (error: any) {
 			console.error("Error saving driver:", error);
-			const errorMessage = error?.response?.data?.message || (editingDriver ? "Khong the cap nhat tai xe" : "Khong the them tai xe moi");
+			const errorMessage = error?.response?.data?.message || (editingDriver ? "Không thể cập nhật tài xế" : "Không thể thêm tài xế mới");
 			toast.error(errorMessage);
 			throw error;
 		} finally {
@@ -152,8 +156,8 @@ export default function DriversPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
-							<h1 className="text-3xl font-bold text-foreground">Quan ly tai xe</h1>
-							<p className="text-muted-foreground mt-2">Quan ly va theo doi toan bo tai xe cua cong ty</p>
+							<h1 className="text-3xl font-bold text-foreground">Quản lý tài xế</h1>
+							<p className="text-muted-foreground mt-2">Admin quản lý master data, dispatcher chỉ xem theo kho</p>
 						</div>
 					</div>
 
@@ -168,18 +172,18 @@ export default function DriversPage() {
 							depots={depots}
 							onClearFilters={handleClearFilters}
 						>
-							<Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-								<Plus className="w-4 h-4" />
-								Them tai xe moi
-							</Button>
+							{canManageDrivers && (
+								<Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+									<Plus className="w-4 h-4" />
+									Thêm tài xế mới
+								</Button>
+							)}
 						</DriverFilters>
 
 						<div className="space-y-4">
-							<DriverTable drivers={drivers} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} />
+							<DriverTable drivers={drivers} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} canManage={canManageDrivers} />
 
-							{totalElements > 0 && (
-								<Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={setCurrentPage} entityName="tai xe" />
-							)}
+							{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={setCurrentPage} entityName="tài xế" />}
 						</div>
 
 						{isFormOpen && <DriverForm driver={editingDriver} onSubmit={handleFormSubmit} onClose={() => setIsFormOpen(false)} isSubmitting={isFormSubmitting} />}

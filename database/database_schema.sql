@@ -13,8 +13,8 @@ CREATE TABLE companies (
     updated_at TIMESTAMPTZ
 );
 
--- 2. Dispatcher 
-CREATE TABLE dispatchers (
+-- 2. Users
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
@@ -56,6 +56,7 @@ CREATE TABLE depots (
     name VARCHAR(255) NOT NULL,
 
     location_id BIGINT NOT NULL UNIQUE,
+    dispatcher_id BIGINT,
 
     description VARCHAR(500),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -64,7 +65,11 @@ CREATE TABLE depots (
 
     CONSTRAINT fk_depots_location
         FOREIGN KEY (location_id)
-        REFERENCES locations(id)
+        REFERENCES locations(id),
+
+    CONSTRAINT fk_depots_dispatcher
+        FOREIGN KEY (dispatcher_id)
+        REFERENCES users(id)
 );
 
 -- 6. Vehicles
@@ -241,5 +246,35 @@ CREATE TABLE password_reset_tokens (
 
 CREATE INDEX idx_password_reset_tokens_email ON password_reset_tokens(email);
 CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
+
+CREATE TABLE audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    actor_user_id BIGINT,
+    actor_username VARCHAR(50),
+    actor_role VARCHAR(20),
+    action VARCHAR(50) NOT NULL,
+    resource_type VARCHAR(50) NOT NULL,
+    resource_id VARCHAR(100),
+    resource_name VARCHAR(255),
+    scope_depot_id BIGINT,
+    status VARCHAR(20) NOT NULL DEFAULT 'SUCCESS',
+    message TEXT,
+    before_data JSONB,
+    after_data JSONB,
+    metadata JSONB,
+    ip_address VARCHAR(64),
+    user_agent VARCHAR(500),
+    request_id VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_audit_logs_actor
+        FOREIGN KEY (actor_user_id)
+        REFERENCES users(id)
+);
+
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX idx_audit_logs_actor_user_id ON audit_logs(actor_user_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
+CREATE INDEX idx_audit_logs_scope_depot_id ON audit_logs(scope_depot_id);
 
 -- END OF SCRIPT

@@ -21,27 +21,27 @@ export function FleetFilters({ searchQuery, onSearchChange, status, onStatusChan
 		<div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center">
 			<div className="relative flex-1">
 				<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-				<Input placeholder="Tim kiem ma xe..." value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} className="pl-10 bg-card border-border" />
+				<Input placeholder="Tìm kiếm mã xe..." value={searchQuery} onChange={(e) => onSearchChange(e.target.value)} className="pl-10 bg-card border-border" />
 			</div>
 
 			<Select value={status} onValueChange={(value) => onStatusChange(value as VehicleStatus | "all")}>
 				<SelectTrigger className="w-full lg:w-[200px] bg-card border-border">
-					<SelectValue placeholder="Trang thai" />
+					<SelectValue placeholder="Trạng thái" />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="all">Tat ca trang thai</SelectItem>
-					<SelectItem value={VehicleStatus.ACTIVE}>Dang hoat dong</SelectItem>
-					<SelectItem value={VehicleStatus.MAINTENANCE}>Bao tri</SelectItem>
-					<SelectItem value={VehicleStatus.IDLE}>Nhan roi</SelectItem>
+					<SelectItem value="all">Tất cả trạng thái</SelectItem>
+					<SelectItem value={VehicleStatus.ACTIVE}>Đang hoạt động</SelectItem>
+					<SelectItem value={VehicleStatus.MAINTENANCE}>Bảo trì</SelectItem>
+					<SelectItem value={VehicleStatus.IDLE}>Nhàn rỗi</SelectItem>
 				</SelectContent>
 			</Select>
 
 			<Select value={depotId} onValueChange={onDepotChange}>
 				<SelectTrigger className="w-full lg:w-[220px] bg-card border-border">
-					<SelectValue placeholder="Kho truc thuoc" />
+					<SelectValue placeholder="Kho trực thuộc" />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="all">Tat ca kho</SelectItem>
+					<SelectItem value="all">Tất cả kho</SelectItem>
 					{depots.map((depot) => (
 						<SelectItem key={depot.id} value={String(depot.id)}>
 							{depot.name}

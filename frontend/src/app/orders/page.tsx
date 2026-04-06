@@ -11,6 +11,8 @@ import { OrderFilters } from "@/components/order-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/auth";
 import { orderApi } from "@/lib/order-api";
 import { depotApi } from "@/lib/depot-api";
 import { Order, OrderRequest, OrderStatistics, OrderStatus } from "@/types/order-types";
@@ -20,6 +22,8 @@ import { toast } from "sonner";
 const ITEMS_PER_PAGE = 10;
 
 export default function OrdersPage() {
+	const { user } = useAuth();
+	const canManageOrders = hasPermission(user, "order.manage");
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [statistics, setStatistics] = useState<OrderStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -224,7 +228,7 @@ export default function OrdersPage() {
 						/>
 
 						<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+							{canManageOrders && <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
 									<Select value={bulkStatus} onValueChange={(value) => setBulkStatus(value as OrderStatus | "")}>
 										<SelectTrigger className="w-full sm:w-[220px] bg-card border-border">
 											<SelectValue placeholder="Cập nhật trạng thái" />
@@ -239,12 +243,14 @@ export default function OrdersPage() {
 									<Button onClick={handleBulkStatusUpdate} disabled={selectedOrderIds.length === 0 || !bulkStatus || isBulkUpdating} className="gap-2">
 										Cập nhật hàng loạt
 									</Button>
-								</div>
+								</div>}
 
-							<Button onClick={() => setIsFormOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-								<Plus className="w-4 h-4" />
-								Thêm đơn hàng mới
-							</Button>
+							{canManageOrders && (
+								<Button onClick={() => setIsFormOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+									<Plus className="w-4 h-4" />
+									Thêm đơn hàng mới
+								</Button>
+							)}
 						</div>
 
 						<div className="space-y-4">
@@ -253,6 +259,7 @@ export default function OrdersPage() {
 								onEdit={handleEditOrder}
 								onDelete={handleDeleteOrder}
 								isLoading={isLoading}
+								canManage={canManageOrders}
 								selectedOrderIds={selectedOrderIds}
 								onToggleOrderSelection={handleToggleOrderSelection}
 							/>

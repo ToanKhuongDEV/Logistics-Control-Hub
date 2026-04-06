@@ -5,20 +5,27 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class CreateAccountRequest {
 
-    @NotBlank(message = "Tên đăng nhập không được để trống")
+    @NotBlank(message = "Ten dang nhap khong duoc de trong")
     private String username;
 
-    @NotBlank(message = "Họ tên không được để trống")
+    @NotBlank(message = "Ho ten khong duoc de trong")
     private String fullName;
 
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
+    @NotBlank(message = "Email khong duoc de trong")
+    @Email(message = "Email khong hop le")
     private String email;
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
+    @NotBlank(message = "Mat khau khong duoc de trong")
+    @Size(min = 8, message = "Mat khau phai co it nhat 8 ky tu")
     private String password;
+
+    @NotBlank(message = "Vai tro khong duoc de trong")
+    private String role;
+
+    private List<Long> assignedDepotIds;
 }

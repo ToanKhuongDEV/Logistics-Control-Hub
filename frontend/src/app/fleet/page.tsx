@@ -11,6 +11,8 @@ import { FleetFilters } from "@/components/fleet-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/auth";
 import { vehicleApi } from "@/lib/vehicle-api";
 import { depotApi } from "@/lib/depot-api";
 import { Vehicle, VehicleRequest, VehicleStatistics, VehicleStatus } from "@/types/vehicle-types";
@@ -20,6 +22,9 @@ import { toast } from "sonner";
 const ITEMS_PER_PAGE = 10;
 
 export default function FleetPage() {
+	const { user } = useAuth();
+	const canManageVehicles = hasPermission(user, "vehicle.manage");
+	const canBulkReassignDepot = hasPermission(user, "vehicle.reassign");
 	const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 	const [statistics, setStatistics] = useState<VehicleStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -55,7 +60,7 @@ export default function FleetPage() {
 			setSelectedVehicleIds([]);
 		} catch (error: any) {
 			console.error("Error fetching vehicles:", error);
-			toast.error(error?.response?.data?.message || "Khong the tai danh sach xe");
+			toast.error(error?.response?.data?.message || "Không thể tải danh sách xe");
 		} finally {
 			setIsLoading(false);
 		}
@@ -76,7 +81,7 @@ export default function FleetPage() {
 			setDepots(response.data.filter((depot) => depot.isActive));
 		} catch (error: any) {
 			console.error("Error fetching depots:", error);
-			toast.error(error?.response?.data?.message || "Khong the tai danh sach kho");
+			toast.error(error?.response?.data?.message || "Không thể tải danh sách kho");
 		}
 	};
 
@@ -97,13 +102,13 @@ export default function FleetPage() {
 		setIsFormSubmitting(true);
 		try {
 			await vehicleApi.createVehicle(data);
-			toast.success("Them xe moi thanh cong");
+			toast.success("Thêm xe mới thành công");
 			setIsFormOpen(false);
 			await fetchVehicles();
 			await fetchStatistics();
 		} catch (error: any) {
 			console.error("Error creating vehicle:", error);
-			toast.error(error?.response?.data?.message || "Khong the them xe moi");
+			toast.error(error?.response?.data?.message || "Không thể thêm xe mới");
 		} finally {
 			setIsFormSubmitting(false);
 		}
@@ -120,14 +125,14 @@ export default function FleetPage() {
 		setIsFormSubmitting(true);
 		try {
 			await vehicleApi.updateVehicle(editingVehicle.id, data);
-			toast.success("Cap nhat xe thanh cong");
+			toast.success("Cập nhật xe thành công");
 			setIsFormOpen(false);
 			setEditingVehicle(null);
 			await fetchVehicles();
 			await fetchStatistics();
 		} catch (error: any) {
 			console.error("Error updating vehicle:", error);
-			toast.error(error?.response?.data?.message || "Khong the cap nhat xe");
+			toast.error(error?.response?.data?.message || "Không thể cập nhật xe");
 		} finally {
 			setIsFormSubmitting(false);
 		}
@@ -136,7 +141,7 @@ export default function FleetPage() {
 	const handleDeleteVehicle = async (id: number) => {
 		try {
 			await vehicleApi.deleteVehicle(id);
-			toast.success("Xoa xe thanh cong");
+			toast.success("Xóa xe thành công");
 			await fetchVehicles();
 			await fetchStatistics();
 
@@ -145,7 +150,7 @@ export default function FleetPage() {
 			}
 		} catch (error: any) {
 			console.error("Error deleting vehicle:", error);
-			toast.error(error?.response?.data?.message || "Khong the xoa xe");
+			toast.error(error?.response?.data?.message || "Không thể xóa xe");
 		}
 	};
 
@@ -172,7 +177,7 @@ export default function FleetPage() {
 
 	const handleBulkDepotUpdate = async () => {
 		if (!bulkDepotId || selectedVehicleIds.length === 0) {
-			toast.error("Hay chon phuong tien va kho dich can cap nhat");
+			toast.error("Hãy chọn phương tiện và kho đích cần cập nhật");
 			return;
 		}
 
@@ -182,14 +187,14 @@ export default function FleetPage() {
 				vehicleIds: selectedVehicleIds,
 				depotId: Number(bulkDepotId),
 			});
-			toast.success("Chuyen kho truc thuoc hang loat thanh cong");
+			toast.success("Chuyển kho trực thuộc hàng loạt thành công");
 			setBulkDepotId("");
 			setSelectedVehicleIds([]);
 			await fetchVehicles();
 			await fetchStatistics();
 		} catch (error: any) {
 			console.error("Error bulk updating vehicle depot:", error);
-			toast.error(error?.response?.data?.message || "Khong the cap nhat kho truc thuoc hang loat");
+			toast.error(error?.response?.data?.message || "Không thể cập nhật kho trực thuộc hàng loạt");
 		} finally {
 			setIsBulkUpdating(false);
 		}
@@ -201,8 +206,8 @@ export default function FleetPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
-							<h1 className="text-3xl font-bold text-foreground">Quan ly doi xe</h1>
-							<p className="text-muted-foreground mt-2">Quan ly va theo doi toan bo doi xe cua cong ty</p>
+							<h1 className="text-3xl font-bold text-foreground">Quản lý đội xe</h1>
+							<p className="text-muted-foreground mt-2">Dispatcher được điều phối xe trong kho của mình, admin mới được chuyển chéo kho</p>
 						</div>
 					</div>
 
@@ -229,33 +234,39 @@ export default function FleetPage() {
 
 						<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-								<Select value={bulkDepotId} onValueChange={setBulkDepotId}>
-									<SelectTrigger className="w-full sm:w-[260px] bg-card border-border">
-										<SelectValue placeholder="Chuyen kho truc thuoc" />
-									</SelectTrigger>
-									<SelectContent>
-										{depots.map((depot) => (
-											<SelectItem key={depot.id} value={String(depot.id)}>
-												{depot.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<Button onClick={handleBulkDepotUpdate} disabled={selectedVehicleIds.length === 0 || !bulkDepotId || isBulkUpdating} className="gap-2">
-									Chuyen kho hang loat
-								</Button>
+								{canBulkReassignDepot && (
+									<>
+										<Select value={bulkDepotId} onValueChange={setBulkDepotId}>
+											<SelectTrigger className="w-full sm:w-[260px] bg-card border-border">
+												<SelectValue placeholder="Chuyển kho trực thuộc" />
+											</SelectTrigger>
+											<SelectContent>
+												{depots.map((depot) => (
+													<SelectItem key={depot.id} value={String(depot.id)}>
+														{depot.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<Button onClick={handleBulkDepotUpdate} disabled={selectedVehicleIds.length === 0 || !bulkDepotId || isBulkUpdating} className="gap-2">
+											Chuyển kho hàng loạt
+										</Button>
+									</>
+								)}
 							</div>
 
-							<Button
-								onClick={() => {
-									setEditingVehicle(null);
-									setIsFormOpen(true);
-								}}
-								className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-							>
-								<Plus className="w-4 h-4" />
-								Them xe moi
-							</Button>
+							{canManageVehicles && (
+								<Button
+									onClick={() => {
+										setEditingVehicle(null);
+										setIsFormOpen(true);
+									}}
+									className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+								>
+									<Plus className="w-4 h-4" />
+									Thêm xe mới
+								</Button>
+							)}
 						</div>
 
 						<div className="space-y-4">
@@ -266,6 +277,7 @@ export default function FleetPage() {
 								isLoading={isLoading}
 								selectedVehicleIds={selectedVehicleIds}
 								onToggleVehicleSelection={handleToggleVehicleSelection}
+								canManage={canManageVehicles}
 							/>
 
 							{totalElements > 0 && (
@@ -275,7 +287,7 @@ export default function FleetPage() {
 									itemsPerPage={ITEMS_PER_PAGE}
 									totalItems={totalElements}
 									onPageChange={handlePageChange}
-									entityName="phuong tien"
+									entityName="phương tiện"
 								/>
 							)}
 						</div>

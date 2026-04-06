@@ -1,17 +1,36 @@
 "use client";
 
-import React from "react";
-
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Truck, Route, MapPin, Eye, EyeOff } from "lucide-react";
+import { Truck, Route, MapPin, Eye, EyeOff, ShieldCheck, UserCog } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { Logo } from "@/components/logo";
+
+const DEMO_PASSWORD = "password123";
+
+const DEMO_ACCOUNTS = [
+	{
+		id: "demo-admin",
+		label: "Admin Demo",
+		username: "admin01",
+		password: DEMO_PASSWORD,
+		description: "Toàn quyền quản trị, quản lý tài khoản và cấu hình.",
+		icon: ShieldCheck,
+	},
+	{
+		id: "demo-dispatcher",
+		label: "Dispatcher Demo",
+		username: "user01",
+		password: DEMO_PASSWORD,
+		description: "Điều phối shipment trong các kho đã được gán.",
+		icon: UserCog,
+	},
+];
 
 export default function LoginPage() {
 	const [username, setUsername] = useState("");
@@ -22,11 +41,11 @@ export default function LoginPage() {
 	const { login } = useAuth();
 	const router = useRouter();
 
-	const handleUseDemoAccount = () => {
-		setUsername("dispatcher01");
-		setPassword("password123");
+	const handleUseDemoAccount = (demoUsername: string, demoPassword: string, label: string) => {
+		setUsername(demoUsername);
+		setPassword(demoPassword);
 		setShowDemoBanner(false);
-		toast.success("Đã điền tài khoản dùng thử! Nhấn Đăng nhập để tiếp tục.");
+		toast.success(`Đã điền tài khoản ${label}. Nhấn Đăng nhập để tiếp tục.`);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -40,7 +59,6 @@ export default function LoginPage() {
 		} catch (err: any) {
 			console.error("Login error:", err);
 
-			// Handle different error types
 			if (err.response?.status === 401) {
 				toast.error("Tên đăng nhập hoặc mật khẩu không đúng");
 			} else if (err.code === "ERR_NETWORK") {
@@ -55,11 +73,8 @@ export default function LoginPage() {
 
 	return (
 		<div className="min-h-screen flex">
-			{/* Left Side - Branding & Visual */}
 			<div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
-				{/* Animated Background Lines */}
 				<div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background">
-					{/* Animated route lines */}
 					<svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
 						<defs>
 							<linearGradient id="line1" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -79,13 +94,11 @@ export default function LoginPage() {
 							</linearGradient>
 						</defs>
 
-						{/* Animated curved paths */}
 						<path d="M0,300 Q200,200 400,350 T800,300 T1200,400" fill="none" stroke="url(#line1)" strokeWidth="3" className="animate-pulse" style={{ animationDuration: "3s" }} />
 						<path d="M0,500 Q300,400 500,500 T900,450 T1200,550" fill="none" stroke="url(#line2)" strokeWidth="2" className="animate-pulse" style={{ animationDuration: "4s", animationDelay: "1s" }} />
 						<path d="M0,700 Q250,600 450,700 T850,650 T1200,700" fill="none" stroke="url(#line3)" strokeWidth="2" className="animate-pulse" style={{ animationDuration: "5s", animationDelay: "0.5s" }} />
 					</svg>
 
-					{/* Grid pattern overlay */}
 					<div
 						className="absolute inset-0 opacity-10"
 						style={{
@@ -96,12 +109,9 @@ export default function LoginPage() {
 					/>
 				</div>
 
-				{/* Content */}
 				<div className="relative z-10 flex flex-col justify-between p-12 xl:p-16">
-					{/* Logo */}
 					<Logo className="scale-125 origin-left" iconClassName="w-10 h-10 text-lg" />
 
-					{/* Main Content */}
 					<div className="space-y-8">
 						<div>
 							<h2 className="text-4xl xl:text-5xl font-bold text-foreground leading-tight">
@@ -115,7 +125,6 @@ export default function LoginPage() {
 
 						<p className="text-lg text-muted-foreground max-w-md leading-relaxed">Tối ưu hóa hiệu suất vận chuyển với insights thời gian thực, tự động hóa và quản lý đội xe thông minh.</p>
 
-						{/* Feature Indicators */}
 						<div className="flex flex-col gap-4">
 							<FeatureItem icon={<Route className="w-5 h-5" />} label="Tối ưu tuyến đường" />
 							<FeatureItem icon={<MapPin className="w-5 h-5" />} label="Theo dõi thời gian thực" />
@@ -123,7 +132,6 @@ export default function LoginPage() {
 						</div>
 					</div>
 
-					{/* Bottom Stats */}
 					<div className="flex gap-12">
 						<StatItem value="98%" label="Giao hàng đúng hẹn" />
 						<StatItem value="35%" label="Tiết kiệm chi phí" />
@@ -132,51 +140,59 @@ export default function LoginPage() {
 				</div>
 			</div>
 
-			{/* Right Side - Login Form */}
 			<div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center p-8 bg-card">
 				<div className="w-full max-w-md space-y-8">
-					{/* Mobile Logo */}
 					<div className="lg:hidden flex justify-center mb-8">
 						<Logo className="scale-110" />
 					</div>
 
-					{/* Header */}
 					<div className="space-y-2 text-center lg:text-left">
 						<h2 className="text-3xl font-bold text-foreground">Đăng nhập</h2>
 						<p className="text-muted-foreground">Truy cập vào bảng điều khiển logistics của bạn</p>
 					</div>
 
-					{/* Demo Account Banner */}
 					{showDemoBanner && (
-						<div className="relative rounded-xl border border-primary/30 bg-primary/10 p-4 overflow-hidden">
-							{/* Shimmer effect */}
-							<div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-pulse" style={{ animationDuration: "2s" }} />
-							<div className="relative flex items-start justify-between gap-3">
-								<div className="flex-1">
+						<div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
+							<div className="flex items-center justify-between gap-3 mb-3">
+								<div>
 									<div className="flex items-center gap-2 mb-1">
 										<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground">DEMO</span>
-										<p className="text-sm font-semibold text-foreground">Bạn muốn dùng tài khoản dùng thử?</p>
+										<p className="text-sm font-semibold text-foreground">Chọn nhanh tài khoản mẫu</p>
 									</div>
-									<p className="text-xs text-muted-foreground mb-3">Khám phá tính năng ngay mà không cần tài khoản.</p>
-									<div className="flex items-center gap-2">
-										<button
-											type="button"
-											onClick={handleUseDemoAccount}
-											id="btn-use-demo-account"
-											className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 hover:shadow-md hover:shadow-primary/25 hover:scale-105 active:scale-95"
-										>
-											✓ Có, dùng thử ngay
-										</button>
-										<button type="button" onClick={() => setShowDemoBanner(false)} className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200">
-											Không, cảm ơn
-										</button>
-									</div>
+									<p className="text-xs text-muted-foreground">Cả hai tài khoản demo đều dùng mật khẩu `password123`.</p>
 								</div>
+								<button type="button" onClick={() => setShowDemoBanner(false)} className="text-xs text-muted-foreground hover:text-foreground">
+									Đóng
+								</button>
+							</div>
+
+							<div className="grid gap-3">
+								{DEMO_ACCOUNTS.map((account) => {
+									const Icon = account.icon;
+									return (
+										<button
+											key={account.id}
+											type="button"
+											onClick={() => handleUseDemoAccount(account.username, account.password, account.label)}
+											className="flex items-start gap-3 rounded-lg border border-primary/20 bg-background/70 px-4 py-3 text-left transition-all hover:border-primary/40 hover:bg-background"
+										>
+											<div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+												<Icon className="h-4 w-4" />
+											</div>
+											<div className="flex-1">
+												<div className="flex items-center justify-between gap-3">
+													<p className="text-sm font-semibold text-foreground">{account.label}</p>
+													<span className="text-xs text-primary font-medium">{account.username}</span>
+												</div>
+												<p className="mt-1 text-xs text-muted-foreground">{account.description}</p>
+											</div>
+										</button>
+									);
+								})}
 							</div>
 						</div>
 					)}
 
-					{/* Form */}
 					<form onSubmit={handleSubmit} className="space-y-6">
 						<div className="space-y-2">
 							<Label htmlFor="username" className="text-foreground font-medium">
@@ -222,7 +238,6 @@ export default function LoginPage() {
 						</Button>
 					</form>
 
-					{/* Footer */}
 					<p className="text-center text-sm text-muted-foreground pt-4">© 2026 LogiTower. Nền tảng logistics thông minh.</p>
 				</div>
 			</div>

@@ -9,20 +9,20 @@ interface DepotTableProps {
 	onEdit: (depot: Depot) => void;
 	onDelete: (id: number) => void;
 	isLoading?: boolean;
+	canManage?: boolean;
 }
 
-export function DepotTable({ depots, onEdit, onDelete, isLoading }: DepotTableProps) {
-	const formatDate = (dateString: string) => {
-		return new Date(dateString).toLocaleDateString("vi-VN", {
+export function DepotTable({ depots, onEdit, onDelete, isLoading, canManage = true }: DepotTableProps) {
+	const formatDate = (dateString: string) =>
+		new Date(dateString).toLocaleDateString("vi-VN", {
 			year: "numeric",
 			month: "2-digit",
 			day: "2-digit",
 		});
-	};
 
 	const truncateText = (text: string, maxLength: number = 50) => {
 		if (!text) return "-";
-		return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+		return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 	};
 
 	if (isLoading) {
@@ -53,7 +53,7 @@ export function DepotTable({ depots, onEdit, onDelete, isLoading }: DepotTablePr
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Mô tả</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Trạng thái</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Ngày tạo</th>
-						<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>
+						{canManage && <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>}
 					</tr>
 				</thead>
 				<tbody className="divide-y divide-border">
@@ -77,18 +77,20 @@ export function DepotTable({ depots, onEdit, onDelete, isLoading }: DepotTablePr
 								)}
 							</td>
 							<td className="px-6 py-4 text-sm text-muted-foreground">{formatDate(depot.createdAt)}</td>
-							<td className="px-6 py-4 text-right">
-								<div className="flex items-center justify-end gap-2">
-									<Button variant="outline" size="sm" onClick={() => onEdit(depot)} className="gap-2">
-										<Edit className="w-4 h-4" />
-										Sửa
-									</Button>
-									<Button variant="destructive" size="sm" onClick={() => onDelete(depot.id)} className="gap-2">
-										<Trash2 className="w-4 h-4" />
-										Xóa
-									</Button>
-								</div>
-							</td>
+							{canManage && (
+								<td className="px-6 py-4 text-right">
+									<div className="flex items-center justify-end gap-2">
+										<Button variant="outline" size="sm" onClick={() => onEdit(depot)} className="gap-2">
+											<Edit className="w-4 h-4" />
+											Sửa
+										</Button>
+										<Button variant="destructive" size="sm" onClick={() => onDelete(depot.id)} className="gap-2">
+											<Trash2 className="w-4 h-4" />
+											Xóa
+										</Button>
+									</div>
+								</td>
+							)}
 						</tr>
 					))}
 				</tbody>

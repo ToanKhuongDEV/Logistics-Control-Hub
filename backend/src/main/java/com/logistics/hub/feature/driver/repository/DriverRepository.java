@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -33,8 +35,23 @@ public interface DriverRepository extends JpaRepository<DriverEntity, Long> {
                         @Param("depotId") Long depotId,
                         Pageable pageable);
 
+        @Query("SELECT DISTINCT d FROM DriverEntity d " +
+                        "JOIN VehicleEntity v ON v.driver = d " +
+                        "WHERE v.depot.id IN :depotIds " +
+                        "AND (:search IS NULL OR :search = '' OR " +
+                        "LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                        "LOWER(d.licenseNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                        "LOWER(d.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')))")
+        Page<DriverEntity> findBySearchAndDepotIds(
+                        @Param("search") String search,
+                        @Param("depotIds") Collection<Long> depotIds,
+                        Pageable pageable);
+
         @Query("SELECT d FROM DriverEntity d WHERE " +
                         "d.id NOT IN (SELECT v.driver.id FROM VehicleEntity v WHERE v.driver IS NOT NULL) " +
                         "OR (:includeDriverId IS NOT NULL AND d.id = :includeDriverId)")
         List<DriverEntity> findAvailableDrivers(@Param("includeDriverId") Long includeDriverId);
+
+        @Query("SELECT COUNT(DISTINCT d.id) FROM DriverEntity d JOIN VehicleEntity v ON v.driver = d WHERE v.depot.id IN :depotIds")
+        Long countDistinctByDepotIds(@Param("depotIds") Collection<Long> depotIds);
 }

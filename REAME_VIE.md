@@ -103,7 +103,7 @@ Hệ thống tích hợp với **OSRM** (Open Source Routing Machine) để tín
 ### 🔐 Xác Thực & Phân Quyền
 
 - Xác thực JWT với refresh token
-- Phân quyền theo vai trò: `DISPATCHER`, `ADMIN`
+- Phân quyền theo vai trò: `USER`, `ADMIN`
 - Mã hóa mật khẩu an toàn với BCrypt
 
 ### ⚡ Redis Caching
@@ -270,7 +270,7 @@ Logistics-Control-Hub/
 │   │   │   ├── company/        # Quản lý công ty
 │   │   │   ├── dashboard/      # Thống kê dashboard
 │   │   │   ├── depot/          # Quản lý kho
-│   │   │   ├── dispatcher/     # Tài khoản điều phối
+│   │   │   ├── user/           # Tài khoản người dùng
 │   │   │   ├── driver/         # Quản lý tài xế
 │   │   │   ├── geocoding/      # Geocoding địa chỉ
 │   │   │   ├── location/       # Quản lý vị trí
@@ -300,8 +300,8 @@ Logistics-Control-Hub/
 
 | Vai trò    | Username       | Password |
 | ---------- | -------------- | -------- |
-| Admin      | `admin01`      | `123456` |
-| Dispatcher | `dispatcher01` | `123456` |
+| Admin      | `admin01`      | `password123` |
+| User | `user01` | `password123` |
 
 ---
 

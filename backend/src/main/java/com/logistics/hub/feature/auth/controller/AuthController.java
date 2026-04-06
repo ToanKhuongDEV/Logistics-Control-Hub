@@ -8,8 +8,9 @@ import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
 import com.logistics.hub.feature.auth.dto.request.ForgotPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
-import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
+import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.service.AuthService;
 import com.logistics.hub.feature.auth.util.JwtUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,12 +22,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(UrlConstant.Auth.PREFIX)
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Login & Token APIs for Dispatchers")
+@Tag(name = "Authentication", description = "Login & Token APIs for Users")
 public class AuthController {
 
     private final AuthService authService;
@@ -87,7 +91,7 @@ public class AuthController {
 
     @GetMapping(UrlConstant.Auth.ME)
     @Operation(summary = "Get Current User", description = "Returns current authenticated user info (requires valid token)")
-    public ResponseEntity<ApiResponse<DispatcherResponse>> getCurrentUser() {
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         var authentication = org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication();
 
@@ -96,16 +100,34 @@ public class AuthController {
                     .body(ApiResponse.error(401, AuthConstant.NOT_AUTHENTICATED));
         }
 
-        DispatcherResponse userData = authService.getCurrentUser(authentication.getName());
+        UserResponse userData = authService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.USER_INFO_RETRIEVED_SUCCESS, userData));
     }
 
     @PostMapping(UrlConstant.Auth.CREATE_ACCOUNT)
+    @PreAuthorize("hasAuthority('account.manage')")
     @Operation(summary = "Create Employee Account", description = "Creates a new employee account for internal use")
-    public ResponseEntity<ApiResponse<DispatcherResponse>> createAccount(@Valid @RequestBody CreateAccountRequest request) {
-        DispatcherResponse response = authService.createAccount(request);
+    public ResponseEntity<ApiResponse<UserResponse>> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        UserResponse response = authService.createAccount(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(HttpStatus.CREATED.value(), AuthConstant.ACCOUNT_CREATED_SUCCESS, response));
+    }
+
+    @GetMapping(UrlConstant.Auth.CREATE_ACCOUNT)
+    @PreAuthorize("hasAuthority('account.manage')")
+    @Operation(summary = "List employee accounts", description = "Returns all internal accounts with role and assigned depots")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAccounts() {
+        return ResponseEntity.ok(ApiResponse.success("Accounts retrieved successfully", authService.getAccounts()));
+    }
+
+    @PutMapping(UrlConstant.Auth.UPDATE_ACCOUNT)
+    @PreAuthorize("hasAuthority('account.manage')")
+    @Operation(summary = "Update employee account", description = "Updates employee profile, role and assigned depots")
+    public ResponseEntity<ApiResponse<UserResponse>> updateAccount(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateAccountRequest request) {
+        UserResponse response = authService.updateAccount(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Account updated successfully", response));
     }
 
     @PostMapping(UrlConstant.Auth.CHANGE_PASSWORD)

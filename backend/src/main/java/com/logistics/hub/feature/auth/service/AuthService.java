@@ -1,24 +1,21 @@
 package com.logistics.hub.feature.auth.service;
 
-import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.ChangePasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
 import com.logistics.hub.feature.auth.dto.request.ForgotPasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
-import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
+import com.logistics.hub.feature.auth.dto.response.UserResponse;
+
+import java.util.List;
 
 public interface AuthService {
 
-    /**
-     * Kết quả login chứa cả accessToken (body) và refreshToken (cookie).
-     */
     record LoginResult(AuthTokensResponse response, String refreshToken) {
     }
 
-    /**
-     * Kết quả refresh chứa accessToken mới và refreshToken mới.
-     */
     record RefreshResult(AuthTokensResponse response, String refreshToken) {
     }
 
@@ -28,9 +25,13 @@ public interface AuthService {
 
     void logout(String refreshToken);
 
-    DispatcherResponse getCurrentUser(String username);
+    UserResponse getCurrentUser(String username);
 
-    DispatcherResponse createAccount(CreateAccountRequest request);
+    UserResponse createAccount(CreateAccountRequest request);
+
+    List<UserResponse> getAccounts();
+
+    UserResponse updateAccount(Long id, UpdateAccountRequest request);
 
     void changePassword(String username, ChangePasswordRequest request);
 

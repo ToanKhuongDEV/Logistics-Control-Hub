@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.order.repository;
 
+import com.logistics.hub.common.specification.SpecificationUtils;
 import com.logistics.hub.feature.order.entity.OrderEntity;
 import com.logistics.hub.feature.order.enums.OrderStatus;
 import jakarta.persistence.criteria.JoinType;
@@ -39,13 +40,11 @@ public final class OrderSpecification {
     }
 
     private static Specification<OrderEntity> hasStatus(OrderStatus status) {
-        return (root, query, criteriaBuilder) ->
-                status == null ? criteriaBuilder.conjunction() : criteriaBuilder.equal(root.get("status"), status);
+        return SpecificationUtils.equalsValue("status", status);
     }
 
     private static Specification<OrderEntity> hasDepotId(Long depotId) {
-        return (root, query, criteriaBuilder) ->
-                depotId == null ? criteriaBuilder.conjunction() : criteriaBuilder.equal(root.get("depot").get("id"), depotId);
+        return SpecificationUtils.equalsValue("depot.id", depotId);
     }
 
     private static Specification<OrderEntity> hasDepotIds(Collection<Long> depotIds) {
@@ -59,16 +58,6 @@ public final class OrderSpecification {
     }
 
     private static Specification<OrderEntity> matchesSearch(String search) {
-        return (root, query, criteriaBuilder) -> {
-            if (search == null || search.isBlank()) {
-                return criteriaBuilder.conjunction();
-            }
-
-            String keyword = "%" + search.trim().toLowerCase() + "%";
-
-            return criteriaBuilder.or(
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), keyword),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("depot").get("name")), keyword));
-        };
+        return SpecificationUtils.anyContainsIgnoreCase(search, "code", "depot.name");
     }
 }

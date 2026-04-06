@@ -143,7 +143,6 @@ export default function AuditPage() {
 	const currentPageFailedCount = useMemo(() => logs.filter((log) => log.status === "FAILED").length, [logs]);
 	const currentPageRoutingCount = useMemo(() => logs.filter((log) => log.resourceType === "ROUTING_RUN").length, [logs]);
 	const currentPageIncidentCount = useMemo(() => logs.filter((log) => isPriorityLog(log)).length, [logs]);
-	const highlightedChanges = useMemo(() => buildChangeSummary(selectedLog), [selectedLog]);
 
 	const applyFilters = async () => {
 		setPage(0);
@@ -328,7 +327,7 @@ export default function AuditPage() {
 												<Input
 													id="audit-search"
 													className="mt-2"
-													placeholder="Username, resource, message, request id..."
+													placeholder="Tên người thao tác hoặc loại tài nguyên..."
 													value={filters.search}
 													onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
 												/>
@@ -405,11 +404,8 @@ export default function AuditPage() {
 															</SelectItem>
 													))}
 												</SelectContent>
-											</Select>
-										</div>
-										</div>
-
-										<div className="grid gap-4 md:grid-cols-2">
+												</Select>
+											</div>
 											<div>
 												<Label htmlFor="audit-from">Từ thời điểm</Label>
 												<Input
@@ -624,31 +620,6 @@ export default function AuditPage() {
 														<AuditMeta label="Trình duyệt / thiết bị" value={selectedLog.userAgent || "N/A"} className="md:col-span-2" />
 													</div>
 
-													<div className="rounded-2xl border border-border bg-muted/20 p-5">
-														<div className="flex items-center justify-between gap-3">
-															<div>
-																<h3 className="font-semibold text-foreground">Tóm tắt thay đổi</h3>
-																<p className="text-sm text-muted-foreground">Rút gọn các key thay đổi để admin quét nhanh trước khi xem JSON.</p>
-															</div>
-															<span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-																{highlightedChanges.length} mục
-															</span>
-														</div>
-
-														{highlightedChanges.length > 0 ? (
-															<div className="mt-4 flex flex-wrap gap-2">
-																{highlightedChanges.map((item) => (
-																	<span key={item} className="rounded-full bg-background px-3 py-1 text-xs font-medium text-foreground shadow-sm">
-																		{item}
-																	</span>
-																))}
-															</div>
-														) : (
-															<p className="mt-4 text-sm text-muted-foreground">Bản ghi này không có snapshot before/after hoặc không phát hiện trường thay đổi.</p>
-														)}
-													</div>
-
-
 													<div className="grid gap-4 xl:grid-cols-3">
 														<AuditJsonBlock title="Before Data" value={selectedLog.beforeData} onOpen={() => setIsJsonViewerOpen(true)} />
 														<AuditJsonBlock title="After Data" value={selectedLog.afterData} onOpen={() => setIsJsonViewerOpen(true)} />
@@ -658,7 +629,7 @@ export default function AuditPage() {
 											) : (
 												<div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center">
 													<p className="text-lg font-semibold text-foreground">Chọn một bản ghi audit</p>
-													<p className="mt-2 text-sm text-muted-foreground">Panel này sẽ hiển thị request context, snapshot dữ liệu và tóm tắt thay đổi.</p>
+													<p className="mt-2 text-sm text-muted-foreground">Panel này sẽ hiển thị request context và các khối dữ liệu để mở trình xem lớn khi cần.</p>
 												</div>
 											)}
 										</div>
@@ -788,15 +759,26 @@ function AuditMeta({ label, value, className }: { label: string; value: string; 
 }
 
 function AuditJsonBlock({ title, value, onOpen }: { title: string; value: unknown; onOpen: () => void }) {
+	const accentClass =
+		title === "Before Data"
+			? "border-sky-500/20 bg-[linear-gradient(160deg,rgba(2,6,23,0.98),rgba(15,23,42,0.94))]"
+			: title === "After Data"
+				? "border-emerald-500/20 bg-[linear-gradient(160deg,rgba(3,7,18,0.98),rgba(6,36,24,0.94))]"
+				: "border-violet-500/20 bg-[linear-gradient(160deg,rgba(3,7,18,0.98),rgba(31,18,53,0.94))]";
+
 	return (
-		<div className="overflow-hidden rounded-2xl border border-border bg-slate-950/95">
-			<div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-				<Label className="text-slate-200">{title}</Label>
-				<Button variant="ghost" size="icon-sm" className="text-slate-200 hover:bg-white/10 hover:text-white" onClick={onOpen}>
-					<Eye className="h-4 w-4" />
+		<div className={cn("rounded-2xl border shadow-sm", accentClass)}>
+			<div className="flex items-center justify-between px-4 py-3.5">
+				<Label className="text-sm font-semibold text-white">{title}</Label>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					className="rounded-full border border-amber-400/70 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20 hover:text-white"
+					onClick={onOpen}
+				>
+					<Eye className="h-3.5 w-3.5" />
 				</Button>
 			</div>
-			<pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-slate-100">{value ? JSON.stringify(value, null, 2) : "Không có dữ liệu"}</pre>
 		</div>
 	);
 }

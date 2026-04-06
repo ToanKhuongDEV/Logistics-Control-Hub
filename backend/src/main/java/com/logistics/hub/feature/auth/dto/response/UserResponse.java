@@ -15,5 +15,6 @@ public class UserResponse {
     private String email;
     private String fullName;
     private String role;
+    private List<String> permissions;
     private List<AssignedDepotResponse> assignedDepots;
 }

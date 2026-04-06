@@ -12,6 +12,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
 import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/auth";
 import { vehicleApi } from "@/lib/vehicle-api";
 import { depotApi } from "@/lib/depot-api";
 import { Vehicle, VehicleRequest, VehicleStatistics, VehicleStatus } from "@/types/vehicle-types";
@@ -22,7 +23,8 @@ const ITEMS_PER_PAGE = 10;
 
 export default function FleetPage() {
 	const { user } = useAuth();
-	const canBulkReassignDepot = user?.role === "ADMIN";
+	const canManageVehicles = hasPermission(user, "vehicle.manage");
+	const canBulkReassignDepot = hasPermission(user, "vehicle.reassign");
 	const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 	const [statistics, setStatistics] = useState<VehicleStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -253,16 +255,18 @@ export default function FleetPage() {
 								)}
 							</div>
 
-							<Button
-								onClick={() => {
-									setEditingVehicle(null);
-									setIsFormOpen(true);
-								}}
-								className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-							>
-								<Plus className="w-4 h-4" />
-								Thêm xe mới
-							</Button>
+							{canManageVehicles && (
+								<Button
+									onClick={() => {
+										setEditingVehicle(null);
+										setIsFormOpen(true);
+									}}
+									className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+								>
+									<Plus className="w-4 h-4" />
+									Thêm xe mới
+								</Button>
+							)}
 						</div>
 
 						<div className="space-y-4">
@@ -273,7 +277,7 @@ export default function FleetPage() {
 								isLoading={isLoading}
 								selectedVehicleIds={selectedVehicleIds}
 								onToggleVehicleSelection={handleToggleVehicleSelection}
-								canManage
+								canManage={canManageVehicles}
 							/>
 
 							{totalElements > 0 && (

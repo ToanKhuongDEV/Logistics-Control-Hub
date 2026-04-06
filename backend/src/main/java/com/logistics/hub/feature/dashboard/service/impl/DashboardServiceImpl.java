@@ -1,6 +1,7 @@
 package com.logistics.hub.feature.dashboard.service.impl;
 
 import com.logistics.hub.feature.auth.service.AuthorizationService;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.dashboard.dto.response.DashboardStatisticsResponse;
 import com.logistics.hub.feature.dashboard.service.DashboardService;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
@@ -34,8 +35,9 @@ public class DashboardServiceImpl implements DashboardService {
   @Override
   public DashboardStatisticsResponse getStatistics(Long depotId) {
     log.info("Fetching dashboard statistics for depotId: {}", depotId);
+    authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DASHBOARD_READ);
 
-    if (!authorizationService.isAdmin() && depotId != null) {
+    if (!authorizationService.hasGlobalScope() && depotId != null) {
       authorizationService.requireDepotAccess(depotId);
     }
 
@@ -53,7 +55,7 @@ public class DashboardServiceImpl implements DashboardService {
       ordersInTransit = orderRepository.countByStatusAndDepot_Id(OrderStatus.IN_TRANSIT, depotId);
       ordersDelivered = orderRepository.countByStatusAndDepot_Id(OrderStatus.DELIVERED, depotId);
       ordersCancelled = orderRepository.countByStatusAndDepot_Id(OrderStatus.CANCELLED, depotId);
-    } else if (authorizationService.isAdmin()) {
+    } else if (authorizationService.hasGlobalScope()) {
       activeVehicles = vehicleRepository.countByStatus(VehicleStatus.ACTIVE);
       totalOrders = orderRepository.count();
       ordersCreated = orderRepository.countByStatus(OrderStatus.CREATED);
@@ -80,21 +82,21 @@ public class DashboardServiceImpl implements DashboardService {
           .reduce(0L, Long::sum);
     }
 
-    Long activeDepots = authorizationService.isAdmin()
+    Long activeDepots = authorizationService.hasGlobalScope()
         ? depotRepository.countByIsActive(true)
         : depotRepository.countByIsActiveAndIdIn(true, authorizationService.getAccessibleDepotIds());
-    Long totalDrivers = authorizationService.isAdmin()
+    Long totalDrivers = authorizationService.hasGlobalScope()
         ? driverRepository.count()
         : driverRepository.countDistinctByDepotIds(authorizationService.getAccessibleDepotIds());
     Long totalRoutingRuns = depotId != null ? routingRunRepository.countByDepot_Id(depotId)
-        : authorizationService.isAdmin()
+        : authorizationService.hasGlobalScope()
             ? routingRunRepository.count()
             : authorizationService.getAccessibleDepotIds().stream()
                 .map(routingRunRepository::countByDepot_Id)
                 .reduce(0L, Long::sum);
     Long successfulRuns = depotId != null
         ? routingRunRepository.countByStatusAndDepot_Id(RoutingRunStatus.COMPLETED, depotId)
-        : authorizationService.isAdmin()
+        : authorizationService.hasGlobalScope()
             ? routingRunRepository.countByStatus(RoutingRunStatus.COMPLETED)
             : authorizationService.getAccessibleDepotIds().stream()
                 .map(id -> routingRunRepository.countByStatusAndDepot_Id(RoutingRunStatus.COMPLETED, id))

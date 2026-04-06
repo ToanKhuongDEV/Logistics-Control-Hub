@@ -3,6 +3,7 @@ package com.logistics.hub.feature.order.service.impl;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.location.service.LocationService;
@@ -46,7 +47,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> findAll(Pageable pageable, OrderStatus status, String search, Long depotId) {
-        if (authorizationService.isAdmin()) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_READ);
+        if (authorizationService.hasGlobalScope()) {
             return orderRepository.findAll(OrderSpecification.withFilters(status, search, depotId), pageable)
                     .map(this::toResponse);
         }
@@ -69,7 +71,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderStatisticsResponse getStatistics() {
-        List<OrderEntity> allOrders = authorizationService.isAdmin()
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_READ);
+        List<OrderEntity> allOrders = authorizationService.hasGlobalScope()
                 ? orderRepository.findAll()
                 : orderRepository.findAll(
                         OrderSpecification.withFilters(null, null, authorizationService.getAccessibleDepotIds()));
@@ -107,10 +110,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse create(OrderRequest request) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
         if (request.getDepotId() != null) {
             authorizationService.requireDepotAccess(request.getDepotId());
-        } else if (!authorizationService.isAdmin()) {
-            throw new ValidationException("Dispatcher phải chọn kho phụ trách khi tạo đơn hàng.");
+        } else if (!authorizationService.hasGlobalScope()) {
+            throw new ValidationException("Nhân sự có scope phải chọn kho phụ trách khi tạo đơn hàng.");
         }
 
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
@@ -162,6 +166,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse update(Long id, OrderRequest request) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
         OrderEntity entity = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
         authorizationService.requireOrderAccess(entity);
@@ -173,7 +178,7 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.updateEntityFromRequest(request, entity);
 
         if (request.getStatus() != null) {
-            if (!authorizationService.isAdmin()
+            if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_ORDER_CANCEL_CONFIRMED)
                     && request.getStatus() == OrderStatus.CANCELLED
                     && entity.getStatus() != OrderStatus.CREATED) {
                 throw new ForbiddenException("Dispatcher không được hủy đơn đã xác nhận hoặc đang xử lý.");
@@ -191,7 +196,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         if (request.getDepotId() != null) {
-            if (!authorizationService.isAdmin()
+            if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN)
                     && entity.getDepot() != null
                     && !entity.getDepot().getId().equals(request.getDepotId())) {
                 throw new ForbiddenException("Điều chuyển đơn sang kho khác cần admin xử lý.");
@@ -211,7 +216,8 @@ public class OrderServiceImpl implements OrderService {
     public void updateStatusBulk(List<Long> orderIds, OrderStatus status) {
         List<OrderEntity> orders = orderRepository.findAllById(orderIds);
 
-        if (!authorizationService.isAdmin() && status == OrderStatus.CANCELLED) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
+        if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_ORDER_CANCEL_CONFIRMED) && status == OrderStatus.CANCELLED) {
             throw new ForbiddenException("Dispatcher không được hủy đơn hàng loạt.");
         }
 
@@ -240,7 +246,7 @@ public class OrderServiceImpl implements OrderService {
 
         List<DepotEntity> activeDepots = depotRepository.findAll().stream()
                 .filter(DepotEntity::getIsActive)
-                .filter(depot -> authorizationService.isAdmin()
+                .filter(depot -> authorizationService.hasGlobalScope()
                         || authorizationService.getAccessibleDepotIds().contains(depot.getId()))
                 .toList();
 
@@ -277,6 +283,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void delete(Long id) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ORDER_MANAGE);
         OrderEntity order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
         authorizationService.requireOrderAccess(order);

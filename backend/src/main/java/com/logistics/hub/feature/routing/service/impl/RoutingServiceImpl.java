@@ -5,6 +5,7 @@ import com.google.ortools.constraintsolver.*;
 import com.google.protobuf.Duration;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
@@ -476,6 +477,7 @@ public class RoutingServiceImpl implements RoutingService {
     @Transactional
     public RoutingRunEntity executeAutoRouting(Long depotId) {
         log.info("Executing auto-routing for depot ID: {}", depotId);
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_EXECUTE);
 
         if (depotId == null) {
             throw new ValidationException(RoutingConstant.DEPOT_NOT_ASSIGNED);

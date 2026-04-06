@@ -2,6 +2,7 @@ package com.logistics.hub.feature.routing.controller;
 
 import com.logistics.hub.common.base.ApiResponse;
 import com.logistics.hub.common.constant.UrlConstant;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.routing.constant.RoutingConstant;
 import com.logistics.hub.feature.routing.dto.response.RoutingRunResponse;
@@ -36,6 +37,7 @@ public class RoutingController {
 	@PostMapping(UrlConstant.Routing.OPTIMIZE)
 	@Operation(summary = "Optimize routes", description = "Automatically optimizes delivery routes for all CREATED orders using ACTIVE vehicles with assigned drivers for the given depot")
 	public ResponseEntity<ApiResponse<RoutingRunResponse>> optimizeRouting(@RequestParam Long depotId) {
+		authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_EXECUTE);
 		authorizationService.requireDepotAccess(depotId);
 		RoutingRunEntity runEntity = routingService.executeAutoRouting(depotId);
 
@@ -48,6 +50,7 @@ public class RoutingController {
 	@GetMapping(UrlConstant.Routing.RUN_BY_ID)
 	@Operation(summary = "Get routing run info", description = "Retrieves details of a specific routing run including its routes and stops")
 	public ResponseEntity<ApiResponse<RoutingRunResponse>> getRoutingRunById(@PathVariable Long id) {
+		authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_READ);
 		log.info("Fetching routing run with id: {}", id);
 
 		RoutingRunEntity runEntity = routingRunRepository.findById(id)
@@ -65,6 +68,7 @@ public class RoutingController {
 	@GetMapping(UrlConstant.Routing.LATEST_BY_DEPOT)
 	@Operation(summary = "Get latest routing run for depot", description = "Retrieves the most recent successful routing run for a specific depot")
 	public ResponseEntity<ApiResponse<RoutingRunResponse>> getLatestRoutingRunByDepot(@PathVariable Long depotId) {
+		authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_READ);
 		log.info("Fetching latest routing run for depot id: {}", depotId);
 		authorizationService.requireDepotAccess(depotId);
 
@@ -81,6 +85,7 @@ public class RoutingController {
 			@PathVariable Long depotId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
+		authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_READ);
 		log.info("Fetching routing history for depot id: {}, page: {}, size: {}", depotId, page, size);
 		authorizationService.requireDepotAccess(depotId);
 

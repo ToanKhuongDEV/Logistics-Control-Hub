@@ -3,6 +3,7 @@ package com.logistics.hub.feature.vehicle.service.impl;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
@@ -48,7 +49,8 @@ public class VehicleServiceImpl implements VehicleService {
     @Transactional(readOnly = true)
     public Page<VehicleResponse> findAll(Pageable pageable, VehicleStatus status, String search, Long depotId) {
         Page<VehicleEntity> vehiclePage;
-        if (authorizationService.isAdmin()) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_READ);
+        if (authorizationService.hasGlobalScope()) {
             vehiclePage = vehicleRepository.findByStatusAndSearchAndDepot(status, search, depotId, pageable);
         } else if (depotId != null) {
             authorizationService.requireDepotAccess(depotId);
@@ -84,9 +86,10 @@ public class VehicleServiceImpl implements VehicleService {
     })
     public VehicleResponse create(VehicleRequest request) {
         if (request.getDepotId() != null) {
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
             authorizationService.requireDepotAccess(request.getDepotId());
         } else {
-            authorizationService.requireAdmin();
+            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN);
         }
 
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
@@ -137,11 +140,12 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public VehicleResponse update(Long id, VehicleRequest request) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
         VehicleEntity entity = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
         authorizationService.requireVehicleAccess(entity);
 
-        if (!authorizationService.isAdmin()
+        if (!authorizationService.hasPermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN)
                 && request.getDepotId() != null
                 && entity.getDepot() != null
                 && !entity.getDepot().getId().equals(request.getDepotId())) {
@@ -169,7 +173,7 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void updateDepotBulk(Long depotId, List<Long> vehicleIds) {
-        authorizationService.requireAdmin();
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_REASSIGN);
         DepotEntity depot = depotRepository.findById(depotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Depot not found with id: " + depotId));
 
@@ -221,6 +225,7 @@ public class VehicleServiceImpl implements VehicleService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void delete(Long id) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_MANAGE);
         VehicleEntity vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
         authorizationService.requireVehicleAccess(vehicle);
@@ -230,7 +235,8 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     @Transactional(readOnly = true)
     public VehicleStatisticsResponse getStatistics() {
-        List<VehicleEntity> allVehicles = authorizationService.isAdmin()
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_VEHICLE_READ);
+        List<VehicleEntity> allVehicles = authorizationService.hasGlobalScope()
                 ? vehicleRepository.findAll()
                 : vehicleRepository.findByStatusAndSearchAndDepotIds(
                         null,

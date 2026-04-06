@@ -3,6 +3,7 @@ package com.logistics.hub.feature.auth.service.impl;
 import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.common.exception.UnauthorizedException;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.order.entity.OrderEntity;
 import com.logistics.hub.feature.user.entity.UserEntity;
@@ -34,19 +35,26 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     }
 
     @Override
-    public boolean isAdmin() {
-        return ROLE_ADMIN.equalsIgnoreCase(getCurrentUser().getRole());
+    public boolean hasPermission(String permission) {
+        return getCurrentPermissions().contains(permission);
     }
 
     @Override
-    public boolean isDispatcher() {
-        return ROLE_DISPATCHER.equalsIgnoreCase(getCurrentUser().getRole());
+    public void requirePermission(String permission) {
+        if (!hasPermission(permission)) {
+            throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
+        }
+    }
+
+    @Override
+    public Set<String> getCurrentPermissions() {
+        return AuthorizationPolicy.permissionsForRole(getCurrentUser().getRole());
     }
 
     @Override
     public Set<Long> getAccessibleDepotIds() {
         UserEntity user = getCurrentUser();
-        if (ROLE_ADMIN.equalsIgnoreCase(user.getRole())) {
+        if (AuthorizationPolicy.hasGlobalScope(user.getRole())) {
             return Set.of();
         }
 
@@ -56,15 +64,13 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     }
 
     @Override
-    public void requireAdmin() {
-        if (!isAdmin()) {
-            throw new ForbiddenException("Chỉ admin mới được thực hiện thao tác này.");
-        }
+    public boolean hasGlobalScope() {
+        return AuthorizationPolicy.hasGlobalScope(getCurrentUser().getRole());
     }
 
     @Override
     public void requireDepotAccess(Long depotId) {
-        if (depotId == null || isAdmin()) {
+        if (depotId == null || hasGlobalScope()) {
             return;
         }
 
@@ -76,7 +82,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public void requireOrderAccess(OrderEntity order) {
         if (order == null || order.getDepot() == null) {
-            if (!isAdmin()) {
+            if (!hasGlobalScope()) {
                 throw new ForbiddenException("Bạn không có quyền truy cập đơn hàng này.");
             }
             return;
@@ -88,7 +94,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public void requireVehicleAccess(VehicleEntity vehicle) {
         if (vehicle == null || vehicle.getDepot() == null) {
-            if (!isAdmin()) {
+            if (!hasGlobalScope()) {
                 throw new ForbiddenException("Bạn không có quyền truy cập phương tiện này.");
             }
             return;

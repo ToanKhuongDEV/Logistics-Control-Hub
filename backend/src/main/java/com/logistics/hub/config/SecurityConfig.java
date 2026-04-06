@@ -1,6 +1,7 @@
 package com.logistics.hub.config;
 
 import com.logistics.hub.common.constant.UrlConstant;
+import com.logistics.hub.feature.audit.security.AuditRequestContextFilter;
 import com.logistics.hub.feature.auth.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +28,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuditRequestContextFilter auditRequestContextFilter;
     private final UserDetailsService userDetailsService;
     private final com.logistics.hub.config.security.CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final com.logistics.hub.config.security.CustomAccessDeniedHandler accessDeniedHandler;
@@ -73,6 +75,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 
 
+                .addFilterBefore(auditRequestContextFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -16,8 +16,8 @@ VALUES
 INSERT INTO users (username, password, email, full_name, role)
 VALUES
 ('user01', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user01@logitower.vn', 'Nguyễn Văn An', 'DISPATCHER'),
-('user02', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user02@logitower.vn', 'Trần Thị Bích', 'DISPATCHER'),
-('user03', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user03@logitower.vn', 'Lê Minh Châu', 'DISPATCHER'),
+('user02', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user02@logitower.vn', 'Trần Thị Bích', 'USER'),
+('user03', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user03@logitower.vn', 'Lê Minh Châu', 'USER'),
 ('user04', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user04@logitower.vn', 'Phạm Quốc Duy', 'DISPATCHER'),
 ('user05', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user05@logitower.vn', 'Hoàng Thu Hà', 'DISPATCHER'),
 ('user06', '$2a$10$EnBIa50ATiitk.ir98E6ged3Eu7bH5rwCrsn9m4k7mPLE.wH9S.P6', 'user06@logitower.vn', 'Đỗ Văn Hùng', 'DISPATCHER'),

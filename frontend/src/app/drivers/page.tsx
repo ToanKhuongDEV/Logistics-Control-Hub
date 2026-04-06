@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
 import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/auth";
 import { driverApi } from "@/lib/driver-api";
 import { depotApi } from "@/lib/depot-api";
 import { Driver, DriverRequest, DriverStatistics } from "@/types/driver-types";
@@ -21,7 +22,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function DriversPage() {
 	const { user } = useAuth();
-	const canManageDrivers = user?.role === "ADMIN";
+	const canManageDrivers = hasPermission(user, "driver.manage");
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [statistics, setStatistics] = useState<DriverStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);

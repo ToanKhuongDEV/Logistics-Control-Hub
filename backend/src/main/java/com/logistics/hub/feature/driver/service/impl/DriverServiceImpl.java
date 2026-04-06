@@ -2,6 +2,7 @@ package com.logistics.hub.feature.driver.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.driver.constant.DriverConstant;
 import com.logistics.hub.feature.driver.dto.request.DriverRequest;
@@ -40,7 +41,8 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public Page<DriverResponse> findAll(Pageable pageable, String search, Long depotId) {
-        if (authorizationService.isAdmin()) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_READ);
+        if (authorizationService.hasGlobalScope()) {
             return driverRepository.findBySearchAndDepot(search, depotId, pageable)
                     .map(driverMapper::toResponse);
         }
@@ -76,7 +78,7 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public DriverResponse create(DriverRequest request) {
-        authorizationService.requireAdmin();
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
         normalizeRequest(request);
         validateDriverRequest(request, null);
         DriverEntity driver = driverMapper.toEntity(request);
@@ -92,7 +94,7 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public DriverResponse update(Long id, DriverRequest request) {
-        authorizationService.requireAdmin();
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
         DriverEntity driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
 
@@ -112,7 +114,7 @@ public class DriverServiceImpl implements DriverService {
             @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
     })
     public void delete(Long id) {
-        authorizationService.requireAdmin();
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
         if (!driverRepository.existsById(id)) {
             throw new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND);
         }
@@ -171,7 +173,8 @@ public class DriverServiceImpl implements DriverService {
         long available;
         long assigned;
 
-        if (authorizationService.isAdmin()) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_READ);
+        if (authorizationService.hasGlobalScope()) {
             total = driverRepository.count();
             List<DriverEntity> availableDrivers = driverRepository.findAvailableDrivers(null);
             available = availableDrivers.size();

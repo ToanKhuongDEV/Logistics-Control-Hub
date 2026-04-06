@@ -2,6 +2,7 @@ package com.logistics.hub.feature.depot.service.impl;
 
 import com.logistics.hub.common.exception.ResourceNotFoundException;
 import com.logistics.hub.common.exception.ValidationException;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.depot.constant.DepotConstant;
 import com.logistics.hub.feature.depot.dto.request.DepotRequest;
@@ -43,6 +44,7 @@ public class DepotServiceImpl implements DepotService {
   @Override
   @Transactional(readOnly = true)
   public Page<DepotResponse> findAll(String search, Pageable pageable) {
+    authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DEPOT_READ);
     Sort sort = Sort.by(
         Sort.Order.desc("isActive"),
         Sort.Order.asc("id"));
@@ -52,7 +54,7 @@ public class DepotServiceImpl implements DepotService {
         sort);
 
     Page<DepotEntity> depotPage;
-    if (authorizationService.isAdmin()) {
+    if (authorizationService.hasGlobalScope()) {
       depotPage = (search != null && !search.trim().isEmpty())
           ? depotRepository.searchDepots(search, sortedPageable)
           : depotRepository.findAll(sortedPageable);
@@ -85,7 +87,7 @@ public class DepotServiceImpl implements DepotService {
       @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
   })
   public DepotResponse create(DepotRequest request) {
-    authorizationService.requireAdmin();
+    authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DEPOT_MANAGE);
     LocationEntity location = locationService.getOrCreateLocation(request.getLocationRequest());
     Long locationId = location.getId();
 
@@ -107,7 +109,7 @@ public class DepotServiceImpl implements DepotService {
       @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
   })
   public DepotResponse update(Long id, DepotRequest request) {
-    authorizationService.requireAdmin();
+    authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DEPOT_MANAGE);
     DepotEntity entity = depotRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id));
 
@@ -132,7 +134,7 @@ public class DepotServiceImpl implements DepotService {
       @CacheEvict(value = CacheConstant.DASHBOARD_STATS, allEntries = true)
   })
   public void delete(Long id) {
-    authorizationService.requireAdmin();
+    authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DEPOT_MANAGE);
     if (!depotRepository.existsById(id)) {
       throw new ResourceNotFoundException(DepotConstant.DEPOT_NOT_FOUND + id);
     }
@@ -155,7 +157,8 @@ public class DepotServiceImpl implements DepotService {
     long active;
     long inactive;
 
-    if (authorizationService.isAdmin()) {
+    authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DEPOT_READ);
+    if (authorizationService.hasGlobalScope()) {
       total = depotRepository.count();
       active = depotRepository.countByIsActive(true);
       inactive = depotRepository.countByIsActive(false);

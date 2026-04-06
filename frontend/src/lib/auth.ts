@@ -1,6 +1,24 @@
 import apiClient from "./api";
 
-export type UserRole = "ADMIN" | "DISPATCHER";
+export type UserRole = "ADMIN" | "DISPATCHER" | "USER";
+export type UserPermission =
+	| "account.manage"
+	| "audit.read"
+	| "company.manage"
+	| "dashboard.read"
+	| "depot.read"
+	| "depot.manage"
+	| "driver.read"
+	| "driver.manage"
+	| "order.read"
+	| "order.manage"
+	| "order.cancel.confirmed"
+	| "routing.execute"
+	| "routing.read"
+	| "settings.read"
+	| "vehicle.manage"
+	| "vehicle.read"
+	| "vehicle.reassign";
 
 export interface AssignedDepot {
 	id: number;
@@ -22,6 +40,7 @@ export interface User {
 	email: string;
 	fullName: string;
 	role: UserRole;
+	permissions?: UserPermission[];
 	assignedDepots?: AssignedDepot[];
 }
 
@@ -119,3 +138,7 @@ class AuthService {
 }
 
 export const authService = new AuthService();
+
+export function hasPermission(user: User | null | undefined, permission: UserPermission): boolean {
+	return !!user?.permissions?.includes(permission);
+}

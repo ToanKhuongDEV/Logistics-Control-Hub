@@ -105,7 +105,7 @@ public class AuthController {
     }
 
     @PostMapping(UrlConstant.Auth.CREATE_ACCOUNT)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('account.manage')")
     @Operation(summary = "Create Employee Account", description = "Creates a new employee account for internal use")
     public ResponseEntity<ApiResponse<UserResponse>> createAccount(@Valid @RequestBody CreateAccountRequest request) {
         UserResponse response = authService.createAccount(request);
@@ -114,14 +114,14 @@ public class AuthController {
     }
 
     @GetMapping(UrlConstant.Auth.CREATE_ACCOUNT)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('account.manage')")
     @Operation(summary = "List employee accounts", description = "Returns all internal accounts with role and assigned depots")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAccounts() {
         return ResponseEntity.ok(ApiResponse.success("Accounts retrieved successfully", authService.getAccounts()));
     }
 
     @PutMapping(UrlConstant.Auth.UPDATE_ACCOUNT)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('account.manage')")
     @Operation(summary = "Update employee account", description = "Updates employee profile, role and assigned depots")
     public ResponseEntity<ApiResponse<UserResponse>> updateAccount(
             @PathVariable Long id,

@@ -87,4 +87,11 @@ public class UrlConstant {
         private Routing() {
         }
     }
+
+    public static class Audit {
+        public static final String PREFIX = API_V1 + "/audit-logs";
+
+        private Audit() {
+        }
+    }
 }

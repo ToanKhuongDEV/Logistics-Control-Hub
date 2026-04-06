@@ -3,6 +3,10 @@ package com.logistics.hub.feature.auth.service.impl;
 import com.logistics.hub.common.exception.UnauthorizedException;
 import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.common.exception.ResourceNotFoundException;
+import com.logistics.hub.feature.audit.constant.AuditAction;
+import com.logistics.hub.feature.audit.constant.AuditResourceType;
+import com.logistics.hub.feature.audit.constant.AuditStatus;
+import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
 import com.logistics.hub.feature.auth.dto.request.ChangePasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
@@ -14,6 +18,7 @@ import com.logistics.hub.feature.auth.dto.response.AssignedDepotResponse;
 import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.entity.PasswordResetTokenEntity;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.entity.RefreshTokenEntity;
 import com.logistics.hub.feature.auth.repository.PasswordResetTokenRepository;
 import com.logistics.hub.feature.auth.repository.RefreshTokenRepository;
@@ -38,8 +43,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -55,6 +61,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordResetMailService passwordResetMailService;
     private final DepotRepository depotRepository;
+    private final AuditLogService auditLogService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -66,9 +73,36 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public LoginResult login(LoginRequest request) {
         UserEntity user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException(AuthConstant.INVALID_CREDENTIALS));
+                .orElseThrow(() -> {
+                    auditLogService.logByUsername(
+                            request.getUsername(),
+                            null,
+                            AuditAction.LOGIN,
+                            AuditResourceType.AUTH,
+                            request.getUsername(),
+                            request.getUsername(),
+                            null,
+                            AuditStatus.FAILED,
+                            AuthConstant.INVALID_CREDENTIALS,
+                            null,
+                            null,
+                            Map.of("username", request.getUsername()));
+                    return new RuntimeException(AuthConstant.INVALID_CREDENTIALS);
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            auditLogService.log(
+                    user,
+                    AuditAction.LOGIN,
+                    AuditResourceType.AUTH,
+                    user.getId().toString(),
+                    user.getUsername(),
+                    firstAssignedDepotId(user),
+                    AuditStatus.FAILED,
+                    AuthConstant.INVALID_CREDENTIALS,
+                    null,
+                    null,
+                    Map.of("username", user.getUsername()));
             throw new RuntimeException(AuthConstant.INVALID_CREDENTIALS);
         }
 
@@ -83,6 +117,19 @@ public class AuthServiceImpl implements AuthService {
 
         // Lưu refresh token vào DB
         saveRefreshToken(refreshToken, user.getUsername());
+
+        auditLogService.log(
+                user,
+                AuditAction.LOGIN,
+                AuditResourceType.AUTH,
+                user.getId().toString(),
+                user.getUsername(),
+                firstAssignedDepotId(user),
+                AuditStatus.SUCCESS,
+                AuthConstant.LOGIN_SUCCESS,
+                null,
+                null,
+                Map.of("username", user.getUsername()));
 
         return new LoginResult(new AuthTokensResponse(accessToken), refreshToken);
     }
@@ -137,7 +184,20 @@ public class AuthServiceImpl implements AuthService {
     public void logout(String refreshToken) {
         try {
             String jti = jwtUtils.extractJtiFromRefreshToken(refreshToken);
+            String username = jwtUtils.extractUsernameFromRefreshToken(refreshToken);
             refreshTokenRepository.deleteByJti(jti);
+            userRepository.findByUsernameWithAssignedDepots(username).ifPresent(user -> auditLogService.log(
+                    user,
+                    AuditAction.LOGOUT,
+                    AuditResourceType.AUTH,
+                    user.getId().toString(),
+                    user.getUsername(),
+                    firstAssignedDepotId(user),
+                    AuditStatus.SUCCESS,
+                    AuthConstant.LOGOUT_SUCCESS,
+                    null,
+                    null,
+                    Map.of("username", user.getUsername())));
         } catch (Exception e) {
             // Token không hợp lệ → bỏ qua, vẫn clear cookie ở controller
         }
@@ -149,6 +209,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         UserResponse response = userMapper.toResponse(user);
+        response.setPermissions(new ArrayList<>(AuthorizationPolicy.permissionsForRole(user.getRole())));
         response.setAssignedDepots(toAssignedDepotResponses(user));
         return response;
     }
@@ -173,6 +234,19 @@ public class AuthServiceImpl implements AuthService {
 
         UserEntity savedUser = userRepository.save(user);
         syncAssignedDepots(savedUser, request.getAssignedDepotIds());
+        UserEntity createdUser = userRepository.findByIdWithAssignedDepots(savedUser.getId()).orElse(savedUser);
+        auditLogService.log(
+                getCurrentActorForAudit(),
+                AuditAction.CREATE,
+                AuditResourceType.USER,
+                createdUser.getId().toString(),
+                createdUser.getUsername(),
+                firstAssignedDepotId(createdUser),
+                AuditStatus.SUCCESS,
+                "Created employee account",
+                null,
+                userAuditSnapshot(createdUser),
+                Map.of("role", createdUser.getRole()));
         return getCurrentUserResponse(savedUser.getId());
     }
 
@@ -189,6 +263,7 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse updateAccount(Long id, UpdateAccountRequest request) {
         UserEntity user = userRepository.findByIdWithAssignedDepots(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        Map<String, Object> beforeData = userAuditSnapshot(user);
 
         if (userRepository.findByEmailIgnoreCase(request.getEmail().trim())
                 .filter(existingUser -> !existingUser.getId().equals(id))
@@ -202,6 +277,19 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
         syncAssignedDepots(user, request.getAssignedDepotIds());
+        UserEntity updatedUser = userRepository.findByIdWithAssignedDepots(user.getId()).orElse(user);
+        auditLogService.log(
+                getCurrentActorForAudit(),
+                AuditAction.UPDATE,
+                AuditResourceType.USER,
+                updatedUser.getId().toString(),
+                updatedUser.getUsername(),
+                firstAssignedDepotId(updatedUser),
+                AuditStatus.SUCCESS,
+                "Updated employee account",
+                beforeData,
+                userAuditSnapshot(updatedUser),
+                Map.of("role", updatedUser.getRole()));
         return getCurrentUserResponse(user.getId());
     }
 
@@ -222,6 +310,18 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         refreshTokenRepository.deleteByUsername(user.getUsername());
+        auditLogService.log(
+                user,
+                AuditAction.CHANGE_PASSWORD,
+                AuditResourceType.AUTH,
+                user.getId().toString(),
+                user.getUsername(),
+                firstAssignedDepotId(user),
+                AuditStatus.SUCCESS,
+                AuthConstant.PASSWORD_CHANGED_SUCCESS,
+                null,
+                null,
+                Map.of("username", user.getUsername()));
     }
 
     @Override
@@ -292,6 +392,7 @@ public class AuthServiceImpl implements AuthService {
 
     private UserResponse toUserResponse(UserEntity user) {
         UserResponse response = userMapper.toResponse(user);
+        response.setPermissions(new ArrayList<>(AuthorizationPolicy.permissionsForRole(user.getRole())));
         response.setAssignedDepots(toAssignedDepotResponses(user));
         return response;
     }
@@ -304,19 +405,17 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String normalizeRole(String role) {
-        String normalizedRole = role == null ? "" : role.trim().toUpperCase(Locale.ROOT);
-        if (!Set.of("ADMIN", "DISPATCHER").contains(normalizedRole)) {
-            throw new ValidationException("Role is not supported.");
-        }
-        return normalizedRole;
+        return AuthorizationPolicy.normalizeRole(role);
     }
 
     private void syncAssignedDepots(UserEntity user, List<Long> assignedDepotIds) {
         String role = normalizeRole(user.getRole());
         Set<Long> mutableTargetDepotIds = assignedDepotIds == null ? Set.of() : new HashSet<>(assignedDepotIds);
 
-        if ("ADMIN".equals(role)) {
+        if (AuthorizationPolicy.ROLE_ADMIN.equals(role)) {
             mutableTargetDepotIds = Set.of();
+        } else if (mutableTargetDepotIds.isEmpty()) {
+            throw new ValidationException("Scoped roles must be assigned at least one depot.");
         }
 
         Set<Long> targetDepotIds = mutableTargetDepotIds;
@@ -341,5 +440,35 @@ public class AuthServiceImpl implements AuthService {
         if (!currentDepots.isEmpty()) {
             depotRepository.saveAll(currentDepots);
         }
+    }
+
+    private UserEntity getCurrentActorForAudit() {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        return userRepository.findByUsernameWithAssignedDepots(authentication.getName()).orElse(null);
+    }
+
+    private Long firstAssignedDepotId(UserEntity user) {
+        return user.getAssignedDepots().stream()
+                .map(DepotEntity::getId)
+                .sorted()
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Map<String, Object> userAuditSnapshot(UserEntity user) {
+        LinkedHashMap<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("id", user.getId());
+        snapshot.put("username", user.getUsername());
+        snapshot.put("fullName", user.getFullName());
+        snapshot.put("email", user.getEmail());
+        snapshot.put("role", user.getRole());
+        snapshot.put("assignedDepotIds", user.getAssignedDepots().stream()
+                .map(DepotEntity::getId)
+                .sorted()
+                .toList());
+        return snapshot;
     }
 }

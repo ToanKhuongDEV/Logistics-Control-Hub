@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
 import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/auth";
 import { depotApi } from "@/lib/depot-api";
 import { Depot, DepotRequest, DepotStatistics } from "@/types/depot-types";
 import { toast } from "sonner";
@@ -19,7 +20,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function DepotsPage() {
 	const { user } = useAuth();
-	const canManageDepots = user?.role === "ADMIN";
+	const canManageDepots = hasPermission(user, "depot.manage");
 	const [depots, setDepots] = useState<Depot[]>([]);
 	const [statistics, setStatistics] = useState<DepotStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);

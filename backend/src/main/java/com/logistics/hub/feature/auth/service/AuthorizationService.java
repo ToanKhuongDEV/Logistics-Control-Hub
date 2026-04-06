@@ -8,18 +8,17 @@ import java.util.Set;
 
 public interface AuthorizationService {
 
-    String ROLE_ADMIN = "ADMIN";
-    String ROLE_DISPATCHER = "DISPATCHER";
-
     UserEntity getCurrentUser();
 
-    boolean isAdmin();
+    boolean hasPermission(String permission);
 
-    boolean isDispatcher();
+    void requirePermission(String permission);
+
+    Set<String> getCurrentPermissions();
 
     Set<Long> getAccessibleDepotIds();
 
-    void requireAdmin();
+    boolean hasGlobalScope();
 
     void requireDepotAccess(Long depotId);
 

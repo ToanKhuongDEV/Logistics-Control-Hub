@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrderForm } from "@/components/order-form";
@@ -18,6 +18,7 @@ import { depotApi } from "@/lib/depot-api";
 import { Order, OrderRequest, OrderStatistics, OrderStatus } from "@/types/order-types";
 import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -207,6 +208,7 @@ export default function OrdersPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
+							<PageHeader tag="Bảng điều khiển đơn hàng" title="Quản lý đơn hàng" description="Quản lý và theo dõi toàn bộ đơn hàng của công ty." icon={ClipboardList} />
 							<h1 className="text-3xl font-bold text-foreground">Quản lý đơn hàng</h1>
 							<p className="text-muted-foreground mt-2">Quản lý và theo dõi toàn bộ đơn hàng của công ty</p>
 						</div>

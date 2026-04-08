@@ -271,8 +271,10 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> beforeData = null;
         try {
             authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ACCOUNT_MANAGE);
+            UserEntity actor = authorizationService.getCurrentUser();
             user = userRepository.findByIdWithAssignedDepots(id)
                     .orElseThrow(() -> new ResourceNotFoundException(AuthConstant.ACCOUNT_NOT_FOUND));
+            validateAdminAccountManagement(actor, user);
             beforeData = userAuditSnapshot(user);
 
             if (userRepository.findByEmailIgnoreCase(request.getEmail().trim())
@@ -321,6 +323,7 @@ public class AuthServiceImpl implements AuthService {
                     .orElseThrow(() -> new ResourceNotFoundException(AuthConstant.ACCOUNT_NOT_FOUND));
 
             UserEntity actor = authorizationService.getCurrentUser();
+            validateAdminAccountManagement(actor, user);
             if (actor.getId().equals(id)) {
                 throw new ValidationException(AuthConstant.CANNOT_DELETE_OWN_ACCOUNT);
             }
@@ -552,6 +555,19 @@ public class AuthServiceImpl implements AuthService {
 
         if (removingAdminRole && userRepository.countByRoleIgnoreCase(AuthorizationPolicy.ROLE_ADMIN) <= 1) {
             throw new ValidationException(AuthConstant.LAST_ADMIN_REQUIRED);
+        }
+    }
+
+    private void validateAdminAccountManagement(UserEntity actor, UserEntity targetUser) {
+        String actorRole = normalizeRole(actor.getRole());
+        String targetRole = normalizeRole(targetUser.getRole());
+
+        boolean isManagingAnotherAdmin = AuthorizationPolicy.ROLE_ADMIN.equals(actorRole)
+                && AuthorizationPolicy.ROLE_ADMIN.equals(targetRole)
+                && !actor.getId().equals(targetUser.getId());
+
+        if (isManagingAnotherAdmin) {
+            throw new ForbiddenException(AuthConstant.CANNOT_MANAGE_OTHER_ADMIN_ACCOUNT);
         }
     }
 

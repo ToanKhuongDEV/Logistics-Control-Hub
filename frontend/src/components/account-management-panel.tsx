@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/contexts/auth-context";
 import { authService, User, UserRole } from "@/lib/auth";
 import { depotApi } from "@/lib/depot-api";
 import { Depot } from "@/types/depot-types";
@@ -34,6 +35,7 @@ const EMPTY_EDIT_FORM = {
 };
 
 export function AccountManagementPanel() {
+	const { user: currentUser } = useAuth();
 	const [depots, setDepots] = useState<Depot[]>([]);
 	const [accounts, setAccounts] = useState<User[]>([]);
 	const [accountDirectory, setAccountDirectory] = useState<User[]>([]);
@@ -71,7 +73,7 @@ export function AccountManagementPanel() {
 			setDepots(response.data.filter((depot) => depot.isActive));
 		} catch (error: any) {
 			console.error("Error fetching depots:", error);
-			toast.error(error?.response?.data?.message || "Khong the tai danh sach kho");
+			toast.error(error?.response?.data?.message || "Không thể tải danh sách kho");
 		}
 	};
 
@@ -100,7 +102,7 @@ export function AccountManagementPanel() {
 			setTotalElements(response.pagination.totalElements);
 		} catch (error: any) {
 			console.error("Error fetching accounts:", error);
-			toast.error(error?.response?.data?.message || "Khong the tai danh sach nhan vien");
+			toast.error(error?.response?.data?.message || "Không thể tải danh sách nhân viên");
 		} finally {
 			setIsLoadingAccounts(false);
 		}
@@ -121,7 +123,7 @@ export function AccountManagementPanel() {
 			setEditDepotPicker(undefined);
 		} catch (error: any) {
 			console.error("Error fetching account detail:", error);
-			toast.error(error?.response?.data?.message || "Khong the tai chi tiet nhan vien");
+			toast.error(error?.response?.data?.message || "Không thể tải chi tiết nhân viên");
 			setSelectedAccount(null);
 		} finally {
 			setIsLoadingDetail(false);
@@ -155,6 +157,11 @@ export function AccountManagementPanel() {
 		return map;
 	}, [accountDirectory]);
 
+	const isEditingAnotherAdmin = useMemo(
+		() => !!selectedAccount && selectedAccount.role === "ADMIN" && currentUser?.id !== selectedAccount.id,
+		[currentUser?.id, selectedAccount],
+	);
+
 	const createDepotOptions = useMemo(
 		() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || createAccountForm.assignedDepotIds.includes(depot.id)),
 		[createAccountForm.assignedDepotIds, depots, assignedDepotMap],
@@ -183,7 +190,7 @@ export function AccountManagementPanel() {
 
 	const validateScopedRoleSelection = (role: UserRole, assignedDepotIds: number[]) => {
 		if (role !== "ADMIN" && assignedDepotIds.length === 0) {
-			toast.error("USER va Dispatcher phai duoc gan it nhat mot kho");
+			toast.error("USER và Dispatcher phải được gán ít nhất một kho");
 			return false;
 		}
 		return true;
@@ -223,7 +230,7 @@ export function AccountManagementPanel() {
 
 	const handleCreateAccount = async () => {
 		if (createAccountForm.password !== createAccountForm.confirmPassword) {
-			toast.error("Mat khau xac nhan khong khop");
+			toast.error("Mật khẩu xác nhận không khớp");
 			return;
 		}
 
@@ -245,10 +252,10 @@ export function AccountManagementPanel() {
 			setIsCreateExpanded(false);
 			setCurrentPage(1);
 			await refreshAfterMutation(created.id);
-			toast.success("Da tao tai khoan moi");
+			toast.success("Đã tạo tài khoản mới");
 		} catch (error: any) {
 			console.error("Create account error:", error);
-			toast.error(error?.response?.data?.message || "Khong the tao tai khoan");
+			toast.error(error?.response?.data?.message || "Không thể tạo tài khoản");
 		} finally {
 			setIsCreatingAccount(false);
 		}
@@ -273,10 +280,10 @@ export function AccountManagementPanel() {
 			});
 
 			await refreshAfterMutation(selectedAccount.id);
-			toast.success("Da cap nhat tai khoan");
+			toast.success("Đã cập nhật tài khoản");
 		} catch (error: any) {
 			console.error("Update account error:", error);
-			toast.error(error?.response?.data?.message || "Khong the cap nhat tai khoan");
+			toast.error(error?.response?.data?.message || "Không thể cập nhật tài khoản");
 		} finally {
 			setIsUpdatingAccount(false);
 		}
@@ -287,7 +294,7 @@ export function AccountManagementPanel() {
 			return;
 		}
 
-		if (!window.confirm(`Ban co chac chan muon xoa tai khoan ${selectedAccount.username}?`)) {
+		if (!window.confirm(`Bạn có chắc chắn muốn xóa tài khoản ${selectedAccount.username}?`)) {
 			return;
 		}
 
@@ -303,10 +310,10 @@ export function AccountManagementPanel() {
 			}
 
 			await Promise.all([loadAccounts(), loadAccountDirectory()]);
-			toast.success("Da xoa tai khoan");
+			toast.success("Đã xóa tài khoản");
 		} catch (error: any) {
 			console.error("Delete account error:", error);
-			toast.error(error?.response?.data?.message || "Khong the xoa tai khoan");
+			toast.error(error?.response?.data?.message || "Không thể xóa tài khoản");
 		} finally {
 			setIsDeletingAccount(false);
 		}
@@ -335,11 +342,11 @@ export function AccountManagementPanel() {
 		<div className="space-y-3 rounded-lg border border-border p-4">
 			<div className="flex items-center gap-2 text-sm font-medium text-foreground">
 				<Warehouse className="h-4 w-4 text-primary" />
-				Kho phu trach
+				Kho phụ trách
 			</div>
 			<Select value={value} onValueChange={onValueChange}>
 				<SelectTrigger className="w-full">
-					<SelectValue placeholder="Chon kho de gan" />
+					<SelectValue placeholder="Chọn kho để gán" />
 				</SelectTrigger>
 				<SelectContent>
 					{options.length > 0 ? (
@@ -350,7 +357,7 @@ export function AccountManagementPanel() {
 						))
 					) : (
 						<SelectItem value="no-depot" disabled>
-							Khong con kho kha dung
+							Không còn kho khả dụng
 						</SelectItem>
 					)}
 				</SelectContent>
@@ -363,14 +370,14 @@ export function AccountManagementPanel() {
 						return (
 							<div key={depotId} className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm text-foreground">
 								<span>{depot.name}</span>
-								<button type="button" onClick={() => onRemove(depotId)} className="text-muted-foreground hover:text-foreground" aria-label={`Bo kho ${depot.name}`}>
+								<button type="button" onClick={() => onRemove(depotId)} className="text-muted-foreground hover:text-foreground" aria-label={`Bỏ kho ${depot.name}`}>
 									<X className="h-3.5 w-3.5" />
 								</button>
 							</div>
 						);
 					})
 				) : (
-					<p className="text-sm text-muted-foreground">Chua co kho nao duoc gan.</p>
+					<p className="text-sm text-muted-foreground">Chưa có kho nào được gán.</p>
 				)}
 			</div>
 		</div>
@@ -385,12 +392,12 @@ export function AccountManagementPanel() {
 							<UserPlus className="h-5 w-5" />
 						</div>
 						<div>
-							<h2 className="text-xl font-semibold text-foreground">Tao tai khoan</h2>
-							<p className="text-sm text-muted-foreground">Them nhan vien moi, chon vai tro va gan kho ngay trong cung mot form.</p>
+							<h2 className="text-xl font-semibold text-foreground">Tạo tài khoản</h2>
+							<p className="text-sm text-muted-foreground">Thêm nhân viên mới, chọn vai trò và gán kho ngay trong cùng một form.</p>
 						</div>
 					</div>
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<span>{isCreateExpanded ? "Thu gon" : "Mo rong"}</span>
+						<span>{isCreateExpanded ? "Thu gọn" : "Mở rộng"}</span>
 						{isCreateExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
 					</div>
 				</button>
@@ -399,11 +406,11 @@ export function AccountManagementPanel() {
 					<div className="mt-6 border-t border-border pt-6">
 						<div className="grid gap-4 md:grid-cols-2">
 							<div>
-								<Label htmlFor="newUsername">Ten dang nhap</Label>
+								<Label htmlFor="newUsername">Tên đăng nhập</Label>
 								<Input id="newUsername" value={createAccountForm.username} onChange={(e) => setCreateAccountForm({ ...createAccountForm, username: e.target.value })} className="mt-2" />
 							</div>
 							<div>
-								<Label htmlFor="newFullName">Ho va ten</Label>
+								<Label htmlFor="newFullName">Họ và tên</Label>
 								<Input id="newFullName" value={createAccountForm.fullName} onChange={(e) => setCreateAccountForm({ ...createAccountForm, fullName: e.target.value })} className="mt-2" />
 							</div>
 							<div>
@@ -411,15 +418,15 @@ export function AccountManagementPanel() {
 								<Input id="newEmail" type="email" value={createAccountForm.email} onChange={(e) => setCreateAccountForm({ ...createAccountForm, email: e.target.value })} className="mt-2" />
 							</div>
 							<div>
-								<Label htmlFor="newPassword">Mat khau tam thoi</Label>
+								<Label htmlFor="newPassword">Mật khẩu tạm thời</Label>
 								<Input id="newPassword" type="password" value={createAccountForm.password} onChange={(e) => setCreateAccountForm({ ...createAccountForm, password: e.target.value })} className="mt-2" />
 							</div>
 							<div className="md:col-span-2">
-								<Label htmlFor="confirmNewPassword">Xac nhan mat khau</Label>
+								<Label htmlFor="confirmNewPassword">Xác nhận mật khẩu</Label>
 								<Input id="confirmNewPassword" type="password" value={createAccountForm.confirmPassword} onChange={(e) => setCreateAccountForm({ ...createAccountForm, confirmPassword: e.target.value })} className="mt-2" />
 							</div>
 							<div className="md:col-span-2">
-								<Label>Vai tro</Label>
+								<Label>Vai trò</Label>
 								<Select
 									value={createAccountForm.role}
 									onValueChange={(value) =>
@@ -431,7 +438,7 @@ export function AccountManagementPanel() {
 									}
 								>
 									<SelectTrigger className="mt-2 w-full">
-										<SelectValue placeholder="Chon vai tro" />
+										<SelectValue placeholder="Chọn vai trò" />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="USER">User</SelectItem>
@@ -455,7 +462,7 @@ export function AccountManagementPanel() {
 
 						<Button onClick={handleCreateAccount} className="mt-6 gap-2" disabled={isCreatingAccount}>
 							{isCreatingAccount ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-							Tao tai khoan
+							Tạo tài khoản
 						</Button>
 					</div>
 				)}
@@ -464,17 +471,17 @@ export function AccountManagementPanel() {
 			<Card className="p-6">
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 					<div>
-						<h2 className="text-xl font-semibold text-foreground">Tim kiem nhan vien</h2>
-						<p className="text-sm text-muted-foreground">Tim dong theo ten, username, email va loc theo vai tro hoac kho.</p>
+						<h2 className="text-xl font-semibold text-foreground">Tìm kiếm nhân viên</h2>
+						<p className="text-sm text-muted-foreground">Tìm theo tên, username, email và lọc theo vai trò hoặc kho.</p>
 					</div>
 					<Button variant="outline" onClick={handleClearFilters}>
-						Xoa bo loc
+						Xóa bộ lọc
 					</Button>
 				</div>
 
 				<div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.7fr_0.8fr]">
 					<div>
-						<Label htmlFor="accountSearch">Tim kiem</Label>
+						<Label htmlFor="accountSearch">Tìm kiếm</Label>
 						<div className="relative mt-2">
 							<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 							<Input
@@ -484,13 +491,13 @@ export function AccountManagementPanel() {
 									setSearchQuery(e.target.value);
 									setCurrentPage(1);
 								}}
-								placeholder="Nhap ten, username hoac email"
+								placeholder="Nhập tên, username hoặc email"
 								className="pl-9"
 							/>
 						</div>
 					</div>
 					<div>
-						<Label>Vai tro</Label>
+						<Label>Vai trò</Label>
 						<Select
 							value={roleFilter}
 							onValueChange={(value) => {
@@ -499,10 +506,10 @@ export function AccountManagementPanel() {
 							}}
 						>
 							<SelectTrigger className="mt-2 w-full">
-								<SelectValue placeholder="Tat ca vai tro" />
+								<SelectValue placeholder="Tất cả vai trò" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">Tat ca vai tro</SelectItem>
+								<SelectItem value="all">Tất cả vai trò</SelectItem>
 								<SelectItem value="USER">User</SelectItem>
 								<SelectItem value="DISPATCHER">Dispatcher</SelectItem>
 								<SelectItem value="ADMIN">Admin</SelectItem>
@@ -519,10 +526,10 @@ export function AccountManagementPanel() {
 							}}
 						>
 							<SelectTrigger className="mt-2 w-full">
-								<SelectValue placeholder="Tat ca kho" />
+								<SelectValue placeholder="Tất cả kho" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">Tat ca kho</SelectItem>
+								<SelectItem value="all">Tất cả kho</SelectItem>
 								{depots.map((depot) => (
 									<SelectItem key={depot.id} value={depot.id.toString()}>
 										{depot.name}
@@ -534,12 +541,12 @@ export function AccountManagementPanel() {
 				</div>
 			</Card>
 
-			<div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+			<div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
 				<Card className="overflow-hidden">
 					<div className="flex items-center justify-between border-b border-border px-6 py-5">
 						<div>
-							<h2 className="text-xl font-semibold text-foreground">Danh sach nhan su</h2>
-							<p className="text-sm text-muted-foreground">Chon mot dong de xem chi tiet va cap nhat nhan vien.</p>
+							<h2 className="text-xl font-semibold text-foreground">Danh sách nhân sự</h2>
+							<p className="text-sm text-muted-foreground">Chọn một dòng để xem chi tiết và cập nhật nhân viên.</p>
 						</div>
 						{isLoadingAccounts && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
 					</div>
@@ -548,10 +555,10 @@ export function AccountManagementPanel() {
 						<table className="w-full">
 							<thead className="border-b border-border text-left text-sm text-muted-foreground">
 								<tr>
-									<th className="px-6 pb-3 pt-4 font-medium">Tai khoan</th>
-									<th className="pb-3 pt-4 font-medium">Vai tro</th>
-									<th className="pb-3 pt-4 font-medium">Kho phu trach</th>
-									<th className="pb-3 pt-4 pr-6 font-medium text-right">Chi tiet</th>
+									<th className="px-6 pb-3 pt-4 font-medium">Tài khoản</th>
+									<th className="pb-3 pt-4 font-medium">Vai trò</th>
+									<th className="pl-4 pb-3 pt-4 font-medium">Kho phụ trách</th>
+									<th className="pb-3 pt-4 pr-6 font-medium text-right">Chi tiết</th>
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-border">
@@ -560,10 +567,22 @@ export function AccountManagementPanel() {
 										<tr key={account.id} onClick={() => setSelectedAccountId(account.id)} className={`cursor-pointer transition-colors hover:bg-muted/40 ${selectedAccountId === account.id ? "bg-muted/60" : ""}`}>
 											<td className="px-6 py-4">
 												<div className="font-medium text-foreground">{account.fullName}</div>
-												<div className="text-sm text-muted-foreground">{account.username} - {account.email}</div>
+												<div className="text-sm text-muted-foreground">
+													{account.username} - {account.email}
+												</div>
 											</td>
 											<td className="py-4 text-sm text-foreground">{account.role}</td>
-											<td className="py-4 text-sm text-muted-foreground">{account.assignedDepots && account.assignedDepots.length > 0 ? account.assignedDepots.map((depot) => depot.name).join(", ") : "-"}</td>
+											<td className="pl-4 py-4 text-sm text-muted-foreground">
+												{account.assignedDepots && account.assignedDepots.length > 0 ? (
+													<div className="space-y-1">
+														{account.assignedDepots.map((depot) => (
+															<div key={depot.id}>{depot.name}</div>
+														))}
+													</div>
+												) : (
+													"-"
+												)}
+											</td>
 											<td className="py-4 pr-6 text-right">
 												<Button
 													type="button"
@@ -584,7 +603,7 @@ export function AccountManagementPanel() {
 								) : (
 									<tr>
 										<td colSpan={4} className="px-6 py-10 text-center text-sm text-muted-foreground">
-											Khong co nhan vien phu hop voi bo loc hien tai.
+											Không có nhân viên phù hợp với bộ lọc hiện tại.
 										</td>
 									</tr>
 								)}
@@ -592,7 +611,7 @@ export function AccountManagementPanel() {
 						</table>
 					</div>
 
-					{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={setCurrentPage} entityName="nhan vien" />}
+					{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={setCurrentPage} entityName="nhân viên" />}
 				</Card>
 
 				<Card className="p-6">
@@ -601,15 +620,15 @@ export function AccountManagementPanel() {
 							<ShieldCheck className="h-5 w-5" />
 						</div>
 						<div>
-							<h2 className="text-xl font-semibold text-foreground">Chi tiet va cap nhat</h2>
-							<p className="text-sm text-muted-foreground">Xem thong tin nhan vien, sua vai tro, gan kho hoac xoa tai khoan.</p>
+							<h2 className="text-xl font-semibold text-foreground">Chi tiết và cập nhật</h2>
+							<p className="text-sm text-muted-foreground">Xem thông tin nhân viên, sửa vai trò, gán kho hoặc xóa tài khoản.</p>
 						</div>
 					</div>
 
 					{isLoadingDetail ? (
 						<div className="flex items-center justify-center rounded-lg border border-dashed border-border p-8 text-sm text-muted-foreground">
 							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							Dang tai chi tiet nhan vien...
+							Đang tải chi tiết nhân viên...
 						</div>
 					) : selectedAccount ? (
 						<div className="space-y-5">
@@ -622,32 +641,43 @@ export function AccountManagementPanel() {
 										<p className="text-sm text-foreground">{selectedAccount.email}</p>
 									</div>
 									<div>
-										<p className="text-xs uppercase tracking-wide text-muted-foreground">Vai tro hien tai</p>
+										<p className="text-xs uppercase tracking-wide text-muted-foreground">Vai trò hiện tại</p>
 										<p className="text-sm text-foreground">{selectedAccount.role}</p>
 									</div>
 									<div className="sm:col-span-2">
-										<p className="text-xs uppercase tracking-wide text-muted-foreground">Kho dang phu trach</p>
-										<p className="text-sm text-foreground">{selectedAccount.assignedDepots && selectedAccount.assignedDepots.length > 0 ? selectedAccount.assignedDepots.map((depot) => depot.name).join(", ") : "Chua duoc gan kho"}</p>
+										<p className="text-xs uppercase tracking-wide text-muted-foreground">Kho đang phụ trách</p>
+										<div className="text-sm text-foreground">
+											{selectedAccount.assignedDepots && selectedAccount.assignedDepots.length > 0 ? (
+												<div className="space-y-1">
+													{selectedAccount.assignedDepots.map((depot) => (
+														<div key={depot.id}>{depot.name}</div>
+													))}
+												</div>
+											) : (
+												"Chưa được gán kho"
+											)}
+										</div>
 									</div>
 								</div>
 							</div>
 
 							<div>
-								<Label>Ten dang nhap</Label>
+								<Label>Tên đăng nhập</Label>
 								<Input value={selectedAccount.username} disabled className="mt-2" />
 							</div>
 							<div>
-								<Label>Ho va ten</Label>
-								<Input value={editAccountForm.fullName} onChange={(e) => setEditAccountForm({ ...editAccountForm, fullName: e.target.value })} className="mt-2" />
+								<Label>Họ và tên</Label>
+								<Input value={editAccountForm.fullName} onChange={(e) => setEditAccountForm({ ...editAccountForm, fullName: e.target.value })} className="mt-2" disabled={isEditingAnotherAdmin} />
 							</div>
 							<div>
 								<Label>Email</Label>
-								<Input type="email" value={editAccountForm.email} onChange={(e) => setEditAccountForm({ ...editAccountForm, email: e.target.value })} className="mt-2" />
+								<Input type="email" value={editAccountForm.email} onChange={(e) => setEditAccountForm({ ...editAccountForm, email: e.target.value })} className="mt-2" disabled={isEditingAnotherAdmin} />
 							</div>
 							<div>
-								<Label>Vai tro</Label>
+								<Label>Vai trò</Label>
 								<Select
 									value={editAccountForm.role}
+									disabled={isEditingAnotherAdmin}
 									onValueChange={(value) =>
 										setEditAccountForm({
 											...editAccountForm,
@@ -657,7 +687,7 @@ export function AccountManagementPanel() {
 									}
 								>
 									<SelectTrigger className="mt-2 w-full">
-										<SelectValue placeholder="Chon vai tro" />
+										<SelectValue placeholder="Chọn vai trò" />
 									</SelectTrigger>
 									<SelectContent>
 										<SelectItem value="USER">User</SelectItem>
@@ -666,6 +696,11 @@ export function AccountManagementPanel() {
 									</SelectContent>
 								</Select>
 							</div>
+							{isEditingAnotherAdmin && (
+								<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+									Bạn chỉ có thể xem thông tin. Admin không được sửa hoặc xóa tài khoản admin khác.
+								</div>
+							)}
 							{editAccountForm.role !== "ADMIN" &&
 								renderDepotDropdown({
 									value: editDepotPicker,
@@ -676,13 +711,13 @@ export function AccountManagementPanel() {
 								})}
 
 							<div className="flex flex-wrap gap-3">
-								<Button onClick={handleUpdateAccount} className="gap-2" disabled={isUpdatingAccount}>
+								<Button onClick={handleUpdateAccount} className="gap-2" disabled={isUpdatingAccount || isEditingAnotherAdmin}>
 									{isUpdatingAccount ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-									Luu tai khoan
+									Lưu tài khoản
 								</Button>
-								<Button type="button" variant="destructive" className="gap-2" onClick={handleDeleteAccount} disabled={isDeletingAccount}>
+								<Button type="button" variant="destructive" className="gap-2" onClick={handleDeleteAccount} disabled={isDeletingAccount || isEditingAnotherAdmin}>
 									{isDeletingAccount ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-									Xoa tai khoan
+									Xóa tài khoản
 								</Button>
 								<Button
 									variant="outline"
@@ -693,12 +728,12 @@ export function AccountManagementPanel() {
 										setEditDepotPicker(undefined);
 									}}
 								>
-									Bo chon
+									Bỏ chọn
 								</Button>
 							</div>
 						</div>
 					) : (
-						<div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Chua chon tai khoan nao de xem chi tiet.</div>
+						<div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Chưa chọn tài khoản nào để xem chi tiết.</div>
 					)}
 				</Card>
 			</div>

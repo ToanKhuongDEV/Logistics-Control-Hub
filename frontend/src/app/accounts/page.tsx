@@ -7,6 +7,7 @@ import { Users } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/auth";
 import { AccountManagementPanel } from "@/components/account-management-panel";
+import { PageHeader } from "@/components/page-header";
 
 export default function AccountsPage() {
 	const { user } = useAuth();
@@ -18,8 +19,9 @@ export default function AccountsPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
+							<PageHeader tag="Bảng điều khiển tài khoản" icon={Users} />
 							<h1 className="text-3xl font-bold text-foreground">Tài khoản</h1>
-							<p className="mt-2 text-muted-foreground">Quản lý con người, vai trò và kho phụ trách cho từng dispatcher</p>
+							<p className="mt-2 text-muted-foreground">Quản lý người dùng, vai trò và kho phụ trách cho từng dispatcher</p>
 						</div>
 					</div>
 

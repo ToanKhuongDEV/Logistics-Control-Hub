@@ -5,10 +5,12 @@ import com.logistics.hub.common.exception.UnauthorizedException;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
 import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
+import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.order.entity.OrderEntity;
 import com.logistics.hub.feature.user.entity.UserEntity;
 import com.logistics.hub.feature.user.repository.UserRepository;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
+import com.logistics.hub.feature.vehicle.repository.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class AuthorizationServiceImpl implements AuthorizationService {
 
     private final UserRepository userRepository;
+    private final VehicleRepository vehicleRepository;
 
     @Override
     public UserEntity getCurrentUser() {
@@ -89,6 +92,26 @@ public class AuthorizationServiceImpl implements AuthorizationService {
         }
 
         requireDepotAccess(order.getDepot().getId());
+    }
+
+    @Override
+    public void requireDriverAccess(DriverEntity driver) {
+        if (driver == null) {
+            if (!hasGlobalScope()) {
+                throw new ForbiddenException("Ban khong co quyen truy cap tai xe nay.");
+            }
+            return;
+        }
+
+        if (hasGlobalScope()) {
+            return;
+        }
+
+        Set<Long> accessibleDepotIds = getAccessibleDepotIds();
+        if (accessibleDepotIds.isEmpty()
+                || !vehicleRepository.existsByDriver_IdAndDepot_IdIn(driver.getId(), accessibleDepotIds)) {
+            throw new ForbiddenException("Ban khong co quyen truy cap tai xe nay.");
+        }
     }
 
     @Override

@@ -25,6 +25,7 @@ public final class AuthConstant {
     public static final String EMAIL_ALREADY_EXISTS = "Email da ton tai";
     public static final String ACCOUNT_NOT_FOUND = "Khong tim thay tai khoan";
     public static final String CANNOT_DELETE_OWN_ACCOUNT = "Khong the xoa chinh tai khoan dang dang nhap";
+    public static final String CANNOT_MANAGE_OTHER_ADMIN_ACCOUNT = "Khong duoc phep chinh sua hoac xoa tai khoan admin khac";
     public static final String LAST_ADMIN_REQUIRED = "He thong phai con it nhat mot admin";
     public static final String CURRENT_PASSWORD_INCORRECT = "Mat khau hien tai khong dung";
     public static final String PASSWORD_MUST_BE_DIFFERENT = "Mat khau moi phai khac mat khau hien tai";

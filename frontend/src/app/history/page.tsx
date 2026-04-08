@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { ProtectedRoute } from "@/components/protected-route";
+import { PageHeader } from "@/components/page-header";
 import { routingApi, RoutingRun, RoutingHistoryPage } from "@/lib/routing-api";
 import { depotApi } from "@/lib/depot-api";
 import { Depot } from "@/types/depot-types";
@@ -126,6 +127,7 @@ export default function HistoryPage() {
 					{/* Header */}
 					<div className="flex justify-between items-center flex-wrap gap-4">
 						<div className="flex items-center gap-3">
+							<PageHeader tag="Bảng điều khiển lịch sử" icon={History} />
 							<div className="p-2 bg-primary/10 rounded-lg">
 								<History className="w-6 h-6 text-primary" />
 							</div>

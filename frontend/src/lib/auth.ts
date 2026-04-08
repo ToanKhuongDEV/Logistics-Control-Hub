@@ -1,4 +1,5 @@
 import apiClient from "./api";
+import { PaginatedResponse } from "@/types/common-types";
 
 export type UserRole = "ADMIN" | "DISPATCHER" | "USER";
 export type UserPermission =
@@ -42,6 +43,14 @@ export interface User {
 	role: UserRole;
 	permissions?: UserPermission[];
 	assignedDepots?: AssignedDepot[];
+}
+
+export interface AccountQueryParams {
+	page: number;
+	size: number;
+	search?: string;
+	role?: UserRole;
+	depotId?: number;
 }
 
 export interface CreateAccountRequest {
@@ -114,14 +123,38 @@ class AuthService {
 		return response.data.data;
 	}
 
-	async getAccounts(): Promise<User[]> {
-		const response = await apiClient.get<{ data: User[] }>("/api/v1/auth/accounts");
+	async getAccounts(params: AccountQueryParams): Promise<PaginatedResponse<User>> {
+		const queryParams = new URLSearchParams({
+			page: params.page.toString(),
+			size: params.size.toString(),
+		});
+
+		if (params.search) {
+			queryParams.set("search", params.search);
+		}
+		if (params.role) {
+			queryParams.set("role", params.role);
+		}
+		if (params.depotId !== undefined) {
+			queryParams.set("depotId", params.depotId.toString());
+		}
+
+		const response = await apiClient.get<{ data: PaginatedResponse<User> }>(`/api/v1/auth/accounts?${queryParams.toString()}`);
+		return response.data.data;
+	}
+
+	async getAccountById(id: number): Promise<User> {
+		const response = await apiClient.get<{ data: User }>(`/api/v1/auth/accounts/${id}`);
 		return response.data.data;
 	}
 
 	async updateAccount(id: number, payload: UpdateAccountRequest): Promise<User> {
 		const response = await apiClient.put<{ data: User }>(`/api/v1/auth/accounts/${id}`, payload);
 		return response.data.data;
+	}
+
+	async deleteAccount(id: number): Promise<void> {
+		await apiClient.delete(`/api/v1/auth/accounts/${id}`);
 	}
 
 	async changePassword(payload: ChangePasswordRequest): Promise<void> {

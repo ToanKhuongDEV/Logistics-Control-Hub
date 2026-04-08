@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Warehouse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DepotForm } from "@/components/depot-form";
 import { DepotTable } from "@/components/depot-table";
@@ -15,6 +15,7 @@ import { hasPermission } from "@/lib/auth";
 import { depotApi } from "@/lib/depot-api";
 import { Depot, DepotRequest, DepotStatistics } from "@/types/depot-types";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -134,6 +135,7 @@ export default function DepotsPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
+							<PageHeader tag="Bảng điều khiển kho" icon={Warehouse} />
 							<h1 className="text-3xl font-bold text-foreground">Quản lý kho</h1>
 							<p className="text-muted-foreground mt-2">Danh sách kho theo phạm vi được phân công</p>
 						</div>

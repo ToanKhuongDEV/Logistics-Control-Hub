@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.auth.service;
 
+import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.order.entity.OrderEntity;
 import com.logistics.hub.feature.user.entity.UserEntity;
 import com.logistics.hub.feature.vehicle.entity.VehicleEntity;
@@ -23,6 +24,8 @@ public interface AuthorizationService {
     void requireDepotAccess(Long depotId);
 
     void requireOrderAccess(OrderEntity order);
+
+    void requireDriverAccess(DriverEntity driver);
 
     void requireVehicleAccess(VehicleEntity vehicle);
 }

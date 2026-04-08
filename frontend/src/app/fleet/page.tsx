@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VehicleForm } from "@/components/vehicle-form";
@@ -18,6 +18,7 @@ import { depotApi } from "@/lib/depot-api";
 import { Vehicle, VehicleRequest, VehicleStatistics, VehicleStatus } from "@/types/vehicle-types";
 import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -206,6 +207,7 @@ export default function FleetPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
+							<PageHeader tag="Bảng điều khiển đội xe" icon={Truck} />
 							<h1 className="text-3xl font-bold text-foreground">Quản lý đội xe</h1>
 							<p className="text-muted-foreground mt-2">Dispatcher được điều phối xe trong kho của mình, admin mới được chuyển chéo kho</p>
 						</div>

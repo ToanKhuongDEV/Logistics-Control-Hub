@@ -55,6 +55,8 @@ public interface VehicleRepository extends JpaRepository<VehicleEntity, Long> {
 
         boolean existsByDriver_IdAndIdNot(Long driverId, Long id);
 
+        boolean existsByDriver_IdAndDepot_IdIn(Long driverId, Collection<Long> depotIds);
+
         boolean existsByDepot_Id(Long depotId);
 
         @Query("SELECT v FROM VehicleEntity v WHERE v.status = :status AND v.driver IS NOT NULL")

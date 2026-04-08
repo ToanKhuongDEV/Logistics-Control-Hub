@@ -3,7 +3,11 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-
+build/
+out/
+bin/
+*.jar
+*.class
 ### STS ###
 .apt_generated
 .classpath

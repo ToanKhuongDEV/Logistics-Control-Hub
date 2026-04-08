@@ -1,6 +1,7 @@
 package com.logistics.hub.feature.auth.controller;
 
 import com.logistics.hub.common.base.ApiResponse;
+import com.logistics.hub.common.base.PaginatedResponse;
 import com.logistics.hub.common.constant.UrlConstant;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
 import com.logistics.hub.feature.auth.dto.request.ChangePasswordRequest;
@@ -9,7 +10,6 @@ import com.logistics.hub.feature.auth.dto.request.ForgotPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
-import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.service.AuthService;
 import com.logistics.hub.feature.auth.util.JwtUtils;
@@ -20,12 +20,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping(UrlConstant.Auth.PREFIX)
@@ -115,9 +116,33 @@ public class AuthController {
 
     @GetMapping(UrlConstant.Auth.CREATE_ACCOUNT)
     @PreAuthorize("hasAuthority('account.manage')")
-    @Operation(summary = "List employee accounts", description = "Returns all internal accounts with role and assigned depots")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAccounts() {
-        return ResponseEntity.ok(ApiResponse.success("Accounts retrieved successfully", authService.getAccounts()));
+    @Operation(summary = "List employee accounts", description = "Returns paginated employee accounts with dynamic filters")
+    public ResponseEntity<ApiResponse<PaginatedResponse<UserResponse>>> getAccounts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Long depotId) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserResponse> accounts = authService.getAccounts(pageable, search, role, depotId);
+
+        PaginatedResponse<UserResponse> response = new PaginatedResponse<>();
+        response.setData(accounts.getContent());
+        response.setPagination(new PaginatedResponse.PaginationInfo(
+                accounts.getNumber(),
+                accounts.getSize(),
+                accounts.getTotalElements(),
+                accounts.getTotalPages()
+        ));
+
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.ACCOUNTS_RETRIEVED_SUCCESS, response));
+    }
+
+    @GetMapping(UrlConstant.Auth.ACCOUNT_BY_ID)
+    @PreAuthorize("hasAuthority('account.manage')")
+    @Operation(summary = "Get employee account detail", description = "Returns a single employee account with assigned depots")
+    public ResponseEntity<ApiResponse<UserResponse>> getAccountById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.ACCOUNT_RETRIEVED_SUCCESS, authService.getAccountById(id)));
     }
 
     @PutMapping(UrlConstant.Auth.UPDATE_ACCOUNT)
@@ -127,7 +152,15 @@ public class AuthController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateAccountRequest request) {
         UserResponse response = authService.updateAccount(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Account updated successfully", response));
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.ACCOUNT_UPDATED_SUCCESS, response));
+    }
+
+    @DeleteMapping(UrlConstant.Auth.ACCOUNT_BY_ID)
+    @PreAuthorize("hasAuthority('account.manage')")
+    @Operation(summary = "Delete employee account", description = "Deletes an employee account and clears assigned depots")
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(@PathVariable Long id) {
+        authService.deleteAccount(id);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.ACCOUNT_DELETED_SUCCESS, null));
     }
 
     @PostMapping(UrlConstant.Auth.CHANGE_PASSWORD)
@@ -158,8 +191,6 @@ public class AuthController {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.PASSWORD_RESET_SUCCESS, null));
     }
-
-    // ======================== Cookie Helpers ========================
 
     private void addRefreshTokenCookie(HttpServletRequest request, HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, refreshToken);

@@ -3,7 +3,7 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { KPICard } from "@/components/kpi-card";
 import { ShipmentList } from "@/components/shipment-list";
-import { Truck, Package, TrendingUp, Route as RouteIcon, Warehouse } from "lucide-react";
+import { Truck, Package, TrendingUp, Route as RouteIcon, Warehouse, LayoutDashboard } from "lucide-react";
 import { ProtectedRoute } from "@/components/protected-route";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
@@ -15,6 +15,7 @@ import { DashboardStatistics } from "@/types/dashboard-types";
 import { Depot } from "@/types/depot-types";
 import { Order, OrderStatus } from "@/types/order-types";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 const LeafletMap = dynamic(() => import("@/components/leaflet-map").then((mod) => mod.LeafletMap), {
 	ssr: false,
@@ -117,7 +118,11 @@ export default function DashboardPage() {
 				<div className="p-8 space-y-6">
 					{/* Header */}
 					<div className="flex justify-between items-center flex-wrap gap-4">
+						<div className="space-y-3">
+						<PageHeader tag="Bảng điều khiển tổng quan" icon={LayoutDashboard} />
 						<h1 className="text-3xl font-bold text-foreground">Tổng quan</h1>
+
+						</div>
 
 						{/* Depot selector + Optimize Button */}
 						<div className="flex items-center gap-3">

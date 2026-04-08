@@ -75,8 +75,10 @@ public class DriverServiceImpl implements DriverService {
     @Transactional(readOnly = true)
     @Cacheable(value = CacheConstant.DRIVERS, key = "'id:' + #id")
     public DriverResponse findById(Long id) {
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_READ);
         DriverEntity driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
+        authorizationService.requireDriverAccess(driver);
         return driverMapper.toResponse(driver);
     }
 
@@ -127,6 +129,7 @@ public class DriverServiceImpl implements DriverService {
             authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
             driver = driverRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
+            authorizationService.requireDriverAccess(driver);
             beforeData = driverAuditSnapshot(driver);
 
             normalizeRequest(request);
@@ -166,6 +169,7 @@ public class DriverServiceImpl implements DriverService {
             authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_MANAGE);
             driver = driverRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
+            authorizationService.requireDriverAccess(driver);
 
             if (vehicleRepository.existsByDriver_Id(id)) {
                 throw new ValidationException(DriverConstant.DRIVER_HAS_VEHICLE);
@@ -202,10 +206,22 @@ public class DriverServiceImpl implements DriverService {
     @Transactional(readOnly = true)
     @Cacheable(value = CacheConstant.DRIVERS, key = "'available:' + #includeDriverId")
     public List<DriverResponse> getAvailableDrivers(Long includeDriverId) {
-        return driverRepository.findAvailableDrivers(includeDriverId)
-                .stream()
-                .map(driverMapper::toResponse)
-                .toList();
+        authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_READ);
+        if (authorizationService.hasGlobalScope()) {
+            return driverRepository.findAvailableDrivers(includeDriverId)
+                    .stream()
+                    .map(driverMapper::toResponse)
+                    .toList();
+        }
+
+        if (includeDriverId == null) {
+            return List.of();
+        }
+
+        DriverEntity driver = driverRepository.findById(includeDriverId)
+                .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
+        authorizationService.requireDriverAccess(driver);
+        return List.of(driverMapper.toResponse(driver));
     }
 
     private void validateDriverRequest(DriverRequest request, Long id) {

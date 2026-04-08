@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DriverForm } from "@/components/driver-form";
 import { DriverTable } from "@/components/driver-table";
@@ -17,6 +17,7 @@ import { depotApi } from "@/lib/depot-api";
 import { Driver, DriverRequest, DriverStatistics } from "@/types/driver-types";
 import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -156,6 +157,7 @@ export default function DriversPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
+							<PageHeader tag="Bảng điều khiển tài xế" icon={UserRound} />
 							<h1 className="text-3xl font-bold text-foreground">Quản lý tài xế</h1>
 							<p className="text-muted-foreground mt-2">Admin quản lý master data, dispatcher chỉ xem theo kho</p>
 						</div>

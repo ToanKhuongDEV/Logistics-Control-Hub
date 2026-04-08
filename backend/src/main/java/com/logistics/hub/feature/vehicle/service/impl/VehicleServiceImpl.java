@@ -108,6 +108,12 @@ public class VehicleServiceImpl implements VehicleService {
                 throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
             }
 
+            if (request.getDriverId() != null) {
+                DriverEntity selectedDriver = driverRepository.findById(request.getDriverId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + request.getDriverId()));
+                validateDriverAssignmentAccess(request, selectedDriver);
+            }
+
             if (request.getDriverId() != null && vehicleRepository.existsByDriver_Id(request.getDriverId())) {
                 throw new ValidationException(VehicleConstant.DRIVER_ALREADY_ASSIGNED);
             }
@@ -184,6 +190,12 @@ public class VehicleServiceImpl implements VehicleService {
 
             if (!entity.getCode().equals(request.getCode()) && vehicleRepository.existsByCode(request.getCode())) {
                 throw new ValidationException(VehicleConstant.VEHICLE_CODE_EXISTS + request.getCode());
+            }
+
+            if (request.getDriverId() != null) {
+                DriverEntity selectedDriver = driverRepository.findById(request.getDriverId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + request.getDriverId()));
+                validateDriverAssignmentAccess(request, selectedDriver);
             }
 
             if (request.getDriverId() != null && vehicleRepository.existsByDriver_IdAndIdNot(request.getDriverId(), id)) {
@@ -276,9 +288,29 @@ public class VehicleServiceImpl implements VehicleService {
         if (request.getDriverId() != null) {
             DriverEntity driver = driverRepository.findById(request.getDriverId())
                     .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + request.getDriverId()));
+            validateDriverAssignmentAccess(request, driver);
             entity.setDriver(driver);
         } else {
             entity.setDriver(null);
+        }
+    }
+
+    private void validateDriverAssignmentAccess(VehicleRequest request, DriverEntity driver) {
+        if (authorizationService.hasGlobalScope()) {
+            return;
+        }
+
+        Set<Long> accessibleDepotIds = authorizationService.getAccessibleDepotIds();
+        boolean driverAssignedSomewhere = vehicleRepository.existsByDriver_Id(driver.getId());
+        boolean driverInAccessibleDepot = !accessibleDepotIds.isEmpty()
+                && vehicleRepository.existsByDriver_IdAndDepot_IdIn(driver.getId(), accessibleDepotIds);
+
+        if (driverAssignedSomewhere && !driverInAccessibleDepot) {
+            throw new ForbiddenException("Khong the gan tai xe tu kho khac.");
+        }
+
+        if (!driverAssignedSomewhere && request.getDepotId() != null) {
+            authorizationService.requireDepotAccess(request.getDepotId());
         }
     }
 

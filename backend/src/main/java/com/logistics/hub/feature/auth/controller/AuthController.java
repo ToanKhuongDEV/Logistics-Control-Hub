@@ -1,35 +1,54 @@
 package com.logistics.hub.feature.auth.controller;
 
 import com.logistics.hub.common.base.ApiResponse;
+import com.logistics.hub.common.constant.UrlConstant;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
+import com.logistics.hub.feature.auth.dto.request.ChangePasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
+import com.logistics.hub.feature.auth.dto.request.ForgotPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.LoginRequest;
-import com.logistics.hub.feature.auth.dto.request.RefreshTokenRequest;
-import com.logistics.hub.feature.auth.dto.response.DispatcherResponse;
-import com.logistics.hub.feature.auth.dto.response.LoginResponse;
+import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
+import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
+import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
+import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.service.AuthService;
+import com.logistics.hub.feature.auth.util.JwtUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.logistics.hub.common.constant.UrlConstant;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(UrlConstant.Auth.PREFIX)
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Login & Token APIs for Dispatchers")
+@Tag(name = "Authentication", description = "Login & Token APIs for Users")
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtils jwtUtils;
+
+    private static final String REFRESH_TOKEN_COOKIE = "refreshToken";
+    private static final String COOKIE_PATH = "/api/v1/auth";
 
     @PostMapping(UrlConstant.Auth.LOGIN)
-    @Operation(summary = "Login with Username/Password", description = "Returns access and refresh tokens on successful login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    @Operation(summary = "Login with Username/Password", description = "Returns access token in body and sets refresh token as HttpOnly cookie")
+    public ResponseEntity<?> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response) {
         try {
-            LoginResponse user = authService.login(request);
-            return ResponseEntity.ok(user);
+            AuthService.LoginResult result = authService.login(request);
+            addRefreshTokenCookie(httpRequest, response, result.refreshToken());
+            return ResponseEntity.ok(ApiResponse.success(AuthConstant.LOGIN_SUCCESS, result.response()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(401, e.getMessage()));
@@ -37,20 +56,42 @@ public class AuthController {
     }
 
     @PostMapping(UrlConstant.Auth.REFRESH)
-    @Operation(summary = "Refresh Access Token", description = "Use refresh token to get new access token")
-    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+    @Operation(summary = "Refresh Access Token", description = "Uses refresh token from HttpOnly cookie to issue new tokens")
+    public ResponseEntity<?> refreshToken(
+            @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response) {
         try {
-            LoginResponse response = authService.refreshToken(request);
-            return ResponseEntity.ok(response);
+            if (refreshToken == null || refreshToken.isBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.error(401, AuthConstant.REFRESH_TOKEN_NOT_FOUND));
+            }
+            AuthService.RefreshResult result = authService.refreshToken(refreshToken);
+            addRefreshTokenCookie(httpRequest, response, result.refreshToken());
+            return ResponseEntity.ok(ApiResponse.success(AuthConstant.TOKEN_REFRESH_SUCCESS, result.response()));
         } catch (RuntimeException e) {
+            clearRefreshTokenCookie(httpRequest, response);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(401, e.getMessage()));
         }
     }
 
+    @PostMapping(UrlConstant.Auth.LOGOUT)
+    @Operation(summary = "Logout", description = "Clears refresh token from cookie and database")
+    public ResponseEntity<?> logout(
+            @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response) {
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            authService.logout(refreshToken);
+        }
+        clearRefreshTokenCookie(httpRequest, response);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.LOGOUT_SUCCESS, null));
+    }
+
     @GetMapping(UrlConstant.Auth.ME)
     @Operation(summary = "Get Current User", description = "Returns current authenticated user info (requires valid token)")
-    public ResponseEntity<ApiResponse<DispatcherResponse>> getCurrentUser() {
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         var authentication = org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication();
 
@@ -59,7 +100,84 @@ public class AuthController {
                     .body(ApiResponse.error(401, AuthConstant.NOT_AUTHENTICATED));
         }
 
-        DispatcherResponse userData = authService.getCurrentUser(authentication.getName());
+        UserResponse userData = authService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.USER_INFO_RETRIEVED_SUCCESS, userData));
+    }
+
+    @PostMapping(UrlConstant.Auth.CREATE_ACCOUNT)
+    @PreAuthorize("hasAuthority('account.manage')")
+    @Operation(summary = "Create Employee Account", description = "Creates a new employee account for internal use")
+    public ResponseEntity<ApiResponse<UserResponse>> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+        UserResponse response = authService.createAccount(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(HttpStatus.CREATED.value(), AuthConstant.ACCOUNT_CREATED_SUCCESS, response));
+    }
+
+    @GetMapping(UrlConstant.Auth.CREATE_ACCOUNT)
+    @PreAuthorize("hasAuthority('account.manage')")
+    @Operation(summary = "List employee accounts", description = "Returns all internal accounts with role and assigned depots")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAccounts() {
+        return ResponseEntity.ok(ApiResponse.success("Accounts retrieved successfully", authService.getAccounts()));
+    }
+
+    @PutMapping(UrlConstant.Auth.UPDATE_ACCOUNT)
+    @PreAuthorize("hasAuthority('account.manage')")
+    @Operation(summary = "Update employee account", description = "Updates employee profile, role and assigned depots")
+    public ResponseEntity<ApiResponse<UserResponse>> updateAccount(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateAccountRequest request) {
+        UserResponse response = authService.updateAccount(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Account updated successfully", response));
+    }
+
+    @PostMapping(UrlConstant.Auth.CHANGE_PASSWORD)
+    @Operation(summary = "Change Password", description = "Changes password for the currently authenticated user")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, AuthConstant.NOT_AUTHENTICATED));
+        }
+
+        authService.changePassword(authentication.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.PASSWORD_CHANGED_SUCCESS, null));
+    }
+
+    @PostMapping(UrlConstant.Auth.FORGOT_PASSWORD)
+    @Operation(summary = "Forgot Password", description = "Sends password reset instructions to user email")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.FORGOT_PASSWORD_EMAIL_SENT, null));
+    }
+
+    @PostMapping(UrlConstant.Auth.RESET_PASSWORD)
+    @Operation(summary = "Reset Password", description = "Resets password using a valid reset token")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(AuthConstant.PASSWORD_RESET_SUCCESS, null));
+    }
+
+    // ======================== Cookie Helpers ========================
+
+    private void addRefreshTokenCookie(HttpServletRequest request, HttpServletResponse response, String refreshToken) {
+        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(request.isSecure());
+        cookie.setPath(COOKIE_PATH);
+        cookie.setMaxAge((int) jwtUtils.getRefreshExpirationSeconds());
+        cookie.setAttribute("SameSite", "Strict");
+        response.addCookie(cookie);
+    }
+
+    private void clearRefreshTokenCookie(HttpServletRequest request, HttpServletResponse response) {
+        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(request.isSecure());
+        cookie.setPath(COOKIE_PATH);
+        cookie.setMaxAge(0);
+        cookie.setAttribute("SameSite", "Strict");
+        response.addCookie(cookie);
     }
 }

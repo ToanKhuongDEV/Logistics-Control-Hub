@@ -1,22 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Globe, Bell, Lock, Users, Save, X, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { Globe, Bell, BookOpen, Save, X, Loader2, KeyRound, Eye, EyeOff } from "lucide-react";
 import { companyApi } from "@/lib/company-api";
-import { Company } from "@/types/company-types";
+import { authService, hasPermission } from "@/lib/auth";
 import { toast } from "sonner";
 
+type SettingsTab = "company" | "notifications" | "guide";
+
 export default function SettingsPage() {
-	const [activeTab, setActiveTab] = useState<"company" | "notifications" | "system" | "users">("company");
+	const { user } = useAuth();
+	const canManageCompany = hasPermission(user, "company.manage");
+	const availableTabs = useMemo<SettingsTab[]>(() => (canManageCompany ? ["company", "notifications", "guide"] : ["notifications", "guide"]), [canManageCompany]);
+	const [activeTab, setActiveTab] = useState<SettingsTab>(canManageCompany ? "company" : "guide");
 	const [isEditingCompany, setIsEditingCompany] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isChangingPassword, setIsChangingPassword] = useState(false);
+	const [showChangePasswords, setShowChangePasswords] = useState({
+		currentPassword: false,
+		newPassword: false,
+		confirmPassword: false,
+	});
 
 	const [companyData, setCompanyData] = useState({
 		name: "",
@@ -27,11 +39,32 @@ export default function SettingsPage() {
 		taxId: "",
 		description: "",
 	});
-
 	const [originalData, setOriginalData] = useState(companyData);
+	const [changePasswordForm, setChangePasswordForm] = useState({
+		currentPassword: "",
+		newPassword: "",
+		confirmPassword: "",
+	});
 
-	// Fetch company info on mount
+	const quickGuide = [
+		"Tạo hoặc cập nhật kho, xe và lái xe để hệ thống có đủ dữ liệu vận hành.",
+		"Tạo đơn hàng với đầy đủ địa chỉ giao, tải trọng và thông tin cần thiết.",
+		"Chạy tối ưu hóa để hệ thống phân bổ đơn hàng và sắp xếp lộ trình phù hợp.",
+		"Theo dõi kết quả trên màn hình và cập nhật trạng thái đơn hàng trong quá trình giao.",
+	];
+
 	useEffect(() => {
+		if (!availableTabs.includes(activeTab)) {
+			setActiveTab(availableTabs[0]);
+		}
+	}, [activeTab, availableTabs]);
+
+	useEffect(() => {
+		if (!canManageCompany) {
+			setIsLoading(false);
+			return;
+		}
+
 		const fetchCompanyInfo = async () => {
 			setIsLoading(true);
 			try {
@@ -57,8 +90,8 @@ export default function SettingsPage() {
 			}
 		};
 
-		fetchCompanyInfo();
-	}, []);
+		void fetchCompanyInfo();
+	}, [canManageCompany]);
 
 	const handleCompanySave = async () => {
 		setIsSaving(true);
@@ -83,10 +116,59 @@ export default function SettingsPage() {
 		}
 	};
 
-	const handleCancel = () => {
-		setCompanyData(originalData);
-		setIsEditingCompany(false);
+	const handleChangePassword = async () => {
+		if (changePasswordForm.newPassword !== changePasswordForm.confirmPassword) {
+			toast.error("Mật khẩu xác nhận không khớp");
+			return;
+		}
+
+		setIsChangingPassword(true);
+		try {
+			await authService.changePassword({
+				currentPassword: changePasswordForm.currentPassword,
+				newPassword: changePasswordForm.newPassword,
+			});
+			setChangePasswordForm({
+				currentPassword: "",
+				newPassword: "",
+				confirmPassword: "",
+			});
+			toast.success("Đổi mật khẩu thành công");
+		} catch (error: any) {
+			console.error("Change password error:", error);
+			toast.error(error.response?.data?.message || "Không thể đổi mật khẩu");
+		} finally {
+			setIsChangingPassword(false);
+		}
 	};
+
+	const renderPasswordField = ({
+		id,
+		label,
+		value,
+		placeholder,
+		isVisible,
+		onToggle,
+		onChange,
+	}: {
+		id: string;
+		label: string;
+		value: string;
+		placeholder: string;
+		isVisible: boolean;
+		onToggle: () => void;
+		onChange: (value: string) => void;
+	}) => (
+		<div>
+			<Label htmlFor={id}>{label}</Label>
+			<div className="relative mt-2">
+				<Input id={id} type={isVisible ? "text" : "password"} value={value} onChange={(e) => onChange(e.target.value)} className="pr-11" placeholder={placeholder} />
+				<button type="button" onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground" aria-label={isVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"}>
+					{isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+				</button>
+			</div>
+		</div>
+	);
 
 	return (
 		<ProtectedRoute>
@@ -95,52 +177,53 @@ export default function SettingsPage() {
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
 							<h1 className="text-3xl font-bold text-foreground">Cài đặt</h1>
-							<p className="text-muted-foreground mt-2">Quản lý cài đặt hệ thống, công ty và người dùng</p>
+							<p className="text-muted-foreground mt-2">Quản lý thông tin hệ thống, thông báo và bảo mật</p>
 						</div>
 					</div>
 
 					<div className="p-8">
-						{/* Tabs */}
-						<div className="flex gap-2 mb-8 border-b border-border pb-4">
-							<button onClick={() => setActiveTab("company")} className={`px-4 py-2 font-medium transition-colors ${activeTab === "company" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+						<div className="mb-8 flex flex-wrap gap-2 border-b border-border pb-4">
+							{availableTabs.includes("company") && (
+								<button onClick={() => setActiveTab("company")} className={`px-4 py-2 font-medium transition-colors ${activeTab === "company" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+									<div className="flex items-center gap-2">
+										<Globe className="h-4 w-4" />
+										Công ty
+									</div>
+								</button>
+							)}
+							<button onClick={() => setActiveTab("notifications")} className={`px-4 py-2 font-medium transition-colors ${activeTab === "notifications" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}>
 								<div className="flex items-center gap-2">
-									<Globe className="w-4 h-4" />
-									Công ty
-								</div>
-							</button>
-							<button onClick={() => setActiveTab("notifications")} className={`px-4 py-2 font-medium transition-colors ${activeTab === "notifications" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
-								<div className="flex items-center gap-2">
-									<Bell className="w-4 h-4" />
+									<Bell className="h-4 w-4" />
 									Thông báo
 								</div>
 							</button>
-							<button onClick={() => setActiveTab("system")} className={`px-4 py-2 font-medium transition-colors ${activeTab === "system" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
+							<button onClick={() => setActiveTab("guide")} className={`px-4 py-2 font-medium transition-colors ${activeTab === "guide" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}>
 								<div className="flex items-center gap-2">
-									<Lock className="w-4 h-4" />
-									Hệ thống
-								</div>
-							</button>
-							<button onClick={() => setActiveTab("users")} className={`px-4 py-2 font-medium transition-colors ${activeTab === "users" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
-								<div className="flex items-center gap-2">
-									<Users className="w-4 h-4" />
-									Người dùng
+									<BookOpen className="h-4 w-4" />
+									Hướng dẫn
 								</div>
 							</button>
 						</div>
 
-						{/* Company Settings */}
-						{activeTab === "company" && (
+						{activeTab === "company" && canManageCompany && (
 							<div className="max-w-2xl">
 								<Card className="p-6">
-									<div className="flex items-center justify-between mb-6">
+									<div className="mb-6 flex items-center justify-between">
 										<h2 className="text-xl font-semibold text-foreground">Thông tin công ty</h2>
 										{!isEditingCompany ? (
 											<Button onClick={() => setIsEditingCompany(true)} variant="outline" disabled={isLoading}>
-												{isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sửa"}
+												{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sửa"}
 											</Button>
 										) : (
-											<Button onClick={handleCancel} variant="outline" className="gap-2">
-												<X className="w-4 h-4" />
+											<Button
+												onClick={() => {
+													setCompanyData(originalData);
+													setIsEditingCompany(false);
+												}}
+												variant="outline"
+												className="gap-2"
+											>
+												<X className="h-4 w-4" />
 												Hủy
 											</Button>
 										)}
@@ -148,7 +231,7 @@ export default function SettingsPage() {
 
 									{isLoading ? (
 										<div className="flex items-center justify-center py-12">
-											<Loader2 className="w-8 h-8 animate-spin text-primary" />
+											<Loader2 className="h-8 w-8 animate-spin text-primary" />
 										</div>
 									) : (
 										<div className="space-y-4">
@@ -156,45 +239,31 @@ export default function SettingsPage() {
 												<Label htmlFor="companyName">Tên công ty</Label>
 												<Input id="companyName" value={companyData.name} onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
 											</div>
-
 											<div>
 												<Label htmlFor="companyEmail">Email công ty</Label>
 												<Input id="companyEmail" type="email" value={companyData.email} onChange={(e) => setCompanyData({ ...companyData, email: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
 											</div>
-
 											<div>
 												<Label htmlFor="phone">Số điện thoại</Label>
 												<Input id="phone" value={companyData.phone} onChange={(e) => setCompanyData({ ...companyData, phone: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
 											</div>
-
 											<div>
 												<Label htmlFor="address">Địa chỉ</Label>
 												<Input id="address" value={companyData.address} onChange={(e) => setCompanyData({ ...companyData, address: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
 											</div>
-
 											<div>
 												<Label htmlFor="website">Website</Label>
 												<Input id="website" value={companyData.website} onChange={(e) => setCompanyData({ ...companyData, website: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
 											</div>
-
 											<div>
 												<Label htmlFor="taxId">Mã số thuế</Label>
 												<Input id="taxId" value={companyData.taxId} onChange={(e) => setCompanyData({ ...companyData, taxId: e.target.value })} disabled={!isEditingCompany} className="mt-2" />
 											</div>
 
 											{isEditingCompany && (
-												<Button onClick={handleCompanySave} className="w-full bg-primary hover:bg-primary/90 gap-2" disabled={isSaving}>
-													{isSaving ? (
-														<>
-															<Loader2 className="w-4 h-4 animate-spin" />
-															Đang lưu...
-														</>
-													) : (
-														<>
-															<Save className="w-4 h-4" />
-															Lưu thay đổi
-														</>
-													)}
+												<Button onClick={handleCompanySave} className="w-full gap-2 bg-primary hover:bg-primary/90" disabled={isSaving}>
+													{isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+													Lưu thay đổi
 												</Button>
 											)}
 										</div>
@@ -203,38 +272,84 @@ export default function SettingsPage() {
 							</div>
 						)}
 
-						{/* Notification Settings */}
 						{activeTab === "notifications" && (
 							<div className="max-w-2xl">
 								<Card className="p-6">
-									<h2 className="text-xl font-semibold text-foreground mb-6">Cài đặt thông báo</h2>
-									<div className="bg-card rounded-lg border border-border p-12 text-center">
+									<h2 className="mb-6 text-xl font-semibold text-foreground">Cài đặt thông báo</h2>
+									<div className="rounded-lg border border-border bg-card p-12 text-center">
 										<p className="text-muted-foreground">Tính năng đang được phát triển</p>
 									</div>
 								</Card>
 							</div>
 						)}
 
-						{/* System Settings */}
-						{activeTab === "system" && (
+						{activeTab === "guide" && (
 							<div className="max-w-2xl">
 								<Card className="p-6">
-									<h2 className="text-xl font-semibold text-foreground mb-6">Cài đặt hệ thống</h2>
-									<div className="bg-card rounded-lg border border-border p-12 text-center">
-										<p className="text-muted-foreground">Tính năng đang được phát triển</p>
+									<h2 className="mb-2 text-xl font-semibold text-foreground">Hướng dẫn sử dụng</h2>
+									<p className="mb-6 text-muted-foreground">Xem nhanh các bước vận hành và cách hệ thống tối ưu hóa lộ trình.</p>
+									<div className="mb-6 rounded-xl border border-border bg-background p-5">
+										<h3 className="mb-3 text-base font-semibold text-foreground">Các bước sử dụng</h3>
+										<div className="space-y-3">
+											{quickGuide.map((step, index) => (
+												<div key={step} className="flex items-start gap-3">
+													<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">{index + 1}</div>
+													<p className="text-sm leading-6 text-muted-foreground">{step}</p>
+												</div>
+											))}
+										</div>
 									</div>
-								</Card>
-							</div>
-						)}
 
-						{/* User Management */}
-						{activeTab === "users" && (
-							<div className="max-w-2xl">
-								<Card className="p-6">
-									<h2 className="text-xl font-semibold text-foreground mb-6">Quản lý người dùng</h2>
-									<div className="bg-card rounded-lg border border-border p-12 text-center">
-										<p className="text-muted-foreground">Tính năng đang được phát triển</p>
-									</div>
+									<Card className="border border-border p-6 shadow-none">
+										<div className="mb-6 flex items-center gap-3">
+											<div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+												<KeyRound className="h-5 w-5" />
+											</div>
+											<div>
+												<h3 className="text-lg font-semibold text-foreground">Đổi mật khẩu</h3>
+												<p className="text-sm text-muted-foreground">Cập nhật mật khẩu cho tài khoản đang đăng nhập.</p>
+											</div>
+										</div>
+										<div className="grid gap-4 md:grid-cols-2">
+											<div className="md:col-span-2">
+												{renderPasswordField({
+													id: "currentPassword",
+													label: "Mật khẩu hiện tại",
+													value: changePasswordForm.currentPassword,
+													placeholder: "Nhập mật khẩu hiện tại",
+													isVisible: showChangePasswords.currentPassword,
+													onToggle: () => setShowChangePasswords({ ...showChangePasswords, currentPassword: !showChangePasswords.currentPassword }),
+													onChange: (value) => setChangePasswordForm({ ...changePasswordForm, currentPassword: value }),
+												})}
+											</div>
+											<div>
+												{renderPasswordField({
+													id: "updatedPassword",
+													label: "Mật khẩu mới",
+													value: changePasswordForm.newPassword,
+													placeholder: "Ít nhất 8 ký tự",
+													isVisible: showChangePasswords.newPassword,
+													onToggle: () => setShowChangePasswords({ ...showChangePasswords, newPassword: !showChangePasswords.newPassword }),
+													onChange: (value) => setChangePasswordForm({ ...changePasswordForm, newPassword: value }),
+												})}
+											</div>
+											<div>
+												{renderPasswordField({
+													id: "confirmUpdatedPassword",
+													label: "Xác nhận mật khẩu mới",
+													value: changePasswordForm.confirmPassword,
+													placeholder: "Nhập lại mật khẩu mới",
+													isVisible: showChangePasswords.confirmPassword,
+													onToggle: () => setShowChangePasswords({ ...showChangePasswords, confirmPassword: !showChangePasswords.confirmPassword }),
+													onChange: (value) => setChangePasswordForm({ ...changePasswordForm, confirmPassword: value }),
+												})}
+											</div>
+										</div>
+										<Button onClick={handleChangePassword} className="mt-6 gap-2" disabled={isChangingPassword}>
+											{isChangingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+											Cập nhật mật khẩu
+										</Button>
+									</Card>
 								</Card>
 							</div>
 						)}

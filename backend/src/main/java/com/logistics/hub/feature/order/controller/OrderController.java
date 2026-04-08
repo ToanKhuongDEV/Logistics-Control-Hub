@@ -3,6 +3,7 @@ package com.logistics.hub.feature.order.controller;
 import com.logistics.hub.common.base.ApiResponse;
 import com.logistics.hub.common.base.PaginatedResponse;
 import com.logistics.hub.feature.order.constant.OrderConstant;
+import com.logistics.hub.feature.order.dto.request.BulkOrderStatusUpdateRequest;
 import com.logistics.hub.feature.order.dto.request.OrderRequest;
 import com.logistics.hub.feature.order.dto.response.OrderResponse;
 import com.logistics.hub.feature.order.dto.response.OrderStatisticsResponse;
@@ -13,12 +14,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.logistics.hub.common.constant.UrlConstant;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(UrlConstant.Order.PREFIX)
@@ -27,6 +33,16 @@ import com.logistics.hub.common.constant.UrlConstant;
 public class OrderController {
 
     private final OrderService orderService;
+    private static final Map<String, String> ORDER_SORT_FIELDS = Map.of(
+            "id", "id",
+            "code", "code",
+            "status", "status",
+            "weightKg", "weightKg",
+            "volumeM3", "volumeM3",
+            "createdAt", "createdAt",
+            "depotName", "depot.name",
+            "deliveryCity", "deliveryLocation.city",
+            "deliveryStreet", "deliveryLocation.street");
 
     @GetMapping
     @Operation(summary = "Get all orders", description = "Returns a paginated list of orders with optional filtering")
@@ -35,8 +51,9 @@ public class OrderController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Long depotId) {
-        Pageable pageable = PageRequest.of(page, size);
+            @RequestParam(required = false) Long depotId,
+            @RequestParam(required = false) List<String> sort) {
+        Pageable pageable = PageRequest.of(page, size, buildSort(sort));
         Page<OrderResponse> orderPage = orderService.findAll(pageable, status, search, depotId);
 
         PaginatedResponse<OrderResponse> response = new PaginatedResponse<>();
@@ -48,6 +65,57 @@ public class OrderController {
                 orderPage.getTotalPages()));
 
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDERS_RETRIEVED_SUCCESS, response));
+    }
+
+    private Sort buildSort(List<String> sortParams) {
+        if (sortParams == null || sortParams.isEmpty()) {
+            return Sort.by(Sort.Order.desc("createdAt"));
+        }
+
+        List<Sort.Order> orders = new ArrayList<>();
+        List<String> normalizedSortParams = new ArrayList<>();
+
+        for (int i = 0; i < sortParams.size(); i++) {
+            String current = sortParams.get(i);
+            if (current == null || current.isBlank()) {
+                continue;
+            }
+
+            if (current.contains(",")) {
+                normalizedSortParams.add(current);
+                continue;
+            }
+
+            String next = i + 1 < sortParams.size() ? sortParams.get(i + 1) : null;
+            if (next != null && Sort.Direction.fromOptionalString(next.trim()).isPresent()) {
+                normalizedSortParams.add(current + "," + next);
+                i++;
+            } else {
+                normalizedSortParams.add(current);
+            }
+        }
+
+        for (String sortParam : normalizedSortParams) {
+            if (sortParam == null || sortParam.isBlank()) {
+                continue;
+            }
+
+            String[] parts = sortParam.split(",");
+            String requestedField = parts[0].trim();
+            String field = ORDER_SORT_FIELDS.get(requestedField);
+
+            if (field == null) {
+                continue;
+            }
+
+            Sort.Direction direction = parts.length > 1
+                    ? Sort.Direction.fromOptionalString(parts[1].trim()).orElse(Sort.Direction.ASC)
+                    : Sort.Direction.ASC;
+
+            orders.add(new Sort.Order(direction, field));
+        }
+
+        return orders.isEmpty() ? Sort.by(Sort.Order.desc("createdAt")) : Sort.by(orders);
     }
 
     @GetMapping(UrlConstant.Order.STATISTICS)
@@ -77,6 +145,13 @@ public class OrderController {
     public ResponseEntity<ApiResponse<?>> update(@PathVariable Long id, @Valid @RequestBody OrderRequest request) {
         OrderResponse updatedOrder = orderService.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDER_UPDATED_SUCCESS, updatedOrder));
+    }
+
+    @PatchMapping(UrlConstant.Order.BULK_STATUS)
+    @Operation(summary = "Update orders status in bulk", description = "Updates status for multiple selected orders")
+    public ResponseEntity<ApiResponse<?>> updateStatusBulk(@Valid @RequestBody BulkOrderStatusUpdateRequest request) {
+        orderService.updateStatusBulk(request.getOrderIds(), request.getStatus());
+        return ResponseEntity.ok(ApiResponse.success(OrderConstant.ORDERS_STATUS_UPDATED_SUCCESS, null));
     }
 
     @DeleteMapping(UrlConstant.Order.BY_ID)

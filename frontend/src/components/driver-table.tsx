@@ -9,9 +9,10 @@ interface DriverTableProps {
 	onEdit: (driver: Driver) => void;
 	onDelete: (id: number) => void;
 	isLoading?: boolean;
+	canManage?: boolean;
 }
 
-export function DriverTable({ drivers, onEdit, onDelete, isLoading = false }: DriverTableProps) {
+export function DriverTable({ drivers, onEdit, onDelete, isLoading = false, canManage = true }: DriverTableProps) {
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
 		return new Intl.DateTimeFormat("vi-VN", {
@@ -51,7 +52,7 @@ export function DriverTable({ drivers, onEdit, onDelete, isLoading = false }: Dr
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Số điện thoại</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Email</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Ngày tạo</th>
-						<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>
+						{canManage && <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>}
 					</tr>
 				</thead>
 				<tbody className="divide-y divide-border">
@@ -60,20 +61,22 @@ export function DriverTable({ drivers, onEdit, onDelete, isLoading = false }: Dr
 							<td className="px-6 py-4 text-sm text-foreground font-medium">{driver.name}</td>
 							<td className="px-6 py-4 text-sm text-foreground">{driver.licenseNumber}</td>
 							<td className="px-6 py-4 text-sm text-foreground">{driver.phoneNumber}</td>
-							<td className="px-6 py-4 text-sm text-muted-foreground">{driver.email || "—"}</td>
-							<td className="px-6 py-4 text-sm text-muted-foreground">{driver.createdAt ? formatDate(driver.createdAt) : "—"}</td>
-							<td className="px-6 py-4 text-right">
-								<div className="flex items-center justify-end gap-2">
-									<Button onClick={() => onEdit(driver)} variant="outline" size="sm" className="gap-2">
-										<Edit2 className="w-4 h-4" />
-										Sửa
-									</Button>
-									<Button onClick={() => onDelete(driver.id)} variant="destructive" size="sm" className="gap-2">
-										<Trash2 className="w-4 h-4" />
-										Xóa
-									</Button>
-								</div>
-							</td>
+							<td className="px-6 py-4 text-sm text-muted-foreground">{driver.email || "-"}</td>
+							<td className="px-6 py-4 text-sm text-muted-foreground">{driver.createdAt ? formatDate(driver.createdAt) : "-"}</td>
+							{canManage && (
+								<td className="px-6 py-4 text-right">
+									<div className="flex items-center justify-end gap-2">
+										<Button onClick={() => onEdit(driver)} variant="outline" size="sm" className="gap-2">
+											<Edit2 className="w-4 h-4" />
+											Sửa
+										</Button>
+										<Button onClick={() => onDelete(driver.id)} variant="destructive" size="sm" className="gap-2">
+											<Trash2 className="w-4 h-4" />
+											Xóa
+										</Button>
+									</div>
+								</td>
+							)}
 						</tr>
 					))}
 				</tbody>

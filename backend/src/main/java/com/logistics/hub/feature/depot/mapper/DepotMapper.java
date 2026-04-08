@@ -19,10 +19,12 @@ public interface DepotMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "location", ignore = true)
+  @Mapping(target = "dispatcher", ignore = true)
   DepotEntity toEntity(DepotRequest request);
 
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "location", ignore = true)
+  @Mapping(target = "dispatcher", ignore = true)
   void updateEntityFromRequest(DepotRequest request, @MappingTarget DepotEntity entity);
 }

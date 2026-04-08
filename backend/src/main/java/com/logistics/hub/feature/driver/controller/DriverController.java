@@ -30,10 +30,11 @@ public class DriverController {
     public ResponseEntity<ApiResponse<PaginatedResponse<DriverResponse>>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long depotId
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<DriverResponse> driverPage = driverService.findAll(pageable, search);
+        Page<DriverResponse> driverPage = driverService.findAll(pageable, search, depotId);
 
         PaginatedResponse<DriverResponse> response = new PaginatedResponse<>();
         response.setData(driverPage.getContent());

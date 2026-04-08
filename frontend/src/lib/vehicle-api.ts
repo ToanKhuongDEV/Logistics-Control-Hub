@@ -1,5 +1,5 @@
 import apiClient from "./api";
-import { Vehicle, VehicleRequest, VehicleStatistics, PaginatedVehicleResponse, ApiResponse, VehicleFilterParams, VehicleStatus } from "@/types/vehicle-types";
+import { Vehicle, VehicleRequest, VehicleStatistics, PaginatedVehicleResponse, ApiResponse, VehicleFilterParams, BulkVehicleDepotUpdateRequest } from "@/types/vehicle-types";
 
 const VEHICLE_API_BASE = "/api/v1/vehicles";
 
@@ -18,6 +18,9 @@ export const vehicleApi = {
 		}
 		if (params?.search) {
 			queryParams.append("search", params.search);
+		}
+		if (params?.depotId !== undefined) {
+			queryParams.append("depotId", params.depotId.toString());
 		}
 
 		const url = `${VEHICLE_API_BASE}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
@@ -38,6 +41,10 @@ export const vehicleApi = {
 	async updateVehicle(id: number, data: VehicleRequest): Promise<Vehicle> {
 		const response = await apiClient.put<ApiResponse<Vehicle>>(`${VEHICLE_API_BASE}/${id}`, data);
 		return response.data.data;
+	},
+
+	async updateVehiclesDepotBulk(data: BulkVehicleDepotUpdateRequest): Promise<void> {
+		await apiClient.patch<ApiResponse<null>>(`${VEHICLE_API_BASE}/bulk/depot`, data);
 	},
 
 	async deleteVehicle(id: number): Promise<void> {

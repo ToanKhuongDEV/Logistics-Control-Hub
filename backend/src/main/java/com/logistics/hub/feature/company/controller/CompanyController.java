@@ -8,6 +8,7 @@ import com.logistics.hub.feature.company.constant.CompanyConstant;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.logistics.hub.common.constant.UrlConstant;
@@ -26,6 +27,7 @@ public class CompanyController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('company.manage')")
     public ResponseEntity<ApiResponse<CompanyResponse>> createOrUpdateCompanyInfo(@Valid @RequestBody CompanyRequest request) {
         CompanyResponse response = companyService.createOrUpdateCompanyInfo(request);
         return ResponseEntity.ok(ApiResponse.success(CompanyConstant.COMPANY_INFO_SAVED_SUCCESS, response));

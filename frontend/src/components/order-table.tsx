@@ -11,13 +11,23 @@ interface OrderTableProps {
 	onEdit: (order: Order) => void;
 	onDelete: (id: number) => void;
 	isLoading?: boolean;
+	canManage?: boolean;
+	selectedOrderIds: number[];
+	onToggleOrderSelection: (orderId: number) => void;
 }
 
-export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: OrderTableProps) {
+export function OrderTable({
+	orders,
+	onEdit,
+	onDelete,
+	isLoading = false,
+	canManage = true,
+	selectedOrderIds,
+	onToggleOrderSelection,
+}: OrderTableProps) {
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-	const formatNumber = (num: number) => {
-		return new Intl.NumberFormat("vi-VN").format(num);
-	};
+
+	const formatNumber = (num: number) => new Intl.NumberFormat("vi-VN").format(num);
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
@@ -32,8 +42,8 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 
 	if (isLoading) {
 		return (
-			<div className="bg-card rounded-lg border border-border p-12 text-center">
-				<Loader2 className="w-12 h-12 text-muted-foreground mx-auto mb-4 animate-spin" />
+			<div className="rounded-lg border border-border bg-card p-12 text-center">
+				<Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-muted-foreground" />
 				<p className="text-muted-foreground">Đang tải dữ liệu...</p>
 			</div>
 		);
@@ -41,8 +51,8 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 
 	if (orders.length === 0) {
 		return (
-			<div className="bg-card rounded-lg border border-border p-12 text-center">
-				<Package className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+			<div className="rounded-lg border border-border bg-card p-12 text-center">
+				<Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-50" />
 				<p className="text-muted-foreground">Chưa có đơn hàng nào</p>
 			</div>
 		);
@@ -50,18 +60,18 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 
 	return (
 		<>
-			<div className="overflow-x-auto bg-card rounded-t-lg border border-b-0 border-border">
+			<div className="overflow-x-auto rounded-t-lg border border-b-0 border-border bg-card">
 				<table className="w-full">
-					<thead className="bg-muted border-b border-border">
+					<thead className="border-b border-border bg-muted">
 						<tr>
 							<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Mã đơn hàng</th>
 							<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Khối lượng (kg)</th>
 							<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Điểm giao hàng</th>
 							<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Kho bãi</th>
 							<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tài xế</th>
-							<th className="px-6 py-4 text-left text-sm font-semibold text-foreground min-w-[140px]">Trạng thái</th>
+							<th className="min-w-[140px] px-6 py-4 text-left text-sm font-semibold text-foreground">Trạng thái</th>
 							<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Ngày tạo</th>
-							<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>
+							{canManage && <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>}
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-border">
@@ -75,40 +85,60 @@ export function OrderTable({ orders, onEdit, onDelete, isLoading = false }: Orde
 							};
 
 							const statusConfig = getStatusConfig(order.status);
+							const isSelected = selectedOrderIds.includes(order.id);
 
 							return (
-								<tr key={order.id} className="hover:bg-muted/50 transition-colors">
+								<tr key={order.id} className={`cursor-pointer transition-colors ${isSelected ? "bg-sky-500/10 hover:bg-sky-500/15" : "hover:bg-muted/50"}`} onClick={() => onToggleOrderSelection(order.id)}>
 									<td className="px-6 py-4 text-sm font-medium text-foreground">{order.code}</td>
 									<td className="px-6 py-4 text-sm text-foreground">{formatNumber(order.weightKg)}</td>
 									<td className="px-6 py-4 text-sm text-foreground">{order.deliveryLocationName}</td>
 									<td className="px-6 py-4 text-sm text-muted-foreground">{order.depotName || "-"}</td>
 									<td className="px-6 py-4 text-sm text-muted-foreground">{order.driverName || "-"}</td>
 									<td className="px-6 py-4">
-										<span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>{statusConfig.label}</span>
+										<span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
 									</td>
 									<td className="px-6 py-4 text-sm text-foreground">{formatDate(order.createdAt)}</td>
-									<td className="px-6 py-4 text-right">
-										<div className="flex items-center justify-end gap-2">
-											<Button size="sm" variant="outline" onClick={() => setSelectedOrder(order)} className="h-8 w-8 p-0 hover:bg-blue-500/20 hover:text-blue-500 text-blue-500">
-												<Eye className="w-4 h-4" />
-											</Button>
-											<Button size="sm" variant="outline" onClick={() => onEdit(order)} className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground">
-												<Edit2 className="w-4 h-4" />
-											</Button>
-											<Button
-												size="sm"
-												variant="outline"
-												onClick={() => {
-													if (window.confirm(`Bạn có chắc muốn xóa đơn hàng ${order.code}?`)) {
-														onDelete(order.id);
-													}
-												}}
-												className="h-8 w-8 p-0 hover:bg-red-500/20 hover:text-red-500 text-red-500"
-											>
-												<Trash2 className="w-4 h-4" />
-											</Button>
-										</div>
-									</td>
+									{canManage && (
+										<td className="px-6 py-4 text-right">
+											<div className="flex items-center justify-end gap-2">
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={(e) => {
+														e.stopPropagation();
+														setSelectedOrder(order);
+													}}
+													className="h-8 w-8 p-0 text-blue-500 hover:bg-blue-500/20 hover:text-blue-500"
+												>
+													<Eye className="h-4 w-4" />
+												</Button>
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={(e) => {
+														e.stopPropagation();
+														onEdit(order);
+													}}
+													className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground"
+												>
+													<Edit2 className="h-4 w-4" />
+												</Button>
+												<Button
+													size="sm"
+													variant="outline"
+													onClick={(e) => {
+														e.stopPropagation();
+														if (window.confirm(`Bạn có chắc muốn xóa đơn hàng ${order.code}?`)) {
+															onDelete(order.id);
+														}
+													}}
+													className="h-8 w-8 p-0 text-red-500 hover:bg-red-500/20 hover:text-red-500"
+												>
+													<Trash2 className="h-4 w-4" />
+												</Button>
+											</div>
+										</td>
+									)}
 								</tr>
 							);
 						})}

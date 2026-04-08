@@ -9,12 +9,21 @@ interface FleetTableProps {
 	onEdit: (vehicle: Vehicle) => void;
 	onDelete: (id: number) => void;
 	isLoading?: boolean;
+	selectedVehicleIds: number[];
+	onToggleVehicleSelection: (vehicleId: number) => void;
+	canManage?: boolean;
 }
 
-export function FleetTable({ vehicles, onEdit, onDelete, isLoading = false }: FleetTableProps) {
-	const formatNumber = (num: number) => {
-		return new Intl.NumberFormat("vi-VN").format(num);
-	};
+export function FleetTable({
+	vehicles,
+	onEdit,
+	onDelete,
+	isLoading = false,
+	selectedVehicleIds,
+	onToggleVehicleSelection,
+	canManage = true,
+}: FleetTableProps) {
+	const formatNumber = (num: number) => new Intl.NumberFormat("vi-VN").format(num);
 
 	if (isLoading) {
 		return (
@@ -42,11 +51,11 @@ export function FleetTable({ vehicles, onEdit, onDelete, isLoading = false }: Fl
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Mã xe</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Loại xe</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tải trọng (kg)</th>
-						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Thể tích (m³)</th>
+						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Thể tích (m3)</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Kho trực thuộc</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Trạng thái</th>
 						<th className="px-6 py-4 text-left text-sm font-semibold text-foreground">Tài xế</th>
-						<th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>
+						{canManage && <th className="px-6 py-4 text-right text-sm font-semibold text-foreground">Thao tác</th>}
 					</tr>
 				</thead>
 				<tbody className="divide-y divide-border">
@@ -59,9 +68,14 @@ export function FleetTable({ vehicles, onEdit, onDelete, isLoading = false }: Fl
 						};
 
 						const statusConfig = getStatusConfig(vehicle.status);
+						const isSelected = selectedVehicleIds.includes(vehicle.id);
 
 						return (
-							<tr key={vehicle.id} className="hover:bg-muted/50 transition-colors">
+							<tr
+								key={vehicle.id}
+								className={`transition-colors cursor-pointer ${isSelected ? "bg-sky-500/10 hover:bg-sky-500/15" : "hover:bg-muted/50"}`}
+								onClick={() => onToggleVehicleSelection(vehicle.id)}
+							>
 								<td className="px-6 py-4 text-sm font-medium text-foreground">{vehicle.code}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{vehicle.type || "-"}</td>
 								<td className="px-6 py-4 text-sm text-foreground">{formatNumber(vehicle.maxWeightKg)}</td>
@@ -71,25 +85,36 @@ export function FleetTable({ vehicles, onEdit, onDelete, isLoading = false }: Fl
 									<span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>{statusConfig.label}</span>
 								</td>
 								<td className="px-6 py-4 text-sm text-muted-foreground">{vehicle.driverName || "-"}</td>
-								<td className="px-6 py-4 text-right">
-									<div className="flex items-center justify-end gap-2">
-										<Button size="sm" variant="outline" onClick={() => onEdit(vehicle)} className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground">
-											<Edit2 className="w-4 h-4" />
-										</Button>
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => {
-												if (window.confirm(`Bạn có chắc muốn xóa xe ${vehicle.code}?`)) {
-													onDelete(vehicle.id);
-												}
-											}}
-											className="h-8 w-8 p-0 hover:bg-red-500/20 hover:text-red-500 text-red-500"
-										>
-											<Trash2 className="w-4 h-4" />
-										</Button>
-									</div>
-								</td>
+								{canManage && (
+									<td className="px-6 py-4 text-right">
+										<div className="flex items-center justify-end gap-2">
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={(e) => {
+													e.stopPropagation();
+													onEdit(vehicle);
+												}}
+												className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground"
+											>
+												<Edit2 className="w-4 h-4" />
+											</Button>
+											<Button
+												size="sm"
+												variant="outline"
+												onClick={(e) => {
+													e.stopPropagation();
+													if (window.confirm(`Bạn có chắc muốn xóa xe ${vehicle.code}?`)) {
+														onDelete(vehicle.id);
+													}
+												}}
+												className="h-8 w-8 p-0 hover:bg-red-500/20 hover:text-red-500 text-red-500"
+											>
+												<Trash2 className="w-4 h-4" />
+											</Button>
+										</div>
+									</td>
+								)}
 							</tr>
 						);
 					})}

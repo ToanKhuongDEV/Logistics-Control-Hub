@@ -1,5 +1,5 @@
 import apiClient from "./api";
-import { Order, OrderRequest, OrderStatistics, PaginatedOrderResponse, ApiResponse, OrderFilterParams } from "@/types/order-types";
+import { Order, OrderRequest, OrderStatistics, PaginatedOrderResponse, ApiResponse, OrderFilterParams, BulkOrderStatusUpdateRequest } from "@/types/order-types";
 
 const ORDER_API_BASE = "/api/v1/orders";
 
@@ -22,6 +22,13 @@ export const orderApi = {
 		if (params?.depotId !== undefined && params?.depotId !== null) {
 			queryParams.append("depotId", params.depotId.toString());
 		}
+		if (params?.sort?.length) {
+			params.sort.forEach((sortValue) => {
+				if (sortValue) {
+					queryParams.append("sort", sortValue);
+				}
+			});
+		}
 
 		const url = `${ORDER_API_BASE}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 		const response = await apiClient.get<ApiResponse<PaginatedOrderResponse>>(url);
@@ -41,6 +48,10 @@ export const orderApi = {
 	async updateOrder(id: number, data: OrderRequest): Promise<Order> {
 		const response = await apiClient.put<ApiResponse<Order>>(`${ORDER_API_BASE}/${id}`, data);
 		return response.data.data;
+	},
+
+	async updateOrdersStatusBulk(data: BulkOrderStatusUpdateRequest): Promise<void> {
+		await apiClient.patch<ApiResponse<null>>(`${ORDER_API_BASE}/bulk/status`, data);
 	},
 
 	async deleteOrder(id: number): Promise<void> {

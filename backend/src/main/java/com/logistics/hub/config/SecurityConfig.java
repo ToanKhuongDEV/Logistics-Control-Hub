@@ -1,5 +1,7 @@
 package com.logistics.hub.config;
 
+import com.logistics.hub.common.constant.UrlConstant;
+import com.logistics.hub.feature.audit.security.AuditRequestContextFilter;
 import com.logistics.hub.feature.auth.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -26,13 +28,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuditRequestContextFilter auditRequestContextFilter;
     private final UserDetailsService userDetailsService;
     private final com.logistics.hub.config.security.CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final com.logistics.hub.config.security.CustomAccessDeniedHandler accessDeniedHandler;
 
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/v1/auth/**",
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.LOGIN,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.REFRESH,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.LOGOUT,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.FORGOT_PASSWORD,
+            UrlConstant.Auth.PREFIX + UrlConstant.Auth.RESET_PASSWORD,
             "/actuator/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
@@ -68,6 +75,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 
 
+                .addFilterBefore(auditRequestContextFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

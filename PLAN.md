@@ -10,7 +10,7 @@
 Xây dựng hệ thống quản lý logistics với các tính năng:
 
 - ✅ CRUD cơ bản cho **Location**, Depot, Vehicle, Order
-- ✅ Authentication cho dispatcher
+- ✅ Authentication cho user
 - ✅ Tối ưu hóa tuyến đường, chi phí (Google OR-Tools)
 - ✅ Analytics: Tổng km, tổng thời gian, số xe, số đơn
 - ✅ Real-time tracking (WebSocket)

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { VehicleForm } from "@/components/vehicle-form";
 import { FleetTable } from "@/components/fleet-table";
 import { FleetStats } from "@/components/fleet-stats";
@@ -10,13 +11,20 @@ import { FleetFilters } from "@/components/fleet-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Pagination } from "@/components/pagination";
+import { useAuth } from "@/contexts/auth-context";
+import { hasPermission } from "@/lib/auth";
 import { vehicleApi } from "@/lib/vehicle-api";
+import { depotApi } from "@/lib/depot-api";
 import { Vehicle, VehicleRequest, VehicleStatistics, VehicleStatus } from "@/types/vehicle-types";
+import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
 
 export default function FleetPage() {
+	const { user } = useAuth();
+	const canManageVehicles = hasPermission(user, "vehicle.manage");
+	const canBulkReassignDepot = hasPermission(user, "vehicle.reassign");
 	const [vehicles, setVehicles] = useState<Vehicle[]>([]);
 	const [statistics, setStatistics] = useState<VehicleStatistics | null>(null);
 	const [isFormOpen, setIsFormOpen] = useState(false);
@@ -26,25 +34,30 @@ export default function FleetPage() {
 	const [totalElements, setTotalElements] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+	const [depots, setDepots] = useState<Depot[]>([]);
+	const [selectedVehicleIds, setSelectedVehicleIds] = useState<number[]>([]);
+	const [bulkDepotId, setBulkDepotId] = useState("");
+	const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
-	// Filter states
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<VehicleStatus | "all">("all");
+	const [depotFilter, setDepotFilter] = useState("all");
 
-	// Fetch vehicles
 	const fetchVehicles = async () => {
 		setIsLoading(true);
 		try {
 			const response = await vehicleApi.getVehicles({
-				page: currentPage - 1, // Backend uses 0-based indexing
+				page: currentPage - 1,
 				size: ITEMS_PER_PAGE,
 				status: statusFilter !== "all" ? statusFilter : undefined,
 				search: searchQuery || undefined,
+				depotId: depotFilter !== "all" ? Number(depotFilter) : undefined,
 			});
 
 			setVehicles(response.data);
 			setTotalPages(response.pagination.totalPages);
 			setTotalElements(response.pagination.totalElements);
+			setSelectedVehicleIds([]);
 		} catch (error: any) {
 			console.error("Error fetching vehicles:", error);
 			toast.error(error?.response?.data?.message || "Không thể tải danh sách xe");
@@ -53,7 +66,6 @@ export default function FleetPage() {
 		}
 	};
 
-	// Fetch statistics
 	const fetchStatistics = async () => {
 		try {
 			const stats = await vehicleApi.getStatistics();
@@ -63,20 +75,28 @@ export default function FleetPage() {
 		}
 	};
 
-	// Initial load and when filters/page change
+	const fetchDepots = async () => {
+		try {
+			const response = await depotApi.getDepots({ page: 0, size: 100 });
+			setDepots(response.data.filter((depot) => depot.isActive));
+		} catch (error: any) {
+			console.error("Error fetching depots:", error);
+			toast.error(error?.response?.data?.message || "Không thể tải danh sách kho");
+		}
+	};
+
 	useEffect(() => {
 		fetchVehicles();
-	}, [currentPage, statusFilter, searchQuery]);
+	}, [currentPage, statusFilter, searchQuery, depotFilter]);
 
-	// Fetch statistics on mount and after CRUD operations
 	useEffect(() => {
 		fetchStatistics();
+		fetchDepots();
 	}, []);
 
-	// Reset to page 1 when filters change
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [searchQuery, statusFilter]);
+	}, [searchQuery, statusFilter, depotFilter]);
 
 	const handleAddVehicle = async (data: VehicleRequest) => {
 		setIsFormSubmitting(true);
@@ -125,7 +145,6 @@ export default function FleetPage() {
 			await fetchVehicles();
 			await fetchStatistics();
 
-			// Reset to page 1 if current page becomes empty after deletion
 			if (vehicles.length === 1 && currentPage > 1) {
 				setCurrentPage(currentPage - 1);
 			}
@@ -152,6 +171,35 @@ export default function FleetPage() {
 		setCurrentPage(page);
 	};
 
+	const handleToggleVehicleSelection = (vehicleId: number) => {
+		setSelectedVehicleIds((current) => (current.includes(vehicleId) ? current.filter((id) => id !== vehicleId) : [...current, vehicleId]));
+	};
+
+	const handleBulkDepotUpdate = async () => {
+		if (!bulkDepotId || selectedVehicleIds.length === 0) {
+			toast.error("Hãy chọn phương tiện và kho đích cần cập nhật");
+			return;
+		}
+
+		setIsBulkUpdating(true);
+		try {
+			await vehicleApi.updateVehiclesDepotBulk({
+				vehicleIds: selectedVehicleIds,
+				depotId: Number(bulkDepotId),
+			});
+			toast.success("Chuyển kho trực thuộc hàng loạt thành công");
+			setBulkDepotId("");
+			setSelectedVehicleIds([]);
+			await fetchVehicles();
+			await fetchStatistics();
+		} catch (error: any) {
+			console.error("Error bulk updating vehicle depot:", error);
+			toast.error(error?.response?.data?.message || "Không thể cập nhật kho trực thuộc hàng loạt");
+		} finally {
+			setIsBulkUpdating(false);
+		}
+	};
+
 	return (
 		<ProtectedRoute>
 			<DashboardLayout>
@@ -159,12 +207,11 @@ export default function FleetPage() {
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
 							<h1 className="text-3xl font-bold text-foreground">Quản lý đội xe</h1>
-							<p className="text-muted-foreground mt-2">Quản lý và theo dõi toàn bộ đội xe của công ty</p>
+							<p className="text-muted-foreground mt-2">Dispatcher được điều phối xe trong kho của mình, admin mới được chuyển chéo kho</p>
 						</div>
 					</div>
 
 					<div className="p-8 space-y-6">
-						{/* Statistics Cards */}
 						<FleetStats
 							totalVehicles={statistics?.total || 0}
 							activeVehicles={statistics?.active || 0}
@@ -175,28 +222,74 @@ export default function FleetPage() {
 							totalCapacityM3={statistics?.totalCapacityM3}
 						/>
 
-						{/* Filters */}
-						<FleetFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} status={statusFilter} onStatusChange={setStatusFilter} />
+						<FleetFilters
+							searchQuery={searchQuery}
+							onSearchChange={setSearchQuery}
+							status={statusFilter}
+							onStatusChange={setStatusFilter}
+							depotId={depotFilter}
+							onDepotChange={setDepotFilter}
+							depots={depots}
+						/>
 
-						{/* Actions */}
-						<div className="flex items-center justify-end">
-							<Button
-								onClick={() => {
-									setEditingVehicle(null);
-									setIsFormOpen(true);
-								}}
-								className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-							>
-								<Plus className="w-4 h-4" />
-								Thêm xe mới
-							</Button>
+						<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+								{canBulkReassignDepot && (
+									<>
+										<Select value={bulkDepotId} onValueChange={setBulkDepotId}>
+											<SelectTrigger className="w-full sm:w-[260px] bg-card border-border">
+												<SelectValue placeholder="Chuyển kho trực thuộc" />
+											</SelectTrigger>
+											<SelectContent>
+												{depots.map((depot) => (
+													<SelectItem key={depot.id} value={String(depot.id)}>
+														{depot.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<Button onClick={handleBulkDepotUpdate} disabled={selectedVehicleIds.length === 0 || !bulkDepotId || isBulkUpdating} className="gap-2">
+											Chuyển kho hàng loạt
+										</Button>
+									</>
+								)}
+							</div>
+
+							{canManageVehicles && (
+								<Button
+									onClick={() => {
+										setEditingVehicle(null);
+										setIsFormOpen(true);
+									}}
+									className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+								>
+									<Plus className="w-4 h-4" />
+									Thêm xe mới
+								</Button>
+							)}
 						</div>
 
-						{/* Table and Pagination */}
 						<div className="space-y-4">
-							<FleetTable vehicles={vehicles} onEdit={handleEditVehicle} onDelete={handleDeleteVehicle} isLoading={isLoading} />
+							<FleetTable
+								vehicles={vehicles}
+								onEdit={handleEditVehicle}
+								onDelete={handleDeleteVehicle}
+								isLoading={isLoading}
+								selectedVehicleIds={selectedVehicleIds}
+								onToggleVehicleSelection={handleToggleVehicleSelection}
+								canManage={canManageVehicles}
+							/>
 
-							{totalElements > 0 && <Pagination currentPage={currentPage} totalPages={totalPages} itemsPerPage={ITEMS_PER_PAGE} totalItems={totalElements} onPageChange={handlePageChange} entityName="phương tiện" />}
+							{totalElements > 0 && (
+								<Pagination
+									currentPage={currentPage}
+									totalPages={totalPages}
+									itemsPerPage={ITEMS_PER_PAGE}
+									totalItems={totalElements}
+									onPageChange={handlePageChange}
+									entityName="phương tiện"
+								/>
+							)}
 						</div>
 					</div>
 				</div>

@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,7 +67,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long>, JpaSp
 
         Long countByDepot_Id(Long depotId);
 
+        Long countByDepot_IdIn(Collection<Long> depotIds);
+
         List<OrderEntity> findByStatus(OrderStatus status);
 
         List<OrderEntity> findByStatusAndDepot_Id(OrderStatus status, Long depotId);
+
+        List<OrderEntity> findByStatusAndDepot_IdIn(OrderStatus status, Collection<Long> depotIds);
 }

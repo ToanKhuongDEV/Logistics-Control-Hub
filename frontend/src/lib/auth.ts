@@ -1,5 +1,30 @@
 import apiClient from "./api";
 
+export type UserRole = "ADMIN" | "DISPATCHER" | "USER";
+export type UserPermission =
+	| "account.manage"
+	| "audit.read"
+	| "company.manage"
+	| "dashboard.read"
+	| "depot.read"
+	| "depot.manage"
+	| "driver.read"
+	| "driver.manage"
+	| "order.read"
+	| "order.manage"
+	| "order.cancel.confirmed"
+	| "routing.execute"
+	| "routing.read"
+	| "settings.read"
+	| "vehicle.manage"
+	| "vehicle.read"
+	| "vehicle.reassign";
+
+export interface AssignedDepot {
+	id: number;
+	name: string;
+}
+
 export interface LoginRequest {
 	username: string;
 	password: string;
@@ -7,7 +32,6 @@ export interface LoginRequest {
 
 export interface LoginResponse {
 	accessToken: string;
-	refreshToken: string;
 }
 
 export interface User {
@@ -15,35 +39,65 @@ export interface User {
 	username: string;
 	email: string;
 	fullName: string;
+	role: UserRole;
+	permissions?: UserPermission[];
+	assignedDepots?: AssignedDepot[];
+}
+
+export interface CreateAccountRequest {
+	username: string;
+	fullName: string;
+	email: string;
+	password: string;
+	role: UserRole;
+	assignedDepotIds?: number[];
+}
+
+export interface UpdateAccountRequest {
+	fullName: string;
+	email: string;
+	role: UserRole;
+	assignedDepotIds?: number[];
+}
+
+export interface ChangePasswordRequest {
+	currentPassword: string;
+	newPassword: string;
+}
+
+export interface ForgotPasswordRequest {
+	email: string;
+}
+
+export interface ResetPasswordRequest {
+	token: string;
+	newPassword: string;
 }
 
 class AuthService {
 	async login(username: string, password: string): Promise<LoginResponse> {
-		const response = await apiClient.post<LoginResponse>("/api/v1/auth/login", {
+		const response = await apiClient.post<{ data: LoginResponse }>("/api/v1/auth/login", {
 			username,
 			password,
 		});
 
-		const { accessToken, refreshToken } = response.data;
-
-		// Store tokens in localStorage
+		const { accessToken } = response.data.data;
 		localStorage.setItem("accessToken", accessToken);
-		localStorage.setItem("refreshToken", refreshToken);
-
-		return response.data;
+		return response.data.data;
 	}
 
-	logout(): void {
+	async logout(): Promise<void> {
+		try {
+			await apiClient.post("/api/v1/auth/logout");
+		} catch {
+			// Ignore logout transport errors and still clear local auth state.
+		}
+
 		localStorage.removeItem("accessToken");
-		localStorage.removeItem("refreshToken");
 	}
 
 	getAccessToken(): string | null {
 		return localStorage.getItem("accessToken");
-	}
-
-	getRefreshToken(): string | null {
-		return localStorage.getItem("refreshToken");
 	}
 
 	isAuthenticated(): boolean {
@@ -54,6 +108,37 @@ class AuthService {
 		const response = await apiClient.get<{ data: User }>("/api/v1/auth/me");
 		return response.data.data;
 	}
+
+	async createAccount(payload: CreateAccountRequest): Promise<User> {
+		const response = await apiClient.post<{ data: User }>("/api/v1/auth/accounts", payload);
+		return response.data.data;
+	}
+
+	async getAccounts(): Promise<User[]> {
+		const response = await apiClient.get<{ data: User[] }>("/api/v1/auth/accounts");
+		return response.data.data;
+	}
+
+	async updateAccount(id: number, payload: UpdateAccountRequest): Promise<User> {
+		const response = await apiClient.put<{ data: User }>(`/api/v1/auth/accounts/${id}`, payload);
+		return response.data.data;
+	}
+
+	async changePassword(payload: ChangePasswordRequest): Promise<void> {
+		await apiClient.post("/api/v1/auth/change-password", payload);
+	}
+
+	async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
+		await apiClient.post("/api/v1/auth/forgot-password", payload);
+	}
+
+	async resetPassword(payload: ResetPasswordRequest): Promise<void> {
+		await apiClient.post("/api/v1/auth/reset-password", payload);
+	}
 }
 
 export const authService = new AuthService();
+
+export function hasPermission(user: User | null | undefined, permission: UserPermission): boolean {
+	return !!user?.permissions?.includes(permission);
+}

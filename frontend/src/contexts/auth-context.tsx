@@ -47,9 +47,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	};
 
 	const logout = () => {
-		authService.logout();
-		setUser(null);
-		window.location.href = "/login";
+		void (async () => {
+			await authService.logout();
+			setUser(null);
+			window.location.href = "/login";
+		})();
 	};
 
 	const refreshUser = async () => {

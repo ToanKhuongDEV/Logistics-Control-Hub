@@ -20,3 +20,10 @@ export interface DriverStatistics {
 	available: number;
 	assigned: number;
 }
+
+export interface DriverFilterParams {
+	page: number;
+	size: number;
+	search?: string;
+	depotId?: number;
+}

@@ -13,11 +13,12 @@ CREATE TABLE companies (
     updated_at TIMESTAMPTZ
 );
 
--- 2. Dispatcher 
-CREATE TABLE dispatchers (
+-- 2. Users
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
     full_name VARCHAR(100),
     role VARCHAR(20) NOT NULL DEFAULT 'DISPATCHER'
 );
@@ -55,6 +56,7 @@ CREATE TABLE depots (
     name VARCHAR(255) NOT NULL,
 
     location_id BIGINT NOT NULL UNIQUE,
+    dispatcher_id BIGINT,
 
     description VARCHAR(500),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -63,7 +65,11 @@ CREATE TABLE depots (
 
     CONSTRAINT fk_depots_location
         FOREIGN KEY (location_id)
-        REFERENCES locations(id)
+        REFERENCES locations(id),
+
+    CONSTRAINT fk_depots_dispatcher
+        FOREIGN KEY (dispatcher_id)
+        REFERENCES users(id)
 );
 
 -- 6. Vehicles
@@ -214,5 +220,61 @@ CREATE INDEX idx_orders_driver ON orders(driver_id);
 CREATE INDEX idx_routes_vehicle ON routes(vehicle_id);
 CREATE INDEX idx_route_stops_route ON route_stops(route_id);
 CREATE INDEX idx_vehicles_driver ON vehicles(driver_id);
+
+-- 12. Refresh Tokens (for token rotation)
+CREATE TABLE refresh_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    jti VARCHAR(36) NOT NULL UNIQUE,
+    token TEXT NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_refresh_tokens_username ON refresh_tokens(username);
+CREATE INDEX idx_refresh_tokens_jti ON refresh_tokens(jti);
+CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
+
+CREATE TABLE password_reset_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    token VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_password_reset_tokens_email ON password_reset_tokens(email);
+CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
+
+CREATE TABLE audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    actor_user_id BIGINT,
+    actor_username VARCHAR(50),
+    actor_role VARCHAR(20),
+    action VARCHAR(50) NOT NULL,
+    resource_type VARCHAR(50) NOT NULL,
+    resource_id VARCHAR(100),
+    resource_name VARCHAR(255),
+    scope_depot_id BIGINT,
+    status VARCHAR(20) NOT NULL DEFAULT 'SUCCESS',
+    message TEXT,
+    before_data JSONB,
+    after_data JSONB,
+    metadata JSONB,
+    ip_address VARCHAR(64),
+    user_agent VARCHAR(500),
+    request_id VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_audit_logs_actor
+        FOREIGN KEY (actor_user_id)
+        REFERENCES users(id)
+);
+
+CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX idx_audit_logs_actor_user_id ON audit_logs(actor_user_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
+CREATE INDEX idx_audit_logs_scope_depot_id ON audit_logs(scope_depot_id);
 
 -- END OF SCRIPT

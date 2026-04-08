@@ -10,7 +10,13 @@ public class UrlConstant {
         public static final String PREFIX = API_V1 + "/auth";
         public static final String LOGIN = "/login";
         public static final String REFRESH = "/refresh";
+        public static final String LOGOUT = "/logout";
         public static final String ME = "/me";
+        public static final String CREATE_ACCOUNT = "/accounts";
+        public static final String UPDATE_ACCOUNT = "/accounts/{id}";
+        public static final String CHANGE_PASSWORD = "/change-password";
+        public static final String FORGOT_PASSWORD = "/forgot-password";
+        public static final String RESET_PASSWORD = "/reset-password";
 
         private Auth() {
         }
@@ -20,6 +26,7 @@ public class UrlConstant {
         public static final String PREFIX = API_V1 + "/orders";
         public static final String BY_ID = "/{id}";
         public static final String STATISTICS = "/statistics";
+        public static final String BULK_STATUS = "/bulk/status";
 
         private Order() {
         }
@@ -37,6 +44,7 @@ public class UrlConstant {
         public static final String PREFIX = API_V1 + "/vehicles";
         public static final String BY_ID = "/{id}";
         public static final String STATISTICS = "/statistics";
+        public static final String BULK_DEPOT = "/bulk/depot";
 
         private Vehicle() {
         }
@@ -77,6 +85,13 @@ public class UrlConstant {
         public static final String HISTORY_BY_DEPOT = "/history/{depotId}";
 
         private Routing() {
+        }
+    }
+
+    public static class Audit {
+        public static final String PREFIX = API_V1 + "/audit-logs";
+
+        private Audit() {
         }
     }
 }

@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+
 @Repository
 public interface DepotRepository extends JpaRepository<DepotEntity, Long> {
     boolean existsByLocation_Id(Long locationId);
@@ -21,4 +23,18 @@ public interface DepotRepository extends JpaRepository<DepotEntity, Long> {
             + "OR LOWER(l.city) LIKE LOWER(CONCAT('%', :search, '%')) "
             + "OR LOWER(l.country) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<DepotEntity> searchDepots(String search, Pageable pageable);
+
+    Page<DepotEntity> findByIdIn(Collection<Long> depotIds, Pageable pageable);
+
+    @Query("SELECT d FROM DepotEntity d JOIN d.location l "
+            + "WHERE d.id IN :depotIds AND ("
+            + "LOWER(d.name) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "OR LOWER(l.street) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "OR LOWER(l.city) LIKE LOWER(CONCAT('%', :search, '%')) "
+            + "OR LOWER(l.country) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<DepotEntity> searchDepotsByIds(String search, Collection<Long> depotIds, Pageable pageable);
+
+    Long countByIdIn(Collection<Long> depotIds);
+
+    Long countByIsActiveAndIdIn(boolean isActive, Collection<Long> depotIds);
 }

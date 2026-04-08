@@ -1,7 +1,16 @@
 package com.logistics.hub.feature.routing.controller;
 
 import com.logistics.hub.common.base.ApiResponse;
+import com.logistics.hub.common.exception.ResourceNotFoundException;
+import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.common.constant.UrlConstant;
+import com.logistics.hub.feature.audit.constant.AuditAction;
+import com.logistics.hub.feature.audit.constant.AuditResourceType;
+import com.logistics.hub.feature.audit.constant.AuditStatus;
+import com.logistics.hub.feature.audit.service.AuditActorService;
+import com.logistics.hub.feature.audit.service.AuditLogService;
+import com.logistics.hub.feature.auth.policy.AuthorizationPolicy;
+import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.routing.constant.RoutingConstant;
 import com.logistics.hub.feature.routing.dto.response.RoutingRunResponse;
 import com.logistics.hub.feature.routing.entity.RoutingRunEntity;
@@ -30,26 +39,53 @@ public class RoutingController {
 
 	private final RoutingService routingService;
 	private final RoutingRunRepository routingRunRepository;
+	private final AuthorizationService authorizationService;
+	private final AuditLogService auditLogService;
+	private final AuditActorService auditActorService;
 
 	@PostMapping(UrlConstant.Routing.OPTIMIZE)
 	@Operation(summary = "Optimize routes", description = "Automatically optimizes delivery routes for all CREATED orders using ACTIVE vehicles with assigned drivers for the given depot")
 	public ResponseEntity<ApiResponse<RoutingRunResponse>> optimizeRouting(@RequestParam Long depotId) {
-		RoutingRunEntity runEntity = routingService.executeAutoRouting(depotId);
+		try {
+			authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_EXECUTE);
+			authorizationService.requireDepotAccess(depotId);
+			RoutingRunEntity runEntity = routingService.executeAutoRouting(depotId);
 
-		RoutingRunResponse response = RoutingMapper.toRoutingRunResponse(runEntity);
+			RoutingRunResponse response = RoutingMapper.toRoutingRunResponse(runEntity);
 
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(ApiResponse.success(201, RoutingConstant.ROUTING_OPTIMIZATION_SUCCESS, response));
+			return ResponseEntity.status(HttpStatus.CREATED)
+					.body(ApiResponse.success(201, RoutingConstant.ROUTING_OPTIMIZATION_SUCCESS, response));
+		} catch (RuntimeException ex) {
+			if (ex instanceof ValidationException || ex instanceof ResourceNotFoundException) {
+				auditLogService.log(
+						auditActorService.getCurrentActor(),
+						AuditAction.EXECUTE,
+						AuditResourceType.ROUTING_RUN,
+						null,
+						"Routing execution",
+						depotId,
+						AuditStatus.FAILED,
+						ex.getMessage(),
+						null,
+						null,
+						Map.of("exceptionType", ex.getClass().getSimpleName(), "depotId", depotId));
+			}
+			throw ex;
+		}
 	}
 
 	@GetMapping(UrlConstant.Routing.RUN_BY_ID)
 	@Operation(summary = "Get routing run info", description = "Retrieves details of a specific routing run including its routes and stops")
 	public ResponseEntity<ApiResponse<RoutingRunResponse>> getRoutingRunById(@PathVariable Long id) {
+		authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_READ);
 		log.info("Fetching routing run with id: {}", id);
 
 		RoutingRunEntity runEntity = routingRunRepository.findById(id)
 				.orElseThrow(() -> new com.logistics.hub.common.exception.ResourceNotFoundException(
 						RoutingConstant.ROUTING_RUN_NOT_FOUND + id));
+		if (runEntity.getDepot() != null) {
+			authorizationService.requireDepotAccess(runEntity.getDepot().getId());
+		}
 
 		RoutingRunResponse response = RoutingMapper.toRoutingRunResponse(runEntity);
 
@@ -59,7 +95,9 @@ public class RoutingController {
 	@GetMapping(UrlConstant.Routing.LATEST_BY_DEPOT)
 	@Operation(summary = "Get latest routing run for depot", description = "Retrieves the most recent successful routing run for a specific depot")
 	public ResponseEntity<ApiResponse<RoutingRunResponse>> getLatestRoutingRunByDepot(@PathVariable Long depotId) {
+		authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_READ);
 		log.info("Fetching latest routing run for depot id: {}", depotId);
+		authorizationService.requireDepotAccess(depotId);
 
 		RoutingRunResponse response = routingService.getLatestRunByDepot(depotId)
 				.map(RoutingMapper::toRoutingRunResponse)
@@ -74,7 +112,9 @@ public class RoutingController {
 			@PathVariable Long depotId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
+		authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ROUTING_READ);
 		log.info("Fetching routing history for depot id: {}, page: {}, size: {}", depotId, page, size);
+		authorizationService.requireDepotAccess(depotId);
 
 		Page<RoutingRunEntity> runPage = routingService.getHistoryByDepot(depotId, page, size);
 

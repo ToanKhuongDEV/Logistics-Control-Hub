@@ -23,6 +23,17 @@ spring:
   data:
     redis:
       url: redis://default:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   jpa:
     hibernate:
       ddl-auto: update
@@ -51,6 +62,7 @@ logging:
 
     # Spring core
     org.springframework: ERROR
+    org.springframework.mail: INFO
 
     # Spring Boot startup
     org.springframework.boot: ERROR
@@ -101,3 +113,8 @@ management:
   endpoint:
     health:
       show-details: always
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  auth:
+    reset-password-expiration-minutes: ${RESET_PASSWORD_EXPIRATION_MINUTES:15}

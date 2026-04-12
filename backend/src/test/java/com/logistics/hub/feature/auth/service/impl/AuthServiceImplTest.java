@@ -4,10 +4,12 @@ import com.logistics.hub.common.exception.ForbiddenException;
 import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
 import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
+import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.repository.PasswordResetTokenRepository;
 import com.logistics.hub.feature.auth.repository.RefreshTokenRepository;
 import com.logistics.hub.feature.auth.service.AuthorizationService;
 import com.logistics.hub.feature.auth.service.PasswordResetMailService;
+import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.auth.util.JwtUtils;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
 import com.logistics.hub.feature.user.entity.UserEntity;
@@ -24,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -101,6 +105,78 @@ class AuthServiceImplTest {
         verify(userRepository, never()).delete(target);
     }
 
+    @Test
+    void updateAccount_shouldOnlyUpdateProvidedEmailWithoutTouchingDepots() {
+        UserEntity actor = adminUser(1L, "admin01");
+        UserEntity target = scopedUser(3L, "dispatcher01", "dispatcher01@example.com");
+
+        UpdateAccountRequest request = new UpdateAccountRequest();
+        request.setEmail("updated@example.com");
+
+        doNothing().when(authorizationService).requirePermission("account.manage");
+        when(authorizationService.getCurrentUser()).thenReturn(actor);
+        when(userRepository.findByIdWithAssignedDepots(3L)).thenReturn(Optional.of(target), Optional.of(target));
+        when(userRepository.findByEmailIgnoreCase("updated@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(target)).thenReturn(target);
+        when(userMapper.toResponse(target)).thenReturn(new UserResponse());
+
+        authService.updateAccount(3L, request);
+
+        assertEquals("updated@example.com", target.getEmail());
+        verify(depotRepository, never()).findByDispatcher_Id(3L);
+        verify(depotRepository, never()).findAll();
+    }
+
+    @Test
+    void updateAccount_shouldLookupCurrentDepotsByDispatcherWhenDepotAssignmentsChange() {
+        UserEntity actor = adminUser(1L, "admin01");
+        UserEntity target = scopedUser(3L, "dispatcher01", "dispatcher01@example.com");
+        DepotEntity depot = new DepotEntity();
+        depot.setId(10L);
+        depot.setDispatcher(target);
+
+        UpdateAccountRequest request = new UpdateAccountRequest();
+        request.setAssignedDepotIds(List.of(10L));
+
+        doNothing().when(authorizationService).requirePermission("account.manage");
+        when(authorizationService.getCurrentUser()).thenReturn(actor);
+        when(userRepository.findByIdWithAssignedDepots(3L)).thenReturn(Optional.of(target), Optional.of(target));
+        when(depotRepository.findByDispatcher_Id(3L)).thenReturn(List.of(depot));
+        when(depotRepository.findAllById(anyCollection())).thenReturn(List.of(depot));
+        when(userMapper.toResponse(target)).thenReturn(new UserResponse());
+        authService.updateAccount(3L, request);
+
+        verify(depotRepository).findByDispatcher_Id(3L);
+        verify(depotRepository, never()).findAll();
+    }
+
+    @Test
+    void updateAccount_shouldAllowUserRoleWithoutAssignedDepots() {
+        UserEntity actor = adminUser(1L, "admin01");
+        UserEntity target = scopedUser(3L, "dispatcher01", "dispatcher01@example.com");
+        DepotEntity depot = new DepotEntity();
+        depot.setId(10L);
+        depot.setDispatcher(target);
+        target.setAssignedDepots(new java.util.ArrayList<>(List.of(depot)));
+
+        UpdateAccountRequest request = new UpdateAccountRequest();
+        request.setRole("USER");
+
+        doNothing().when(authorizationService).requirePermission("account.manage");
+        when(authorizationService.getCurrentUser()).thenReturn(actor);
+        when(userRepository.findByIdWithAssignedDepots(3L)).thenReturn(Optional.of(target), Optional.of(target));
+        when(userRepository.save(target)).thenReturn(target);
+        when(depotRepository.findByDispatcher_Id(3L)).thenReturn(List.of(depot));
+        when(userMapper.toResponse(target)).thenReturn(new UserResponse());
+
+        authService.updateAccount(3L, request);
+
+        assertEquals("USER", target.getRole());
+        assertEquals(null, depot.getDispatcher());
+        verify(depotRepository).findByDispatcher_Id(3L);
+        verify(depotRepository).saveAll(anyList());
+    }
+
     private UserEntity adminUser(Long id, String username) {
         UserEntity user = new UserEntity();
         user.setId(id);
@@ -108,6 +184,17 @@ class AuthServiceImplTest {
         user.setFullName(username);
         user.setEmail(username + "@example.com");
         user.setRole("ADMIN");
+        return user;
+    }
+
+    private UserEntity scopedUser(Long id, String username, String email) {
+        UserEntity user = new UserEntity();
+        user.setId(id);
+        user.setUsername(username);
+        user.setFullName(username);
+        user.setEmail(email);
+        user.setRole("DISPATCHER");
+        user.setAssignedDepots(new java.util.ArrayList<>());
         return user;
     }
 }

@@ -14,8 +14,9 @@ services:
       POSTGRES_DB: ${DB_NAME:-logistics_db}
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+    # Port 5432 không expose ra ngoài - backend kết nối qua internal Docker network
+    # ports:
+    #   - "${DB_PORT:-5432}:5432"
     mem_limit: 300m
     volumes:
       - postgres_data:/var/lib/postgresql/data

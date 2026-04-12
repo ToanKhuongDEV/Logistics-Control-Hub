@@ -5,16 +5,19 @@ import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "vehicles")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class VehicleEntity {
@@ -53,4 +56,18 @@ public class VehicleEntity {
     @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof VehicleEntity other))
+            return false;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

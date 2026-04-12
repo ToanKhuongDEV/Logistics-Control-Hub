@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
-import { authService, User, UserRole } from "@/lib/auth";
+import { authService, UpdateAccountRequest, User, UserRole } from "@/lib/auth";
 import { depotApi } from "@/lib/depot-api";
 import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
@@ -157,23 +157,11 @@ export function AccountManagementPanel() {
 		return map;
 	}, [accountDirectory]);
 
-	const isEditingAnotherAdmin = useMemo(
-		() => !!selectedAccount && selectedAccount.role === "ADMIN" && currentUser?.id !== selectedAccount.id,
-		[currentUser?.id, selectedAccount],
-	);
+	const isEditingAnotherAdmin = useMemo(() => !!selectedAccount && selectedAccount.role === "ADMIN" && currentUser?.id !== selectedAccount.id, [currentUser?.id, selectedAccount]);
 
-	const createDepotOptions = useMemo(
-		() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || createAccountForm.assignedDepotIds.includes(depot.id)),
-		[createAccountForm.assignedDepotIds, depots, assignedDepotMap],
-	);
+	const createDepotOptions = useMemo(() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || createAccountForm.assignedDepotIds.includes(depot.id)), [createAccountForm.assignedDepotIds, depots, assignedDepotMap]);
 
-	const editDepotOptions = useMemo(
-		() =>
-			depots.filter(
-				(depot) => !assignedDepotMap.has(depot.id) || assignedDepotMap.get(depot.id) === selectedAccount?.id || editAccountForm.assignedDepotIds.includes(depot.id),
-			),
-		[depots, assignedDepotMap, selectedAccount?.id, editAccountForm.assignedDepotIds],
-	);
+	const editDepotOptions = useMemo(() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || assignedDepotMap.get(depot.id) === selectedAccount?.id || editAccountForm.assignedDepotIds.includes(depot.id)), [depots, assignedDepotMap, selectedAccount?.id, editAccountForm.assignedDepotIds]);
 
 	const resetCreateForm = () => {
 		setCreateAccountForm(EMPTY_CREATE_FORM);
@@ -189,11 +177,21 @@ export function AccountManagementPanel() {
 	};
 
 	const validateScopedRoleSelection = (role: UserRole, assignedDepotIds: number[]) => {
-		if (role !== "ADMIN" && assignedDepotIds.length === 0) {
-			toast.error("USER và Dispatcher phải được gán ít nhất một kho");
+		if (role === "DISPATCHER" && assignedDepotIds.length === 0) {
+			toast.error("Dispatcher phải được gán ít nhất một kho");
 			return false;
 		}
 		return true;
+	};
+
+	const haveSameDepotIds = (left: number[], right: number[]) => {
+		if (left.length !== right.length) {
+			return false;
+		}
+
+		const sortedLeft = [...left].sort((a, b) => a - b);
+		const sortedRight = [...right].sort((a, b) => a - b);
+		return sortedLeft.every((value, index) => value === sortedRight[index]);
 	};
 
 	const addDepotToCreateForm = (value: string) => {
@@ -246,7 +244,7 @@ export function AccountManagementPanel() {
 				email: createAccountForm.email.trim(),
 				password: createAccountForm.password,
 				role: createAccountForm.role,
-				assignedDepotIds: createAccountForm.role === "ADMIN" ? [] : createAccountForm.assignedDepotIds,
+				assignedDepotIds: createAccountForm.role === "DISPATCHER" ? createAccountForm.assignedDepotIds : [],
 			});
 			resetCreateForm();
 			setIsCreateExpanded(false);
@@ -266,18 +264,43 @@ export function AccountManagementPanel() {
 			return;
 		}
 
+		const nextFullName = editAccountForm.fullName.trim();
+		const nextEmail = editAccountForm.email.trim();
+		const currentAssignedDepotIds = selectedAccount.assignedDepots?.map((depot) => depot.id) || [];
+		const payload: UpdateAccountRequest = {};
+
 		if (!validateScopedRoleSelection(editAccountForm.role, editAccountForm.assignedDepotIds)) {
+			return;
+		}
+
+		if (nextFullName !== (selectedAccount.fullName || "")) {
+			payload.fullName = nextFullName;
+		}
+
+		if (nextEmail.toLowerCase() !== (selectedAccount.email || "").trim().toLowerCase()) {
+			payload.email = nextEmail;
+		}
+
+		if (editAccountForm.role !== selectedAccount.role) {
+			payload.role = editAccountForm.role;
+		}
+
+		if (!haveSameDepotIds(editAccountForm.assignedDepotIds, currentAssignedDepotIds)) {
+			payload.assignedDepotIds = editAccountForm.role === "DISPATCHER" ? editAccountForm.assignedDepotIds : [];
+		}
+
+		if (payload.role === "ADMIN" && payload.assignedDepotIds === undefined) {
+			payload.assignedDepotIds = [];
+		}
+
+		if (Object.keys(payload).length === 0) {
+			toast.success("Không có thay đổi để cập nhật");
 			return;
 		}
 
 		setIsUpdatingAccount(true);
 		try {
-			await authService.updateAccount(selectedAccount.id, {
-				fullName: editAccountForm.fullName.trim(),
-				email: editAccountForm.email.trim(),
-				role: editAccountForm.role,
-				assignedDepotIds: editAccountForm.role === "ADMIN" ? [] : editAccountForm.assignedDepotIds,
-			});
+			await authService.updateAccount(selectedAccount.id, payload);
 
 			await refreshAfterMutation(selectedAccount.id);
 			toast.success("Đã cập nhật tài khoản");
@@ -326,19 +349,7 @@ export function AccountManagementPanel() {
 		setCurrentPage(1);
 	};
 
-	const renderDepotDropdown = ({
-		value,
-		onValueChange,
-		options,
-		selectedDepotIds,
-		onRemove,
-	}: {
-		value: string | undefined;
-		onValueChange: (value: string) => void;
-		options: Depot[];
-		selectedDepotIds: number[];
-		onRemove: (depotId: number) => void;
-	}) => (
+	const renderDepotDropdown = ({ value, onValueChange, options, selectedDepotIds, onRemove }: { value: string | undefined; onValueChange: (value: string) => void; options: Depot[]; selectedDepotIds: number[]; onRemove: (depotId: number) => void }) => (
 		<div className="space-y-3 rounded-lg border border-border p-4">
 			<div className="flex items-center gap-2 text-sm font-medium text-foreground">
 				<Warehouse className="h-4 w-4 text-primary" />
@@ -682,7 +693,7 @@ export function AccountManagementPanel() {
 										setEditAccountForm({
 											...editAccountForm,
 											role: value as UserRole,
-											assignedDepotIds: value === "ADMIN" ? [] : editAccountForm.assignedDepotIds,
+											assignedDepotIds: value === "DISPATCHER" ? editAccountForm.assignedDepotIds : [],
 										})
 									}
 								>
@@ -696,12 +707,8 @@ export function AccountManagementPanel() {
 									</SelectContent>
 								</Select>
 							</div>
-							{isEditingAnotherAdmin && (
-								<div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-									Bạn chỉ có thể xem thông tin. Admin không được sửa hoặc xóa tài khoản admin khác.
-								</div>
-							)}
-							{editAccountForm.role !== "ADMIN" &&
+							{isEditingAnotherAdmin && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Bạn chỉ có thể xem thông tin. Admin không được sửa hoặc xóa tài khoản admin khác.</div>}
+							{editAccountForm.role === "DISPATCHER" &&
 								renderDepotDropdown({
 									value: editDepotPicker,
 									onValueChange: addDepotToEditForm,

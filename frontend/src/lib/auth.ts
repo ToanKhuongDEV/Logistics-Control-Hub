@@ -63,9 +63,9 @@ export interface CreateAccountRequest {
 }
 
 export interface UpdateAccountRequest {
-	fullName: string;
-	email: string;
-	role: UserRole;
+	fullName?: string;
+	email?: string;
+	role?: UserRole;
 	assignedDepotIds?: number[];
 }
 
@@ -149,7 +149,7 @@ class AuthService {
 	}
 
 	async updateAccount(id: number, payload: UpdateAccountRequest): Promise<User> {
-		const response = await apiClient.put<{ data: User }>(`/api/v1/auth/accounts/${id}`, payload);
+		const response = await apiClient.patch<{ data: User }>(`/api/v1/auth/accounts/${id}`, payload);
 		return response.data.data;
 	}
 

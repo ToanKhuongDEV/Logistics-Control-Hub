@@ -145,7 +145,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.ACCOUNT_RETRIEVED_SUCCESS, authService.getAccountById(id)));
     }
 
-    @PutMapping(UrlConstant.Auth.UPDATE_ACCOUNT)
+    @PatchMapping(UrlConstant.Auth.UPDATE_ACCOUNT)
     @PreAuthorize("hasAuthority('account.manage')")
     @Operation(summary = "Update employee account", description = "Updates employee profile, role and assigned depots")
     public ResponseEntity<ApiResponse<UserResponse>> updateAccount(

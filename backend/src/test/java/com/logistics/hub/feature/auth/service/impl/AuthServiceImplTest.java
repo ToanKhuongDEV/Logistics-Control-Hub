@@ -27,6 +27,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -147,6 +148,33 @@ class AuthServiceImplTest {
 
         verify(depotRepository).findByDispatcher_Id(3L);
         verify(depotRepository, never()).findAll();
+    }
+
+    @Test
+    void updateAccount_shouldAllowUserRoleWithoutAssignedDepots() {
+        UserEntity actor = adminUser(1L, "admin01");
+        UserEntity target = scopedUser(3L, "dispatcher01", "dispatcher01@example.com");
+        DepotEntity depot = new DepotEntity();
+        depot.setId(10L);
+        depot.setDispatcher(target);
+        target.setAssignedDepots(new java.util.ArrayList<>(List.of(depot)));
+
+        UpdateAccountRequest request = new UpdateAccountRequest();
+        request.setRole("USER");
+
+        doNothing().when(authorizationService).requirePermission("account.manage");
+        when(authorizationService.getCurrentUser()).thenReturn(actor);
+        when(userRepository.findByIdWithAssignedDepots(3L)).thenReturn(Optional.of(target), Optional.of(target));
+        when(userRepository.save(target)).thenReturn(target);
+        when(depotRepository.findByDispatcher_Id(3L)).thenReturn(List.of(depot));
+        when(userMapper.toResponse(target)).thenReturn(new UserResponse());
+
+        authService.updateAccount(3L, request);
+
+        assertEquals("USER", target.getRole());
+        assertEquals(null, depot.getDispatcher());
+        verify(depotRepository).findByDispatcher_Id(3L);
+        verify(depotRepository).saveAll(anyList());
     }
 
     private UserEntity adminUser(Long id, String username) {

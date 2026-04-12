@@ -570,10 +570,13 @@ public class AuthServiceImpl implements AuthService {
         String role = normalizeRole(user.getRole());
         Set<Long> mutableTargetDepotIds = assignedDepotIds == null ? Set.of() : new HashSet<>(assignedDepotIds);
 
-        if (AuthorizationPolicy.ROLE_ADMIN.equals(role)) {
+        if (AuthorizationPolicy.ROLE_DISPATCHER.equals(role)) {
+            if (mutableTargetDepotIds.isEmpty()) {
+                throw new ValidationException("Dispatcher must be assigned at least one depot.");
+            }
+        } else {
+            // ADMIN and USER do not require scoped depot assignments
             mutableTargetDepotIds = Set.of();
-        } else if (mutableTargetDepotIds.isEmpty()) {
-            throw new ValidationException("Scoped roles must be assigned at least one depot.");
         }
 
         Set<Long> targetDepotIds = mutableTargetDepotIds;

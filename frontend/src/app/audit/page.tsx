@@ -1,25 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-	AlertTriangle,
-	CalendarRange,
-	CheckCircle2,
-	ChevronLeft,
-	ChevronRight,
-	Clock3,
-	Copy,
-	Eye,
-	Siren,
-	RefreshCw,
-	Route,
-	Search,
-	ShieldAlert,
-	ShieldCheck,
-	UserSearch,
-	Waypoints,
-	X,
-} from "lucide-react";
+import { AlertTriangle, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Eye, Siren, RefreshCw, Route, Search, ShieldAlert, ShieldCheck, UserSearch, Waypoints, X } from "lucide-react";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Card } from "@/components/ui/card";
@@ -103,7 +85,7 @@ export default function AuditPage() {
 			setSelectedLog((current) => response.data.find((item) => item.id === current?.id) || response.data[0] || null);
 		} catch (error: any) {
 			console.error("Error fetching audit logs:", error);
-			toast.error(error?.response?.data?.message || "KhÃ´ng thá»ƒ táº£i nháº­t kÃ½ audit");
+			toast.error(error?.response?.data?.message || "Không thể tải nhật ký audit");
 		} finally {
 			setIsLoading(false);
 		}
@@ -130,12 +112,12 @@ export default function AuditPage() {
 
 	const resultSummary = useMemo(() => {
 		if (isLoading) {
-			return "Äang táº£i dá»¯ liá»‡u audit...";
+			return "Đang tải dữ liệu audit...";
 		}
 		if (totalElements === 0) {
-			return "Chua co ban ghi phu hop voi bo loc hien tai.";
+			return "Chưa có bản ghi phù hợp với bộ lọc hiện tại.";
 		}
-		return `Äang hiá»ƒn thá»‹ ${logs.length} / ${totalElements} báº£n ghi`;
+		return `Đang hiển thị ${logs.length} / ${totalElements} bản ghi`;
 	}, [isLoading, logs.length, totalElements]);
 
 	const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
@@ -171,12 +153,7 @@ export default function AuditPage() {
 	};
 
 	const applyQuickFocus = async (focus: "failed" | "routing" | "incidents") => {
-		const nextFilters =
-			focus === "failed"
-				? { ...filters, status: "FAILED", resourceType: "ALL" }
-				: focus === "routing"
-					? { ...filters, resourceType: "ROUTING_RUN", status: "ALL" }
-					: { ...filters, status: "FAILED", resourceType: "ROUTING_RUN" };
+		const nextFilters = focus === "failed" ? { ...filters, status: "FAILED", resourceType: "ALL" } : focus === "routing" ? { ...filters, resourceType: "ROUTING_RUN", status: "ALL" } : { ...filters, status: "FAILED", resourceType: "ROUTING_RUN" };
 
 		setFilters(nextFilters);
 		setPage(0);
@@ -190,16 +167,16 @@ export default function AuditPage() {
 
 	const copyValue = async (value: string | null | undefined, label: string) => {
 		if (!value) {
-			toast.error(`KhÃ´ng cÃ³ ${label.toLowerCase()} Ä‘á»ƒ sao chÃ©p`);
+			toast.error(`Không có ${label.toLowerCase()} để sao chép`);
 			return;
 		}
 
 		try {
 			await navigator.clipboard.writeText(value);
-			toast.success(`ÄÃ£ sao chÃ©p ${label.toLowerCase()}`);
+			toast.success(`Đã sao chép ${label.toLowerCase()}`);
 		} catch (error) {
 			console.error("Copy failed:", error);
-			toast.error(`KhÃ´ng thá»ƒ sao chÃ©p ${label.toLowerCase()}`);
+			toast.error(`Không thể sao chép ${label.toLowerCase()}`);
 		}
 	};
 
@@ -213,31 +190,17 @@ export default function AuditPage() {
 								<div className="space-y-3">
 									<div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
 										<ShieldCheck className="h-3.5 w-3.5" />
-										Báº£ng Ä‘iá»u khiá»ƒn audit
+										Bảng điều khiển audit
 									</div>
 									<div>
-										<h1 className="text-3xl font-bold text-foreground md:text-4xl">Nháº­t kÃ½ audit</h1>
-										<p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">
-											Theo dÃµi thao tÃ¡c nháº¡y cáº£m, Ä‘á»‘i chiáº¿u dá»¯ liá»‡u trÆ°á»›c vÃ  sau, vÃ  truy váº¿t request giÃºp admin Ä‘iá»u tra nhanh hÆ¡n.
-										</p>
+										<h1 className="text-3xl font-bold text-foreground md:text-4xl">Nhật ký audit</h1>
+										<p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">Theo dõi thao tác nhạy cảm, đối chiếu dữ liệu trước và sau, và truy vết request giúp admin điều tra nhanh hơn.</p>
 									</div>
 								</div>
 
 								<div className="grid gap-3 sm:grid-cols-2 xl:w-[460px]">
-									<SummaryCard
-										icon={Waypoints}
-										label="Tá»•ng káº¿t quáº£"
-										value={String(totalElements)}
-										helper={resultSummary}
-										tone="neutral"
-									/>
-									<SummaryCard
-										icon={AlertTriangle}
-										label="Báº£n ghi tháº¥t báº¡i"
-										value={String(currentPageFailedCount)}
-										helper="TÃ­nh trÃªn trang hiá»‡n táº¡i"
-										tone="danger"
-									/>
+									<SummaryCard icon={Waypoints} label="Tổng kết quả" value={String(totalElements)} helper={resultSummary} tone="neutral" />
+									<SummaryCard icon={AlertTriangle} label="Bản ghi thất bại" value={String(currentPageFailedCount)} helper="Tính trên trang hiện tại" tone="danger" />
 								</div>
 							</div>
 						</div>
@@ -247,76 +210,36 @@ export default function AuditPage() {
 						{canReadAudit ? (
 							<>
 								<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-									<SummaryCard
-										icon={Clock3}
-										label="Trang hiá»‡n táº¡i"
-										value={String(logs.length)}
-										helper="Sá»‘ dÃ²ng Ä‘ang hiá»ƒn thá»‹"
-										tone="neutral"
-									/>
-									<SummaryCard
-										icon={CheckCircle2}
-										label="ThÃ nh cÃ´ng"
-										value={String(currentPageSuccessCount)}
-										helper="TÃ¡c vá»¥ thÃ nh cÃ´ng"
-										tone="success"
-									/>
-									<SummaryCard
-										icon={AlertTriangle}
-										label="Tháº¥t báº¡i"
-										value={String(currentPageFailedCount)}
-										helper="Cáº§n Æ°u tiÃªn kiá»ƒm tra"
-										tone="danger"
-									/>
-									<SummaryCard
-										icon={Route}
-										label="Nháº­t kÃ½ routing"
-										value={String(currentPageRoutingCount)}
-										helper="Sá»± kiá»‡n tá»‘i Æ°u tuyáº¿n"
-										tone="routing"
-									/>
+									<SummaryCard icon={Clock3} label="Trang hiện tại" value={String(logs.length)} helper="Số dòng đang hiển thị" tone="neutral" />
+									<SummaryCard icon={CheckCircle2} label="Thành công" value={String(currentPageSuccessCount)} helper="Tác vụ thành công" tone="success" />
+									<SummaryCard icon={AlertTriangle} label="Thất bại" value={String(currentPageFailedCount)} helper="Cần ưu tiên kiểm tra" tone="danger" />
+									<SummaryCard icon={Route} label="Nhật ký routing" value={String(currentPageRoutingCount)} helper="Sự kiện tối ưu tuyến" tone="routing" />
 								</div>
 
 								<div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr_0.9fr]">
-									<PrioritySpotlightCard
-										icon={Siren}
-										title="Cáº£nh bÃ¡o Æ°u tiÃªn"
-										value={`${currentPageIncidentCount} ban ghi`}
-										description="Gom cÃ¡c sá»± kiá»‡n tháº¥t báº¡i vÃ  routing Ä‘á»ƒ admin quÃ©t trÆ°á»›c."
-										tone="danger"
-										onClick={() => void applyQuickFocus("incidents")}
-										buttonLabel="Táº­p trung sá»± cá»‘"
-									/>
+									<PrioritySpotlightCard icon={Siren} title="Cảnh báo ưu tiên" value={`${currentPageIncidentCount} bản ghi`} description="Gom các sự kiện thất bại và routing để admin quét trước." tone="danger" onClick={() => void applyQuickFocus("incidents")} buttonLabel="Tập trung sự cố" />
 									<PrioritySpotlightCard
 										icon={AlertTriangle}
-										title="Tháº¥t báº¡i"
-										value={`${currentPageFailedCount} báº£n ghi`}
-										description="Validation fail, permission fail, routing fail vÃ  cÃ¡c nghiá»‡p vá»¥ cáº§n Ä‘iá»u tra."
+										title="Thất bại"
+										value={`${currentPageFailedCount} bản ghi`}
+										description="Validation fail, permission fail, routing fail và các nghiệp vụ cần điều tra."
 										tone="danger"
 										onClick={() => void applyQuickFocus("failed")}
-										buttonLabel="Chá»‰ xem fail"
+										buttonLabel="Chỉ xem fail"
 									/>
-									<PrioritySpotlightCard
-										icon={Route}
-										title="Tá»‘i Æ°u tuyáº¿n"
-										value={`${currentPageRoutingCount} báº£n ghi`}
-										description="NhÃ³m log tá»‘i Æ°u tuyáº¿n, Ä‘á»ƒ theo dÃµi run thÃ nh cÃ´ng vÃ  cÃ¡c ca fail."
-										tone="routing"
-										onClick={() => void applyQuickFocus("routing")}
-										buttonLabel="Chá»‰ xem routing"
-									/>
+									<PrioritySpotlightCard icon={Route} title="Tối ưu tuyến" value={`${currentPageRoutingCount} bản ghi`} description="Nhóm log tối ưu tuyến, để theo dõi run thành công và các ca fail." tone="routing" onClick={() => void applyQuickFocus("routing")} buttonLabel="Chỉ xem routing" />
 								</div>
 
 								<Card className="overflow-hidden border-border/70 bg-card/95 shadow-sm">
 									<div className="border-b border-border bg-muted/20 px-6 py-4">
 										<div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
 											<div>
-												<h2 className="text-lg font-semibold text-foreground">Bá»™ lá»c Ä‘iá»u tra</h2>
-												<p className="text-sm text-muted-foreground">Lá»c theo ngÆ°á»i thao tÃ¡c, loáº¡i sá»± kiá»‡n, depot phá»¥ trÃ¡ch vÃ  khoáº£ng thá»i gian.</p>
+												<h2 className="text-lg font-semibold text-foreground">Bộ lọc điều tra</h2>
+												<p className="text-sm text-muted-foreground">Lọc theo người thao tác, loại sự kiện, depot phụ trách và khoảng thời gian.</p>
 											</div>
 											<div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
 												<CalendarRange className="h-4 w-4" />
-												{activeFilterCount > 0 ? `${activeFilterCount} bá»™ lá»c Ä‘ang Ã¡p dá»¥ng` : "ChÆ°a Ã¡p dá»¥ng bá»™ lá»c"}
+												{activeFilterCount > 0 ? `${activeFilterCount} bộ lọc đang áp dụng` : "Chưa áp dụng bộ lọc"}
 											</div>
 										</div>
 									</div>
@@ -324,23 +247,17 @@ export default function AuditPage() {
 									<div className="space-y-5 p-6">
 										<div className="grid gap-4 lg:grid-cols-3 xl:grid-cols-6">
 											<div className="xl:col-span-2">
-												<Label htmlFor="audit-search">TÃ¬m nhanh</Label>
-												<Input
-													id="audit-search"
-													className="mt-2"
-													placeholder="Username, resource, message, request id..."
-													value={filters.search}
-													onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-												/>
+												<Label htmlFor="audit-search">Tìm nhanh</Label>
+												<Input id="audit-search" className="mt-2" placeholder="Tên người dùng, tài nguyên, thông điệp, mã yêu cầu..." value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} />
 											</div>
 											<div>
-												<Label>HÃ nh Ä‘á»™ng</Label>
+												<Label>Hành động</Label>
 												<Select value={filters.action} onValueChange={(value) => setFilters((current) => ({ ...current, action: value }))}>
 													<SelectTrigger className="mt-2 w-full">
-														<SelectValue placeholder="Táº¥t cáº£ action" />
+														<SelectValue placeholder="Tất cả hành động" />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="ALL">Táº¥t cáº£ action</SelectItem>
+														<SelectItem value="ALL">Tất cả action</SelectItem>
 														{ACTION_OPTIONS.map((action) => (
 															<SelectItem key={action} value={action}>
 																{formatActionLabel(action)}
@@ -350,13 +267,13 @@ export default function AuditPage() {
 												</Select>
 											</div>
 											<div>
-												<Label>TÃ i nguyÃªn</Label>
+												<Label>Tài nguyên</Label>
 												<Select value={filters.resourceType} onValueChange={(value) => setFilters((current) => ({ ...current, resourceType: value }))}>
 													<SelectTrigger className="mt-2 w-full">
-														<SelectValue placeholder="Táº¥t cáº£ resource" />
+														<SelectValue placeholder="Tất cả tài nguyên" />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="ALL">Táº¥t cáº£ resource</SelectItem>
+														<SelectItem value="ALL">Tất cả resource</SelectItem>
 														{RESOURCE_OPTIONS.map((resource) => (
 															<SelectItem key={resource} value={resource}>
 																{formatResourceLabel(resource)}
@@ -366,13 +283,13 @@ export default function AuditPage() {
 												</Select>
 											</div>
 											<div>
-												<Label>Status</Label>
+												<Label>Trạng thái</Label>
 												<Select value={filters.status} onValueChange={(value) => setFilters((current) => ({ ...current, status: value }))}>
 													<SelectTrigger className="mt-2 w-full">
-														<SelectValue placeholder="Táº¥t cáº£ tráº¡ng thÃ¡i" />
+														<SelectValue placeholder="Tất cả trạng thái" />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="ALL">Táº¥t cáº£ tráº¡ng thÃ¡i</SelectItem>
+														<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
 														{STATUS_OPTIONS.map((status) => (
 															<SelectItem key={status} value={status}>
 																{formatStatusLabel(status)}
@@ -382,53 +299,35 @@ export default function AuditPage() {
 												</Select>
 											</div>
 											<div>
-												<Label htmlFor="audit-actor">NgÆ°á»i thao tÃ¡c</Label>
-												<Input
-													id="audit-actor"
-													className="mt-2"
-													placeholder="Nháº­p username"
-													value={filters.actorUsername}
-													onChange={(event) => setFilters((current) => ({ ...current, actorUsername: event.target.value }))}
-												/>
+												<Label htmlFor="audit-actor">Người thao tác</Label>
+												<Input id="audit-actor" className="mt-2" placeholder="Nhập username" value={filters.actorUsername} onChange={(event) => setFilters((current) => ({ ...current, actorUsername: event.target.value }))} />
 											</div>
 											<div>
-												<Label>Kho phá»¥ trÃ¡ch</Label>
+												<Label>Kho phụ trách</Label>
 												<Select value={filters.scopeDepotId} onValueChange={(value) => setFilters((current) => ({ ...current, scopeDepotId: value }))}>
 													<SelectTrigger className="mt-2 w-full">
-														<SelectValue placeholder="Táº¥t cáº£ kho" />
+														<SelectValue placeholder="Tất cả kho" />
 													</SelectTrigger>
 													<SelectContent>
-														<SelectItem value="ALL">Táº¥t cáº£ kho</SelectItem>
+														<SelectItem value="ALL">Tất cả kho</SelectItem>
 														{depots.map((depot) => (
 															<SelectItem key={depot.id} value={String(depot.id)}>
 																{depot.name}
 															</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
+														))}
+													</SelectContent>
+												</Select>
+											</div>
 										</div>
 
 										<div className="grid gap-4 md:grid-cols-2">
 											<div>
-												<Label htmlFor="audit-from">Tá»« thá»i Ä‘iá»ƒm</Label>
-												<Input
-													id="audit-from"
-													type="datetime-local"
-													className="mt-2"
-													value={filters.from}
-													onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value }))}
-												/>
+												<Label htmlFor="audit-from">Từ thời điểm</Label>
+												<Input id="audit-from" type="datetime-local" className="mt-2" value={filters.from} onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value }))} />
 											</div>
 											<div>
-												<Label htmlFor="audit-to">Äáº¿n thá»i Ä‘iá»ƒm</Label>
-												<Input
-													id="audit-to"
-													type="datetime-local"
-													className="mt-2"
-													value={filters.to}
-													onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value }))}
-												/>
+												<Label htmlFor="audit-to">Đến thời điểm</Label>
+												<Input id="audit-to" type="datetime-local" className="mt-2" value={filters.to} onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value }))} />
 											</div>
 										</div>
 
@@ -445,26 +344,26 @@ export default function AuditPage() {
 										<div className="flex flex-wrap gap-3">
 											<Button onClick={() => void applyFilters()} className="gap-2">
 												<Search className="h-4 w-4" />
-												Ãp dá»¥ng bá»™ lá»c
+												Áp dụng bộ lọc
 											</Button>
 											<Button variant="outline" onClick={() => void resetFilters()} className="gap-2">
 												<RefreshCw className="h-4 w-4" />
-												Äáº·t láº¡i
+												Đặt lại
 											</Button>
 											<Button variant="outline" onClick={() => void applyDatePreset(1)} className="gap-2">
-												24h gáº§n nháº¥t
+												24h gần nhất
 											</Button>
 											<Button variant="outline" onClick={() => void applyDatePreset(7)} className="gap-2">
-												7 ngÃ y
+												7 ngày
 											</Button>
 											<Button variant="outline" onClick={() => void applyDatePreset(30)} className="gap-2">
-												30 ngÃ y
+												30 ngày
 											</Button>
 											<Button variant="outline" onClick={() => void applyQuickFocus("failed")} className="gap-2">
-												Tháº¥t báº¡i
+												Thất bại
 											</Button>
 											<Button variant="outline" onClick={() => void applyQuickFocus("routing")} className="gap-2">
-												Tá»‘i Æ°u tuyáº¿n
+												Tối ưu tuyến
 											</Button>
 											<p className="self-center text-sm text-muted-foreground">{resultSummary}</p>
 										</div>
@@ -476,8 +375,8 @@ export default function AuditPage() {
 										<div className="border-b border-border px-6 py-4">
 											<div className="flex items-center justify-between gap-4">
 												<div>
-													<h2 className="text-lg font-semibold text-foreground">Danh sÃ¡ch báº£n ghi</h2>
-													<p className="text-sm text-muted-foreground">Chá»n má»™t dÃ²ng Ä‘á»ƒ má»Ÿ panel Ä‘iá»u tra chi tiáº¿t.</p>
+													<h2 className="text-lg font-semibold text-foreground">Danh sách bản ghi</h2>
+													<p className="text-sm text-muted-foreground">Chọn một dòng để mở panel điều tra chi tiết.</p>
 												</div>
 												<div className="rounded-full border border-border bg-muted/30 px-3 py-1 text-xs font-medium text-muted-foreground">
 													Trang {Math.min(page + 1, Math.max(totalPages, 1))} / {Math.max(totalPages, 1)}
@@ -512,9 +411,9 @@ export default function AuditPage() {
 																		<ResourceBadge resourceType={log.resourceType} />
 																	</div>
 																	<div>
-																		<p className="text-sm font-semibold text-foreground">{log.resourceName || log.resourceId || "KhÃ´ng cÃ³ mÃ£ Ä‘á»‘i tÆ°á»£ng"}</p>
+																		<p className="text-sm font-semibold text-foreground">{log.resourceName || log.resourceId || "Không có mã đối tượng"}</p>
 																		<p className="mt-1 text-sm text-muted-foreground">
-																			{log.actorUsername || "áº¨n danh"} {log.actorRole ? `- ${log.actorRole}` : ""}
+																			{log.actorUsername || "Ẩn danh"} {log.actorRole ? `- ${log.actorRole}` : ""}
 																		</p>
 																	</div>
 																</div>
@@ -524,22 +423,18 @@ export default function AuditPage() {
 																</div>
 															</div>
 
-															<p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">
-																{log.message || "KhÃ´ng cÃ³ thÃ´ng Ä‘iá»‡p bá»• sung cho báº£n ghi nÃ y."}
-															</p>
+															<p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{log.message || "Không có thông điệp bổ sung cho bản ghi này."}</p>
 
 															<div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-																{isPriorityLog(log) ? <span className="rounded-full bg-rose-600 px-2.5 py-1 font-semibold text-white">Cáº£nh bÃ¡o Æ°u tiÃªn</span> : null}
-																{log.resourceType === "ROUTING_RUN" ? <span className="rounded-full bg-sky-600 px-2.5 py-1 font-semibold text-white">Dáº¥u váº¿t routing</span> : null}
-																<span className="rounded-full bg-muted/50 px-2.5 py-1">MÃ£ request {log.requestId || "N/A"}</span>
+																{isPriorityLog(log) ? <span className="rounded-full bg-rose-600 px-2.5 py-1 font-semibold text-white">Cảnh báo ưu tiên</span> : null}
+																{log.resourceType === "ROUTING_RUN" ? <span className="rounded-full bg-sky-600 px-2.5 py-1 font-semibold text-white">Dấu vết routing</span> : null}
+																<span className="rounded-full bg-muted/50 px-2.5 py-1">Mã request {log.requestId || "N/A"}</span>
 																<span className="rounded-full bg-muted/50 px-2.5 py-1">IP {log.ipAddress || "N/A"}</span>
 															</div>
 														</button>
 													))
 												) : (
-													<div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center text-sm text-muted-foreground">
-														{isLoading ? "Äang táº£i dá»¯ liá»‡u..." : "KhÃ´ng cÃ³ báº£n ghi audit phÃ¹ há»£p."}
-													</div>
+													<div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center text-sm text-muted-foreground">{isLoading ? "Đang tải dữ liệu..." : "Không có bản ghi audit phù hợp."}</div>
 												)}
 											</div>
 										</div>
@@ -549,7 +444,7 @@ export default function AuditPage() {
 											<div className="flex gap-2">
 												<Button variant="outline" size="sm" onClick={() => void handlePageChange(page - 1)} disabled={!canGoPrev || isLoading} className="gap-2">
 													<ChevronLeft className="h-4 w-4" />
-													TrÆ°á»›c
+													Trước
 												</Button>
 												<Button variant="outline" size="sm" onClick={() => void handlePageChange(page + 1)} disabled={!canGoNext || isLoading} className="gap-2">
 													Sau
@@ -563,18 +458,18 @@ export default function AuditPage() {
 										<div className="border-b border-border bg-muted/20 px-6 py-4">
 											<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 												<div>
-													<h2 className="text-lg font-semibold text-foreground">Chi tiáº¿t báº£n ghi</h2>
-													<p className="text-sm text-muted-foreground">Äá»c ngá»¯ cáº£nh sá»± kiá»‡n, request vÃ  dá»¯ liá»‡u thay Ä‘á»•i trÃªn cÃ¹ng má»™t mÃ n hÃ¬nh.</p>
+													<h2 className="text-lg font-semibold text-foreground">Chi tiết bản ghi</h2>
+													<p className="text-sm text-muted-foreground">Đọc ngữ cảnh sự kiện, request và dữ liệu thay đổi trên cùng một màn hình.</p>
 												</div>
 												{selectedLog ? (
 													<div className="flex gap-2">
-														<Button variant="outline" size="sm" onClick={() => void copyValue(selectedLog.requestId, "mÃ£ request")}>
+														<Button variant="outline" size="sm" onClick={() => void copyValue(selectedLog.requestId, "mã request")}>
 															<Copy className="h-4 w-4" />
-															MÃ£ request
+															Mã request
 														</Button>
-														<Button variant="outline" size="sm" onClick={() => void copyValue(selectedLog.resourceId, "mÃ£ Ä‘á»‘i tÆ°á»£ng")}>
+														<Button variant="outline" size="sm" onClick={() => void copyValue(selectedLog.resourceId, "mã đối tượng")}>
 															<Copy className="h-4 w-4" />
-															MÃ£ Ä‘á»‘i tÆ°á»£ng
+															Mã đối tượng
 														</Button>
 													</div>
 												) : null}
@@ -584,14 +479,16 @@ export default function AuditPage() {
 										<div className="max-h-[860px] overflow-y-auto p-6">
 											{selectedLog ? (
 												<div className="space-y-6">
-													<div className={cn(
-														"rounded-2xl border p-5 text-slate-100 shadow-sm",
-														selectedLog.status === "FAILED"
-															? "border-rose-400/40 bg-[linear-gradient(135deg,rgba(127,29,29,0.98),rgba(68,12,12,0.95))]"
-															: selectedLog.resourceType === "ROUTING_RUN"
-																? "border-sky-400/40 bg-[linear-gradient(135deg,rgba(8,47,73,0.98),rgba(12,74,110,0.95))]"
-																: "border-border bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.95))]",
-													)}>
+													<div
+														className={cn(
+															"rounded-2xl border p-5 text-slate-100 shadow-sm",
+															selectedLog.status === "FAILED"
+																? "border-rose-400/40 bg-[linear-gradient(135deg,rgba(127,29,29,0.98),rgba(68,12,12,0.95))]"
+																: selectedLog.resourceType === "ROUTING_RUN"
+																	? "border-sky-400/40 bg-[linear-gradient(135deg,rgba(8,47,73,0.98),rgba(12,74,110,0.95))]"
+																	: "border-border bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.95))]",
+														)}
+													>
 														<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 															<div className="space-y-3">
 																<div className="flex flex-wrap items-center gap-2">
@@ -600,28 +497,28 @@ export default function AuditPage() {
 																	<ResourceBadge resourceType={selectedLog.resourceType} />
 																</div>
 																<div>
-																	<p className="text-xs uppercase tracking-[0.22em] text-slate-400">Äá»‘i tÆ°á»£ng má»¥c tiÃªu</p>
-																	<h3 className="mt-2 text-2xl font-semibold text-white">{selectedLog.resourceName || selectedLog.resourceId || "KhÃ´ng rÃµ Ä‘á»‘i tÆ°á»£ng"}</h3>
-																	<p className="mt-2 text-sm text-slate-300">{selectedLog.message || "KhÃ´ng cÃ³ thÃ´ng Ä‘iá»‡p bá»• sung."}</p>
+																	<p className="text-xs uppercase tracking-[0.22em] text-slate-400">Đối tượng mục tiêu</p>
+																	<h3 className="mt-2 text-2xl font-semibold text-white">{selectedLog.resourceName || selectedLog.resourceId || "Không rõ đối tượng"}</h3>
+																	<p className="mt-2 text-sm text-slate-300">{selectedLog.message || "Không có thông điệp bổ sung."}</p>
 																</div>
 															</div>
 															<div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-																<p className="text-xs uppercase tracking-[0.2em] text-slate-400">Thá»i Ä‘iá»ƒm xáº£y ra</p>
+																<p className="text-xs uppercase tracking-[0.2em] text-slate-400">Thời điểm xảy ra</p>
 																<p className="mt-2 font-medium text-white">{formatDateTime(selectedLog.createdAt)}</p>
 															</div>
 														</div>
 													</div>
 
 													<div className="grid gap-3 md:grid-cols-2">
-														<AuditMeta label="NgÆ°á»i thao tÃ¡c" value={selectedLog.actorUsername || "áº¨n danh"} />
-														<AuditMeta label="Vai trÃ²" value={selectedLog.actorRole || "N/A"} />
-														<AuditMeta label="HÃ nh Ä‘á»™ng" value={formatActionLabel(selectedLog.action)} />
-														<AuditMeta label="TÃ i nguyÃªn" value={formatResourceLabel(selectedLog.resourceType)} />
-														<AuditMeta label="MÃ£ Ä‘á»‘i tÆ°á»£ng" value={selectedLog.resourceId || "N/A"} />
-														<AuditMeta label="Kho pháº¡m vi" value={formatDepotScope(selectedLog.scopeDepotId)} />
-														<AuditMeta label="MÃ£ request" value={selectedLog.requestId || "N/A"} />
-														<AuditMeta label="Äá»‹a chá»‰ IP" value={selectedLog.ipAddress || "N/A"} />
-														<AuditMeta label="TrÃ¬nh duyá»‡t / thiáº¿t bá»‹" value={selectedLog.userAgent || "N/A"} className="md:col-span-2" />
+														<AuditMeta label="Người thao tác" value={selectedLog.actorUsername || "Ẩn danh"} />
+														<AuditMeta label="Vai trò" value={selectedLog.actorRole || "N/A"} />
+														<AuditMeta label="Hành động" value={formatActionLabel(selectedLog.action)} />
+														<AuditMeta label="Tài nguyên" value={formatResourceLabel(selectedLog.resourceType)} />
+														<AuditMeta label="Mã đối tượng" value={selectedLog.resourceId || "N/A"} />
+														<AuditMeta label="Kho phạm vi" value={formatDepotScope(selectedLog.scopeDepotId)} />
+														<AuditMeta label="Mã request" value={selectedLog.requestId || "N/A"} />
+														<AuditMeta label="Địa chỉ IP" value={selectedLog.ipAddress || "N/A"} />
+														<AuditMeta label="Trình duyệt / thiết bị" value={selectedLog.userAgent || "N/A"} className="md:col-span-2" />
 													</div>
 
 													<div className="rounded-2xl border border-border bg-muted/20 p-5">
@@ -630,9 +527,7 @@ export default function AuditPage() {
 																<h3 className="font-semibold text-foreground">Tóm tắt thay đổi</h3>
 																<p className="text-sm text-muted-foreground">Rút gọn các key thay đổi để admin quét nhanh trước khi xem JSON.</p>
 															</div>
-															<span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-																{highlightedChanges.length} mục
-															</span>
+															<span className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">{highlightedChanges.length} mục</span>
 														</div>
 
 														{highlightedChanges.length > 0 ? (
@@ -648,17 +543,16 @@ export default function AuditPage() {
 														)}
 													</div>
 
-
 													<div className="grid gap-4 xl:grid-cols-3">
-														<AuditJsonBlock title="Before Data" value={selectedLog.beforeData} onOpen={() => setIsJsonViewerOpen(true)} />
-														<AuditJsonBlock title="After Data" value={selectedLog.afterData} onOpen={() => setIsJsonViewerOpen(true)} />
-														<AuditJsonBlock title="Metadata" value={selectedLog.metadata} onOpen={() => setIsJsonViewerOpen(true)} />
+														<AuditJsonBlock title="Dữ liệu trước" value={selectedLog.beforeData} onOpen={() => setIsJsonViewerOpen(true)} />
+														<AuditJsonBlock title="Dữ liệu sau" value={selectedLog.afterData} onOpen={() => setIsJsonViewerOpen(true)} />
+														<AuditJsonBlock title="Siêu dữ liệu" value={selectedLog.metadata} onOpen={() => setIsJsonViewerOpen(true)} />
 													</div>
 												</div>
 											) : (
 												<div className="rounded-2xl border border-dashed border-border px-6 py-16 text-center">
-													<p className="text-lg font-semibold text-foreground">Chá»n má»™t báº£n ghi audit</p>
-													<p className="mt-2 text-sm text-muted-foreground">Panel nÃ y sáº½ hiá»‡n request context, snapshot dá»¯ liá»‡u vÃ  tÃ³m táº¯t thay Ä‘á»•i.</p>
+													<p className="text-lg font-semibold text-foreground">Chọn một bản ghi audit</p>
+													<p className="mt-2 text-sm text-muted-foreground">Panel này sẽ hiện request context, snapshot dữ liệu và tóm tắt thay đổi.</p>
 												</div>
 											)}
 										</div>
@@ -670,60 +564,28 @@ export default function AuditPage() {
 								<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
 									<ShieldAlert className="h-6 w-6" />
 								</div>
-								<h2 className="text-xl font-semibold text-foreground">Chá»‰ admin má»›i Ä‘Æ°á»£c xem audit logs</h2>
-								<p className="mt-2 text-muted-foreground">Trang nÃ y dÃ¹ng Ä‘á»ƒ Ä‘iá»u tra thao tÃ¡c há»‡ thá»‘ng vÃ  theo dÃµi thay Ä‘á»•i nháº¡y cáº£m, nÃªn Ä‘ang Ä‘Æ°á»£c giá»›i háº¡n á»Ÿ quyá»n `audit.read`.</p>
+								<h2 className="text-xl font-semibold text-foreground">Chỉ admin mới được xem audit logs</h2>
+								<p className="mt-2 text-muted-foreground">Trang này dùng để điều tra thao tác hệ thống và theo dõi thay đổi nhạy cảm, nên đang được giới hạn ở quyền `audit.read`.</p>
 							</Card>
 						)}
 					</div>
 				</div>
 			</DashboardLayout>
-			{selectedLog && isJsonViewerOpen ? (
-				<AuditJsonViewerModal
-					log={selectedLog}
-					onClose={() => setIsJsonViewerOpen(false)}
-				/>
-			) : null}
+			{selectedLog && isJsonViewerOpen ? <AuditJsonViewerModal log={selectedLog} onClose={() => setIsJsonViewerOpen(false)} /> : null}
 		</ProtectedRoute>
 	);
 }
 
-function SummaryCard({
-	icon: Icon,
-	label,
-	value,
-	helper,
-	tone,
-}: {
-	icon: typeof ShieldCheck;
-	label: string;
-	value: string;
-	helper: string;
-	tone: "neutral" | "success" | "danger" | "routing";
-}) {
+function SummaryCard({ icon: Icon, label, value, helper, tone }: { icon: typeof ShieldCheck; label: string; value: string; helper: string; tone: "neutral" | "success" | "danger" | "routing" }) {
 	return (
-		<Card
-			className={cn(
-				"border-border/70 p-4 shadow-sm",
-				tone === "success" && "border-emerald-500/20 bg-emerald-500/5",
-				tone === "danger" && "border-rose-500/20 bg-rose-500/5",
-				tone === "routing" && "border-sky-500/20 bg-sky-500/5",
-			)}
-		>
+		<Card className={cn("border-border/70 p-4 shadow-sm", tone === "success" && "border-emerald-500/20 bg-emerald-500/5", tone === "danger" && "border-rose-500/20 bg-rose-500/5", tone === "routing" && "border-sky-500/20 bg-sky-500/5")}>
 			<div className="flex items-start justify-between gap-4">
 				<div>
 					<p className="text-sm text-muted-foreground">{label}</p>
 					<p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>
 					<p className="mt-2 text-xs text-muted-foreground">{helper}</p>
 				</div>
-				<div
-					className={cn(
-						"rounded-2xl p-3",
-						tone === "neutral" && "bg-slate-900 text-white",
-						tone === "success" && "bg-emerald-600 text-white",
-						tone === "danger" && "bg-rose-600 text-white",
-						tone === "routing" && "bg-sky-600 text-white",
-					)}
-				>
+				<div className={cn("rounded-2xl p-3", tone === "neutral" && "bg-slate-900 text-white", tone === "success" && "bg-emerald-600 text-white", tone === "danger" && "bg-rose-600 text-white", tone === "routing" && "bg-sky-600 text-white")}>
 					<Icon className="h-5 w-5" />
 				</div>
 			</div>
@@ -731,32 +593,9 @@ function SummaryCard({
 	);
 }
 
-function PrioritySpotlightCard({
-	icon: Icon,
-	title,
-	value,
-	description,
-	buttonLabel,
-	tone,
-	onClick,
-}: {
-	icon: typeof ShieldCheck;
-	title: string;
-	value: string;
-	description: string;
-	buttonLabel: string;
-	tone: "danger" | "routing";
-	onClick: () => void;
-}) {
+function PrioritySpotlightCard({ icon: Icon, title, value, description, buttonLabel, tone, onClick }: { icon: typeof ShieldCheck; title: string; value: string; description: string; buttonLabel: string; tone: "danger" | "routing"; onClick: () => void }) {
 	return (
-		<Card
-			className={cn(
-				"overflow-hidden border-border/70 p-0 shadow-sm",
-				tone === "danger"
-					? "border-rose-300/50 bg-[linear-gradient(135deg,rgba(255,241,242,0.98),rgba(255,228,230,0.95))]"
-					: "border-sky-300/50 bg-[linear-gradient(135deg,rgba(240,249,255,0.98),rgba(224,242,254,0.95))]",
-			)}
-		>
+		<Card className={cn("overflow-hidden border-border/70 p-0 shadow-sm", tone === "danger" ? "border-rose-300/50 bg-[linear-gradient(135deg,rgba(255,241,242,0.98),rgba(255,228,230,0.95))]" : "border-sky-300/50 bg-[linear-gradient(135deg,rgba(240,249,255,0.98),rgba(224,242,254,0.95))]")}>
 			<div className="flex h-full flex-col gap-4 p-5">
 				<div className="flex items-start justify-between gap-4">
 					<div>
@@ -796,7 +635,7 @@ function AuditJsonBlock({ title, value, onOpen }: { title: string; value: unknow
 					<Eye className="h-4 w-4" />
 				</Button>
 			</div>
-			<pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-slate-100">{value ? JSON.stringify(value, null, 2) : "KhÃ´ng cÃ³ dá»¯ liá»‡u"}</pre>
+			<pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-slate-100">{value ? JSON.stringify(value, null, 2) : "Không có dữ liệu"}</pre>
 		</div>
 	);
 }
@@ -807,10 +646,8 @@ function AuditJsonViewerModal({ log, onClose }: { log: AuditLog; onClose: () => 
 			<div className="flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-2xl">
 				<div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
 					<div>
-						<p className="text-sm font-medium text-slate-400">TrÃ¬nh xem dá»¯ liá»‡u audit</p>
-						<h3 className="mt-1 text-xl font-semibold text-white">
-							{log.resourceName || log.resourceId || "KhÃ´ng rÃµ Ä‘á»‘i tÆ°á»£ng"}
-						</h3>
+						<p className="text-sm font-medium text-slate-400">Trình xem dữ liệu audit</p>
+						<h3 className="mt-1 text-xl font-semibold text-white">{log.resourceName || log.resourceId || "Không rõ đối tượng"}</h3>
 					</div>
 					<Button variant="ghost" size="icon-sm" className="text-slate-200 hover:bg-white/10 hover:text-white" onClick={onClose}>
 						<X className="h-5 w-5" />
@@ -818,9 +655,9 @@ function AuditJsonViewerModal({ log, onClose }: { log: AuditLog; onClose: () => 
 				</div>
 
 				<div className="grid flex-1 gap-4 overflow-auto p-6 xl:grid-cols-3">
-					<AuditJsonPanel title="Dá»¯ liá»‡u trÆ°á»›c thay Ä‘á»•i" value={log.beforeData} />
-					<AuditJsonPanel title="Dá»¯ liá»‡u sau thay Ä‘á»•i" value={log.afterData} />
-					<AuditJsonPanel title="Metadata" value={log.metadata} />
+					<AuditJsonPanel title="Dữ liệu trước thay đổi" value={log.beforeData} />
+					<AuditJsonPanel title="Dữ liệu sau thay đổi" value={log.afterData} />
+					<AuditJsonPanel title="Siêu dữ liệu" value={log.metadata} />
 				</div>
 			</div>
 		</div>
@@ -833,23 +670,14 @@ function AuditJsonPanel({ title, value }: { title: string; value: unknown }) {
 			<div className="border-b border-white/10 px-4 py-3">
 				<p className="text-sm font-semibold text-slate-100">{title}</p>
 			</div>
-			<pre className="max-h-[65vh] overflow-auto p-4 text-xs leading-6 text-slate-100">
-				{value ? JSON.stringify(value, null, 2) : "KhÃ´ng cÃ³ dá»¯ liá»‡u"}
-			</pre>
+			<pre className="max-h-[65vh] overflow-auto p-4 text-xs leading-6 text-slate-100">{value ? JSON.stringify(value, null, 2) : "Không có dữ liệu"}</pre>
 		</div>
 	);
 }
 
 function StatusBadge({ status }: { status: string }) {
 	return (
-		<span
-			className={cn(
-				"inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-				status === "SUCCESS" && "bg-emerald-500/15 text-emerald-700",
-				status === "FAILED" && "bg-rose-500/15 text-rose-700",
-				status !== "SUCCESS" && status !== "FAILED" && "bg-slate-500/15 text-slate-700",
-			)}
-		>
+		<span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", status === "SUCCESS" && "bg-emerald-500/15 text-emerald-700", status === "FAILED" && "bg-rose-500/15 text-rose-700", status !== "SUCCESS" && status !== "FAILED" && "bg-slate-500/15 text-slate-700")}>
 			{formatStatusLabel(status)}
 		</span>
 	);
@@ -873,16 +701,7 @@ function ActionBadge({ action }: { action: string }) {
 }
 
 function ResourceBadge({ resourceType }: { resourceType: string }) {
-	return (
-		<span
-			className={cn(
-				"inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-				resourceType === "ROUTING_RUN" ? "bg-sky-500/15 text-sky-700" : "bg-slate-900/10 text-slate-700",
-			)}
-		>
-			{formatResourceLabel(resourceType)}
-		</span>
-	);
+	return <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", resourceType === "ROUTING_RUN" ? "bg-sky-500/15 text-sky-700" : "bg-slate-900/10 text-slate-700")}>{formatResourceLabel(resourceType)}</span>;
 }
 
 function isPriorityLog(log: AuditLog) {
@@ -890,32 +709,25 @@ function isPriorityLog(log: AuditLog) {
 }
 
 function countActiveFilters(filters: Filters) {
-	return [
-		filters.search,
-		filters.action !== "ALL" ? filters.action : "",
-		filters.resourceType !== "ALL" ? filters.resourceType : "",
-		filters.actorUsername,
-		filters.scopeDepotId !== "ALL" ? filters.scopeDepotId : "",
-		filters.status !== "ALL" ? filters.status : "",
-		filters.from,
-		filters.to,
-	].filter(Boolean).length;
+	return [filters.search, filters.action !== "ALL" ? filters.action : "", filters.resourceType !== "ALL" ? filters.resourceType : "", filters.actorUsername, filters.scopeDepotId !== "ALL" ? filters.scopeDepotId : "", filters.status !== "ALL" ? filters.status : "", filters.from, filters.to].filter(
+		Boolean,
+	).length;
 }
 
 function buildActiveFilterChips(filters: Filters, depots: Depot[]) {
 	const chips: string[] = [];
 
-	if (filters.search) chips.push(`TÃ¬m kiáº¿m: ${filters.search}`);
-	if (filters.action !== "ALL") chips.push(`HÃ nh Ä‘á»™ng: ${formatActionLabel(filters.action)}`);
-	if (filters.resourceType !== "ALL") chips.push(`TÃ i nguyÃªn: ${formatResourceLabel(filters.resourceType)}`);
-	if (filters.actorUsername) chips.push(`NgÆ°á»i thao tÃ¡c: ${filters.actorUsername}`);
-	if (filters.status !== "ALL") chips.push(`Tráº¡ng thÃ¡i: ${formatStatusLabel(filters.status)}`);
+	if (filters.search) chips.push(`Tìm kiếm: ${filters.search}`);
+	if (filters.action !== "ALL") chips.push(`Hành động: ${formatActionLabel(filters.action)}`);
+	if (filters.resourceType !== "ALL") chips.push(`Tài nguyên: ${formatResourceLabel(filters.resourceType)}`);
+	if (filters.actorUsername) chips.push(`Người thao tác: ${filters.actorUsername}`);
+	if (filters.status !== "ALL") chips.push(`Trạng thái: ${formatStatusLabel(filters.status)}`);
 	if (filters.scopeDepotId !== "ALL") {
 		const depot = depots.find((item) => String(item.id) === filters.scopeDepotId);
 		chips.push(`Kho: ${depot?.name || `#${filters.scopeDepotId}`}`);
 	}
-	if (filters.from) chips.push(`Tá»«: ${formatDateTime(new Date(filters.from).toISOString())}`);
-	if (filters.to) chips.push(`Äáº¿n: ${formatDateTime(new Date(filters.to).toISOString())}`);
+	if (filters.from) chips.push(`Từ: ${formatDateTime(new Date(filters.from).toISOString())}`);
+	if (filters.to) chips.push(`Đến: ${formatDateTime(new Date(filters.to).toISOString())}`);
 
 	return chips;
 }
@@ -957,7 +769,7 @@ function buildChangeSummary(log: AuditLog | null) {
 	}
 
 	if (JSON.stringify(beforeData) !== JSON.stringify(afterData)) {
-		return [`GiÃ¡ trá»‹ thay Ä‘á»•i: ${shortValue(beforeData)} -> ${shortValue(afterData)}`];
+		return [`Giá trị thay đổi: ${shortValue(beforeData)} -> ${shortValue(afterData)}`];
 	}
 
 	return [];
@@ -969,10 +781,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function shortValue(value: unknown) {
 	if (value === null || value === undefined) {
-		return "trá»‘ng";
+		return "trống";
 	}
 	if (Array.isArray(value)) {
-		return value.length === 0 ? "[]" : `[${value.length} má»¥c]`;
+		return value.length === 0 ? "[]" : `[${value.length} mục]`;
 	}
 	if (typeof value === "object") {
 		return "{...}";
@@ -986,15 +798,15 @@ function buildArrayChangeSummary(beforeData: unknown, afterData: unknown) {
 	const afterArray = Array.isArray(afterData) ? afterData : [];
 
 	if (beforeArray.length === 0 && afterArray.length > 0) {
-		return [`ThÃªm má»›i ${afterArray.length} má»¥c`, ...summarizeArrayItems(afterArray)].slice(0, 12);
+		return [`Thêm mới ${afterArray.length} mục`, ...summarizeArrayItems(afterArray)].slice(0, 12);
 	}
 
 	if (afterArray.length === 0 && beforeArray.length > 0) {
-		return [`XÃ³a ${beforeArray.length} má»¥c`, ...summarizeArrayItems(beforeArray)].slice(0, 12);
+		return [`Xóa ${beforeArray.length} mục`, ...summarizeArrayItems(beforeArray)].slice(0, 12);
 	}
 
 	if (beforeArray.length !== afterArray.length) {
-		return [`Sá»‘ lÆ°á»£ng má»¥c: ${beforeArray.length} -> ${afterArray.length}`, ...summarizeArrayItems(afterArray.length > 0 ? afterArray : beforeArray)].slice(0, 12);
+		return [`Số lượng mục: ${beforeArray.length} -> ${afterArray.length}`, ...summarizeArrayItems(afterArray.length > 0 ? afterArray : beforeArray)].slice(0, 12);
 	}
 
 	const changedIndexes = beforeArray
@@ -1006,15 +818,15 @@ function buildArrayChangeSummary(beforeData: unknown, afterData: unknown) {
 		return changedIndexes.map(({ item, index }) => {
 			const nextItem = afterArray[index];
 			if (isRecord(item) && isRecord(nextItem)) {
-				const label = getArrayItemLabel(nextItem) || getArrayItemLabel(item) || `Má»¥c ${index + 1}`;
-				return `${label}: Ä‘Ã£ thay Ä‘á»•i`;
+				const label = getArrayItemLabel(nextItem) || getArrayItemLabel(item) || `Mục ${index + 1}`;
+				return `${label}: đã thay đổi`;
 			}
-			return `Má»¥c ${index + 1}: ${shortValue(item)} -> ${shortValue(nextItem)}`;
+			return `Mục ${index + 1}: ${shortValue(item)} -> ${shortValue(nextItem)}`;
 		});
 	}
 
 	if (JSON.stringify(beforeArray) !== JSON.stringify(afterArray)) {
-		return [`Dá»¯ liá»‡u danh sÃ¡ch Ä‘Ã£ thay Ä‘á»•i (${afterArray.length} má»¥c)`];
+		return [`Dữ liệu danh sách đã thay đổi (${afterArray.length} mục)`];
 	}
 
 	return [];
@@ -1023,9 +835,9 @@ function buildArrayChangeSummary(beforeData: unknown, afterData: unknown) {
 function summarizeArrayItems(items: unknown[]) {
 	return items.slice(0, 6).map((item, index) => {
 		if (isRecord(item)) {
-			return `${getArrayItemLabel(item) || `Má»¥c ${index + 1}`}: ${summarizeObjectKeys(item)}`;
+			return `${getArrayItemLabel(item) || `Mục ${index + 1}`}: ${summarizeObjectKeys(item)}`;
 		}
-		return `Má»¥c ${index + 1}: ${shortValue(item)}`;
+		return `Mục ${index + 1}: ${shortValue(item)}`;
 	});
 }
 
@@ -1079,27 +891,27 @@ function formatDateTime(value: string) {
 }
 
 function formatDepotScope(scopeDepotId: number | null) {
-	return scopeDepotId ? `Kho #${scopeDepotId}` : "ToÃ n há»‡ thá»‘ng";
+	return scopeDepotId ? `Kho #${scopeDepotId}` : "Toàn hệ thống";
 }
 
 function formatActionLabel(action: string) {
 	switch (action) {
 		case "LOGIN":
-			return "ÄÄƒng nháº­p";
+			return "Đăng nhập";
 		case "LOGOUT":
-			return "ÄÄƒng xuáº¥t";
+			return "Đăng xuất";
 		case "CHANGE_PASSWORD":
-			return "Äá»•i máº­t kháº©u";
+			return "Đổi mật khẩu";
 		case "CREATE":
-			return "Táº¡o má»›i";
+			return "Tạo mới";
 		case "UPDATE":
-			return "Cáº­p nháº­t";
+			return "Cập nhật";
 		case "DELETE":
-			return "XÃ³a";
+			return "Xóa";
 		case "BULK_UPDATE":
-			return "Cáº­p nháº­t hÃ ng loáº¡t";
+			return "Cập nhật hàng loạt";
 		case "EXECUTE":
-			return "Thá»±c thi";
+			return "Thực thi";
 		default:
 			return action;
 	}
@@ -1108,21 +920,21 @@ function formatActionLabel(action: string) {
 function formatResourceLabel(resourceType: string) {
 	switch (resourceType) {
 		case "AUTH":
-			return "XÃ¡c thá»±c";
+			return "Xác thực";
 		case "USER":
-			return "TÃ i khoáº£n";
+			return "Tài khoản";
 		case "COMPANY":
-			return "CÃ´ng ty";
+			return "Công ty";
 		case "DEPOT":
 			return "Kho";
 		case "DRIVER":
-			return "LÃ¡i xe";
+			return "Lái xe";
 		case "VEHICLE":
-			return "PhÆ°Æ¡ng tiá»‡n";
+			return "Phương tiện";
 		case "ORDER":
-			return "ÄÆ¡n hÃ ng";
+			return "Đơn hàng";
 		case "ROUTING_RUN":
-			return "Tá»‘i Æ°u tuyáº¿n";
+			return "Tối ưu tuyến";
 		default:
 			return resourceType;
 	}
@@ -1131,9 +943,9 @@ function formatResourceLabel(resourceType: string) {
 function formatStatusLabel(status: string) {
 	switch (status) {
 		case "SUCCESS":
-			return "ThÃ nh cÃ´ng";
+			return "Thành công";
 		case "FAILED":
-			return "Tháº¥t báº¡i";
+			return "Thất bại";
 		default:
 			return status;
 	}

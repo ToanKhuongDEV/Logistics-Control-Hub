@@ -8,9 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface DepotRepository extends JpaRepository<DepotEntity, Long> {
+    List<DepotEntity> findByDispatcher_Id(Long dispatcherId);
+
     boolean existsByLocation_Id(Long locationId);
 
     boolean existsByLocation_IdAndIdNot(Long locationId, Long id);

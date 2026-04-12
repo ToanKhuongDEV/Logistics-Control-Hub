@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
-import { authService, User, UserRole } from "@/lib/auth";
+import { authService, UpdateAccountRequest, User, UserRole } from "@/lib/auth";
 import { depotApi } from "@/lib/depot-api";
 import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
@@ -196,6 +196,16 @@ export function AccountManagementPanel() {
 		return true;
 	};
 
+	const haveSameDepotIds = (left: number[], right: number[]) => {
+		if (left.length !== right.length) {
+			return false;
+		}
+
+		const sortedLeft = [...left].sort((a, b) => a - b);
+		const sortedRight = [...right].sort((a, b) => a - b);
+		return sortedLeft.every((value, index) => value === sortedRight[index]);
+	};
+
 	const addDepotToCreateForm = (value: string) => {
 		const depotId = Number(value);
 		setCreateAccountForm((current) => ({
@@ -266,18 +276,43 @@ export function AccountManagementPanel() {
 			return;
 		}
 
+		const nextFullName = editAccountForm.fullName.trim();
+		const nextEmail = editAccountForm.email.trim();
+		const currentAssignedDepotIds = selectedAccount.assignedDepots?.map((depot) => depot.id) || [];
+		const payload: UpdateAccountRequest = {};
+
 		if (!validateScopedRoleSelection(editAccountForm.role, editAccountForm.assignedDepotIds)) {
+			return;
+		}
+
+		if (nextFullName !== (selectedAccount.fullName || "")) {
+			payload.fullName = nextFullName;
+		}
+
+		if (nextEmail.toLowerCase() !== (selectedAccount.email || "").trim().toLowerCase()) {
+			payload.email = nextEmail;
+		}
+
+		if (editAccountForm.role !== selectedAccount.role) {
+			payload.role = editAccountForm.role;
+		}
+
+		if (!haveSameDepotIds(editAccountForm.assignedDepotIds, currentAssignedDepotIds)) {
+			payload.assignedDepotIds = editAccountForm.role === "ADMIN" ? [] : editAccountForm.assignedDepotIds;
+		}
+
+		if (payload.role === "ADMIN" && payload.assignedDepotIds === undefined) {
+			payload.assignedDepotIds = [];
+		}
+
+		if (Object.keys(payload).length === 0) {
+			toast.success("Không có thay đổi để cập nhật");
 			return;
 		}
 
 		setIsUpdatingAccount(true);
 		try {
-			await authService.updateAccount(selectedAccount.id, {
-				fullName: editAccountForm.fullName.trim(),
-				email: editAccountForm.email.trim(),
-				role: editAccountForm.role,
-				assignedDepotIds: editAccountForm.role === "ADMIN" ? [] : editAccountForm.assignedDepotIds,
-			});
+			await authService.updateAccount(selectedAccount.id, payload);
 
 			await refreshAfterMutation(selectedAccount.id);
 			toast.success("Đã cập nhật tài khoản");

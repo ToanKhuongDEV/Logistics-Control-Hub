@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -277,20 +278,84 @@ public class AuthServiceImpl implements AuthService {
             validateAdminAccountManagement(actor, user);
             beforeData = userAuditSnapshot(user);
 
-            if (userRepository.findByEmailIgnoreCase(request.getEmail().trim())
-                    .filter(existingUser -> !existingUser.getId().equals(id))
-                    .isPresent()) {
-                throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
+            boolean fullNameProvided = request.getFullName() != null;
+            boolean emailProvided = request.getEmail() != null;
+            boolean roleProvided = request.getRole() != null;
+            boolean assignedDepotsProvided = request.getAssignedDepotIds() != null;
+
+            if (!fullNameProvided && !emailProvided && !roleProvided && !assignedDepotsProvided) {
+                throw new ValidationException("No fields provided for update.");
             }
 
-            validateAdminRetention(user, request.getRole());
+            boolean userChanged = false;
+            boolean roleChanged = false;
+            boolean depotAssignmentsChanged = false;
 
-            user.setFullName(request.getFullName().trim());
-            user.setEmail(request.getEmail().trim().toLowerCase());
-            user.setRole(normalizeRole(request.getRole()));
+            if (fullNameProvided) {
+                String fullName = request.getFullName().trim();
+                if (fullName.isEmpty()) {
+                    throw new ValidationException("Ho ten khong duoc de trong");
+                }
+                if (!fullName.equals(user.getFullName())) {
+                    user.setFullName(fullName);
+                    userChanged = true;
+                }
+            }
 
-            userRepository.save(user);
-            syncAssignedDepots(user, request.getAssignedDepotIds());
+            if (emailProvided) {
+                String normalizedEmail = request.getEmail().trim().toLowerCase();
+                if (normalizedEmail.isEmpty()) {
+                    throw new ValidationException("Email khong duoc de trong");
+                }
+
+                if (!normalizedEmail.equalsIgnoreCase(user.getEmail())
+                        && userRepository.findByEmailIgnoreCase(normalizedEmail)
+                        .filter(existingUser -> !existingUser.getId().equals(id))
+                        .isPresent()) {
+                    throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
+                }
+
+                if (!normalizedEmail.equalsIgnoreCase(user.getEmail())) {
+                    user.setEmail(normalizedEmail);
+                    userChanged = true;
+                }
+            }
+
+            String currentRole = normalizeRole(user.getRole());
+            String targetRole = currentRole;
+            if (roleProvided) {
+                String requestedRole = request.getRole().trim();
+                if (requestedRole.isEmpty()) {
+                    throw new ValidationException("Vai tro khong duoc de trong");
+                }
+
+                targetRole = normalizeRole(requestedRole);
+                validateAdminRetention(user, targetRole);
+
+                if (!targetRole.equals(currentRole)) {
+                    user.setRole(targetRole);
+                    userChanged = true;
+                    roleChanged = true;
+                }
+            }
+
+            Set<Long> currentAssignedDepotIds = assignedDepotIdsOf(user);
+            Set<Long> requestedAssignedDepotIds = assignedDepotsProvided
+                    ? new HashSet<>(request.getAssignedDepotIds())
+                    : currentAssignedDepotIds;
+
+            if (assignedDepotsProvided) {
+                depotAssignmentsChanged = !requestedAssignedDepotIds.equals(currentAssignedDepotIds);
+            }
+
+            if (userChanged) {
+                userRepository.save(user);
+            }
+
+            if (roleChanged || depotAssignmentsChanged) {
+                syncAssignedDepots(user, new ArrayList<>(requestedAssignedDepotIds));
+            }
+
             UserEntity updatedUser = userRepository.findByIdWithAssignedDepots(user.getId()).orElse(user);
 
             auditLogService.log(
@@ -304,7 +369,9 @@ public class AuthServiceImpl implements AuthService {
                     "Updated employee account",
                     beforeData,
                     userAuditSnapshot(updatedUser),
-                    Map.of("role", updatedUser.getRole()));
+                    Map.of(
+                            "role", updatedUser.getRole(),
+                            "updatedFields", updatedAccountFields(request)));
 
             return getCurrentUserResponse(user.getId());
         } catch (RuntimeException ex) {
@@ -511,9 +578,7 @@ public class AuthServiceImpl implements AuthService {
 
         Set<Long> targetDepotIds = mutableTargetDepotIds;
 
-        List<DepotEntity> currentDepots = depotRepository.findAll().stream()
-                .filter(depot -> depot.getDispatcher() != null && depot.getDispatcher().getId().equals(user.getId()))
-                .toList();
+        List<DepotEntity> currentDepots = depotRepository.findByDispatcher_Id(user.getId());
 
         currentDepots.stream()
                 .filter(depot -> !targetDepotIds.contains(depot.getId()))
@@ -534,9 +599,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void clearAssignedDepots(UserEntity user) {
-        List<DepotEntity> currentDepots = depotRepository.findAll().stream()
-                .filter(depot -> depot.getDispatcher() != null && depot.getDispatcher().getId().equals(user.getId()))
-                .toList();
+        List<DepotEntity> currentDepots = depotRepository.findByDispatcher_Id(user.getId());
 
         if (currentDepots.isEmpty()) {
             return;
@@ -618,6 +681,29 @@ public class AuthServiceImpl implements AuthService {
         snapshot.put("role", request.getRole());
         snapshot.put("assignedDepotIds", request.getAssignedDepotIds());
         return snapshot;
+    }
+
+    private Set<Long> assignedDepotIdsOf(UserEntity user) {
+        return user.getAssignedDepots().stream()
+                .map(DepotEntity::getId)
+                .collect(Collectors.toSet());
+    }
+
+    private List<String> updatedAccountFields(UpdateAccountRequest request) {
+        List<String> fields = new ArrayList<>();
+        if (request.getFullName() != null) {
+            fields.add("fullName");
+        }
+        if (request.getEmail() != null) {
+            fields.add("email");
+        }
+        if (request.getRole() != null) {
+            fields.add("role");
+        }
+        if (request.getAssignedDepotIds() != null) {
+            fields.add("assignedDepotIds");
+        }
+        return fields;
     }
 
     private void logUserFailure(String action, String resourceId, String resourceName, Object beforeData, Object afterData, RuntimeException ex) {

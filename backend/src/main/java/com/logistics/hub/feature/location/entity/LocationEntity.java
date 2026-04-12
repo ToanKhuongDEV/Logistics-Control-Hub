@@ -6,15 +6,19 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.Objects;
 
 @Entity
 @Table(name = "locations", uniqueConstraints = {
         @UniqueConstraint(name = "uq_locations_address_coords", columnNames = { "street", "city", "country", "latitude",
                 "longitude" })
 })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class LocationEntity {
@@ -46,4 +50,18 @@ public class LocationEntity {
     @NotNull(message = LocationConstant.LONGITUDE_REQUIRED)
     @Column(nullable = false)
     private Double longitude;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof LocationEntity other))
+            return false;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

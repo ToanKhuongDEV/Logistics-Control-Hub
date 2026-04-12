@@ -4,17 +4,20 @@ import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.order.entity.OrderEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "route_stops", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "route_id", "stop_sequence" })
 })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class RouteStopEntity {
@@ -49,4 +52,18 @@ public class RouteStopEntity {
 
     @Column(name = "departure_time")
     private LocalDateTime departureTime;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof RouteStopEntity other))
+            return false;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

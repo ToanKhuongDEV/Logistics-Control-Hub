@@ -157,7 +157,7 @@ export function AccountManagementPanel() {
 		return map;
 	}, [accountDirectory]);
 
-	const isEditingAnotherAdmin = useMemo(() => !!selectedAccount && selectedAccount.role === "ADMIN" && currentUser?.id !== selectedAccount.id, [currentUser?.id, selectedAccount]);
+	const isEditingAnotherAdmin = useMemo(() => !!selectedAccount && selectedAccount.role === "ADMIN" && currentUser != null && currentUser.id !== selectedAccount.id, [currentUser, selectedAccount]);
 
 	const createDepotOptions = useMemo(() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || createAccountForm.assignedDepotIds.includes(depot.id)), [createAccountForm.assignedDepotIds, depots, assignedDepotMap]);
 
@@ -444,7 +444,7 @@ export function AccountManagementPanel() {
 										setCreateAccountForm({
 											...createAccountForm,
 											role: value as UserRole,
-											assignedDepotIds: value === "ADMIN" ? [] : createAccountForm.assignedDepotIds,
+											assignedDepotIds: value === "DISPATCHER" ? createAccountForm.assignedDepotIds : [],
 										})
 									}
 								>
@@ -458,7 +458,7 @@ export function AccountManagementPanel() {
 									</SelectContent>
 								</Select>
 							</div>
-							{createAccountForm.role !== "ADMIN" && (
+							{createAccountForm.role === "DISPATCHER" && (
 								<div className="md:col-span-2">
 									{renderDepotDropdown({
 										value: createDepotPicker,

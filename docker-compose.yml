@@ -41,10 +41,11 @@ services:
         max-file: "3"
     mem_limit: 1500m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/route/v1/driving/105.8342,21.0278;105.8542,21.0285 > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/5000' 2>/dev/null || exit 1"]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 5
+      start_period: 30s
     image: osrm/osrm-backend:latest
     container_name: logistics-osrm
     command: osrm-routed --algorithm mld /data/hanoi.osrm
@@ -86,6 +87,11 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       SERVER_PORT: 8080
       OSRM_URL: http://osrm:5000
+      SPRING_MAIL_HOST: ${MAIL_HOST}
+      SPRING_MAIL_PORT: ${MAIL_PORT}
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
+      RESET_PASSWORD_EXPIRATION_MINUTES: ${RESET_PASSWORD_EXPIRATION_MINUTES}
     ports:
       - "${SERVER_PORT:-8080}:8080"
     networks:

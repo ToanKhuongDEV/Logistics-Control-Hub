@@ -271,8 +271,11 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = null;
         Map<String, Object> beforeData = null;
         try {
-            authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_ACCOUNT_MANAGE);
             UserEntity actor = authorizationService.getCurrentUser();
+            if (!AuthorizationPolicy.permissionsForRole(actor.getRole())
+                    .contains(AuthorizationPolicy.PERMISSION_ACCOUNT_MANAGE)) {
+                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
+            }
             user = userRepository.findByIdWithAssignedDepots(id)
                     .orElseThrow(() -> new ResourceNotFoundException(AuthConstant.ACCOUNT_NOT_FOUND));
             validateAdminAccountManagement(actor, user);
@@ -310,8 +313,8 @@ public class AuthServiceImpl implements AuthService {
 
                 if (!normalizedEmail.equalsIgnoreCase(user.getEmail())
                         && userRepository.findByEmailIgnoreCase(normalizedEmail)
-                        .filter(existingUser -> !existingUser.getId().equals(id))
-                        .isPresent()) {
+                                .filter(existingUser -> !existingUser.getId().equals(id))
+                                .isPresent()) {
                     throw new ValidationException(AuthConstant.EMAIL_ALREADY_EXISTS);
                 }
 
@@ -375,7 +378,8 @@ public class AuthServiceImpl implements AuthService {
 
             return getCurrentUserResponse(user.getId());
         } catch (RuntimeException ex) {
-            logUserFailure(AuditAction.UPDATE, String.valueOf(id), user != null ? user.getUsername() : null, beforeData, updateAccountRequestSnapshot(request), ex);
+            logUserFailure(AuditAction.UPDATE, String.valueOf(id), user != null ? user.getUsername() : null, beforeData,
+                    updateAccountRequestSnapshot(request), ex);
             throw ex;
         }
     }
@@ -416,7 +420,8 @@ public class AuthServiceImpl implements AuthService {
                     null,
                     Map.of("role", user.getRole()));
         } catch (RuntimeException ex) {
-            logUserFailure(AuditAction.DELETE, String.valueOf(id), user != null ? user.getUsername() : null, user != null ? userAuditSnapshot(user) : null, null, ex);
+            logUserFailure(AuditAction.DELETE, String.valueOf(id), user != null ? user.getUsername() : null,
+                    user != null ? userAuditSnapshot(user) : null, null, ex);
             throw ex;
         }
     }
@@ -592,6 +597,12 @@ public class AuthServiceImpl implements AuthService {
             if (targetDepots.size() != targetDepotIds.size()) {
                 throw new ValidationException("One or more assigned depots do not exist.");
             }
+            boolean hasConflictingDispatcher = targetDepots.stream()
+                    .map(DepotEntity::getDispatcher)
+                    .anyMatch(dispatcher -> dispatcher != null && !dispatcher.getId().equals(user.getId()));
+            if (hasConflictingDispatcher) {
+                throw new ValidationException("One or more assigned depots already belong to another dispatcher.");
+            }
             targetDepots.forEach(depot -> depot.setDispatcher(user));
             depotRepository.saveAll(targetDepots);
         }
@@ -638,7 +649,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private UserEntity getCurrentActorForAudit() {
-        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             return null;
         }
@@ -709,8 +721,10 @@ public class AuthServiceImpl implements AuthService {
         return fields;
     }
 
-    private void logUserFailure(String action, String resourceId, String resourceName, Object beforeData, Object afterData, RuntimeException ex) {
-        if (!(ex instanceof ValidationException || ex instanceof ForbiddenException || ex instanceof ResourceNotFoundException)) {
+    private void logUserFailure(String action, String resourceId, String resourceName, Object beforeData,
+            Object afterData, RuntimeException ex) {
+        if (!(ex instanceof ValidationException || ex instanceof ForbiddenException
+                || ex instanceof ResourceNotFoundException)) {
             return;
         }
 

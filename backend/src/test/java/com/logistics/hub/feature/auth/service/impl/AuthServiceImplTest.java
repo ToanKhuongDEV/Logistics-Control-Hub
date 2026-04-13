@@ -1,8 +1,10 @@
 package com.logistics.hub.feature.auth.service.impl;
 
 import com.logistics.hub.common.exception.ForbiddenException;
+import com.logistics.hub.common.exception.ValidationException;
 import com.logistics.hub.feature.audit.service.AuditLogService;
 import com.logistics.hub.feature.auth.constant.AuthConstant;
+import com.logistics.hub.feature.auth.dto.request.CreateAccountRequest;
 import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
 import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.repository.PasswordResetTokenRepository;
@@ -28,8 +30,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,7 +82,6 @@ class AuthServiceImplTest {
         request.setRole("ADMIN");
         request.setAssignedDepotIds(List.of());
 
-        doNothing().when(authorizationService).requirePermission("account.manage");
         when(authorizationService.getCurrentUser()).thenReturn(actor);
         when(userRepository.findByIdWithAssignedDepots(2L)).thenReturn(Optional.of(target));
 
@@ -95,7 +96,6 @@ class AuthServiceImplTest {
         UserEntity actor = adminUser(1L, "admin01");
         UserEntity target = adminUser(2L, "admin02");
 
-        doNothing().when(authorizationService).requirePermission("account.manage");
         when(authorizationService.getCurrentUser()).thenReturn(actor);
         when(userRepository.findByIdWithAssignedDepots(2L)).thenReturn(Optional.of(target));
 
@@ -113,7 +113,6 @@ class AuthServiceImplTest {
         UpdateAccountRequest request = new UpdateAccountRequest();
         request.setEmail("updated@example.com");
 
-        doNothing().when(authorizationService).requirePermission("account.manage");
         when(authorizationService.getCurrentUser()).thenReturn(actor);
         when(userRepository.findByIdWithAssignedDepots(3L)).thenReturn(Optional.of(target), Optional.of(target));
         when(userRepository.findByEmailIgnoreCase("updated@example.com")).thenReturn(Optional.empty());
@@ -138,7 +137,6 @@ class AuthServiceImplTest {
         UpdateAccountRequest request = new UpdateAccountRequest();
         request.setAssignedDepotIds(List.of(10L));
 
-        doNothing().when(authorizationService).requirePermission("account.manage");
         when(authorizationService.getCurrentUser()).thenReturn(actor);
         when(userRepository.findByIdWithAssignedDepots(3L)).thenReturn(Optional.of(target), Optional.of(target));
         when(depotRepository.findByDispatcher_Id(3L)).thenReturn(List.of(depot));
@@ -162,7 +160,6 @@ class AuthServiceImplTest {
         UpdateAccountRequest request = new UpdateAccountRequest();
         request.setRole("USER");
 
-        doNothing().when(authorizationService).requirePermission("account.manage");
         when(authorizationService.getCurrentUser()).thenReturn(actor);
         when(userRepository.findByIdWithAssignedDepots(3L)).thenReturn(Optional.of(target), Optional.of(target));
         when(userRepository.save(target)).thenReturn(target);
@@ -175,6 +172,67 @@ class AuthServiceImplTest {
         assertEquals(null, depot.getDispatcher());
         verify(depotRepository).findByDispatcher_Id(3L);
         verify(depotRepository).saveAll(anyList());
+    }
+
+    @Test
+    void createAccount_shouldAllowUserWithoutAssignedDepots() {
+        CreateAccountRequest request = new CreateAccountRequest();
+        request.setUsername("user01");
+        request.setFullName("User One");
+        request.setEmail("user01@example.com");
+        request.setPassword("password123");
+        request.setRole("USER");
+        request.setAssignedDepotIds(List.of(10L));
+
+        UserEntity savedUser = new UserEntity();
+        savedUser.setId(5L);
+        savedUser.setUsername("user01");
+        savedUser.setFullName("User One");
+        savedUser.setEmail("user01@example.com");
+        savedUser.setRole("USER");
+        savedUser.setAssignedDepots(new java.util.ArrayList<>());
+
+        when(userRepository.existsByUsername("user01")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("user01@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("password123")).thenReturn("encoded");
+        when(userRepository.save(any(UserEntity.class))).thenReturn(savedUser);
+        when(depotRepository.findByDispatcher_Id(5L)).thenReturn(List.of());
+        when(userRepository.findByIdWithAssignedDepots(5L)).thenReturn(Optional.of(savedUser));
+        when(userMapper.toResponse(savedUser)).thenReturn(new UserResponse());
+
+        authService.createAccount(request);
+
+        verify(depotRepository, never()).findAllById(anyCollection());
+        verify(depotRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void createAccount_shouldRejectWhenAssignedDepotAlreadyBelongsToAnotherDispatcher() {
+        CreateAccountRequest request = new CreateAccountRequest();
+        request.setUsername("dispatcher02");
+        request.setFullName("Dispatcher Two");
+        request.setEmail("dispatcher02@example.com");
+        request.setPassword("password123");
+        request.setRole("DISPATCHER");
+        request.setAssignedDepotIds(List.of(10L));
+
+        UserEntity savedUser = scopedUser(6L, "dispatcher02", "dispatcher02@example.com");
+        UserEntity existingDispatcher = scopedUser(7L, "dispatcher01", "dispatcher01@example.com");
+        DepotEntity depot = new DepotEntity();
+        depot.setId(10L);
+        depot.setDispatcher(existingDispatcher);
+
+        when(userRepository.existsByUsername("dispatcher02")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("dispatcher02@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("password123")).thenReturn("encoded");
+        when(userRepository.save(any(UserEntity.class))).thenReturn(savedUser);
+        when(depotRepository.findByDispatcher_Id(6L)).thenReturn(List.of());
+        when(depotRepository.findAllById(anyCollection())).thenReturn(List.of(depot));
+
+        ValidationException ex = assertThrows(ValidationException.class, () -> authService.createAccount(request));
+
+        assertEquals("One or more assigned depots already belong to another dispatcher.", ex.getMessage());
+        verify(depotRepository, never()).saveAll(anyList());
     }
 
     private UserEntity adminUser(Long id, String username) {

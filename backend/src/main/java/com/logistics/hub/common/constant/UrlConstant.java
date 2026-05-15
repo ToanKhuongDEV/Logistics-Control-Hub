@@ -1,5 +1,7 @@
 package com.logistics.hub.common.constant;
 
+import org.checkerframework.checker.units.qual.Prefix;
+
 public class UrlConstant {
     public static final String API_V1 = "/api/v1";
 
@@ -93,6 +95,16 @@ public class UrlConstant {
         public static final String PREFIX = API_V1 + "/audit-logs";
 
         private Audit() {
+        }
+    }
+
+    public static class Excel{
+        public static final String PREFIX = API_V1 + "/excel";
+        public static final String TEMPLATE = PREFIX + "/template";
+        public static final String EXPORT = PREFIX + "/export";
+        @Deprecated
+        public static final String Temlplate = TEMPLATE;
+        private Excel (){
         }
     }
 }

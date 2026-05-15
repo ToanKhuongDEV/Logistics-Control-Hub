@@ -352,7 +352,8 @@ public class OrderServiceImpl implements OrderService {
             order = orderRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException(OrderConstant.ORDER_NOT_FOUND + id));
             authorizationService.requireOrderAccess(order);
-            orderRepository.deleteById(id);
+            order.markDeleted();
+            orderRepository.save(order);
             auditLogService.log(
                     auditActorService.getCurrentActor(),
                     AuditAction.DELETE,

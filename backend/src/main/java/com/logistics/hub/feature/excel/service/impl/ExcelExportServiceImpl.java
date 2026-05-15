@@ -47,7 +47,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -273,7 +272,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                 predicates.add(root.get("id").in(depotIds));
             }
 
-            addLocalDateTimeRange(predicates, cb, root.get("createdAt"), fromDate, toDate);
+            addInstantRange(predicates, cb, root.get("createdAt"), fromDate, toDate);
             return cb.and(predicates.toArray(Predicate[]::new));
         };
     }
@@ -399,7 +398,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                 predicates.add(root.get("depot").get("id").in(depotIds));
             }
 
-            addLocalDateTimeRange(predicates, cb, root.get("createdAt"), fromDate, toDate);
+            addInstantRange(predicates, cb, root.get("createdAt"), fromDate, toDate);
             return cb.and(predicates.toArray(Predicate[]::new));
         };
     }
@@ -454,21 +453,6 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         }
         if (toDate != null) {
             predicates.add(cb.lessThan(path, endExclusiveInstant(toDate)));
-        }
-    }
-
-    private void addLocalDateTimeRange(
-            List<Predicate> predicates,
-            jakarta.persistence.criteria.CriteriaBuilder cb,
-            jakarta.persistence.criteria.Path<LocalDateTime> path,
-            LocalDate fromDate,
-            LocalDate toDate
-    ) {
-        if (fromDate != null) {
-            predicates.add(cb.greaterThanOrEqualTo(path, fromDate.atStartOfDay()));
-        }
-        if (toDate != null) {
-            predicates.add(cb.lessThan(path, toDate.plusDays(1).atStartOfDay()));
         }
     }
 

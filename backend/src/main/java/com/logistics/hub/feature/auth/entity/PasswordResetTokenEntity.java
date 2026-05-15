@@ -1,24 +1,23 @@
 package com.logistics.hub.feature.auth.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "password_reset_tokens")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor
-public class PasswordResetTokenEntity {
+public class PasswordResetTokenEntity extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100)
     private String token;
 
     @Column(nullable = false, length = 255)
@@ -28,12 +27,4 @@ public class PasswordResetTokenEntity {
     private Instant expiresAt;
 
     private Instant usedAt;
-
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = Instant.now();
-    }
 }

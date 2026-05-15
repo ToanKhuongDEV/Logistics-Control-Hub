@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.order.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.location.entity.LocationEntity;
@@ -9,25 +10,21 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.Objects;
 
 @Entity
 @Table(name = "orders")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderEntity {
+public class OrderEntity extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String code;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -51,10 +48,6 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status = OrderStatus.CREATED;
-
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private Instant createdAt;
 
     @Override
     public boolean equals(Object o) {

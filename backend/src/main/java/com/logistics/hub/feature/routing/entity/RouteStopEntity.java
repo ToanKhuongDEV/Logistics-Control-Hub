@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.routing.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import com.logistics.hub.feature.location.entity.LocationEntity;
 import com.logistics.hub.feature.order.entity.OrderEntity;
 import jakarta.persistence.*;
@@ -7,24 +8,20 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "route_stops", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "route_id", "stop_sequence" })
-})
+@Table(name = "route_stops")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RouteStopEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class RouteStopEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id", nullable = false)

@@ -5,15 +5,17 @@ import com.logistics.hub.feature.routing.enums.RoutingRunStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RoutingRunRepository extends JpaRepository<RoutingRunEntity, Long> {
+public interface RoutingRunRepository extends JpaRepository<RoutingRunEntity, Long>, JpaSpecificationExecutor<RoutingRunEntity> {
 
   Long countByStatus(RoutingRunStatus status);
 
@@ -32,4 +34,12 @@ public interface RoutingRunRepository extends JpaRepository<RoutingRunEntity, Lo
 
   @Query(value = "SELECT r FROM RoutingRunEntity r WHERE r.depot.id = :depotId ORDER BY r.createdAt DESC", countQuery = "SELECT COUNT(r) FROM RoutingRunEntity r WHERE r.depot.id = :depotId")
   Page<RoutingRunEntity> findAllByDepot_Id(@Param("depotId") Long depotId, Pageable pageable);
+
+  Page<RoutingRunEntity> findAllByDepot_IdIn(Collection<Long> depotIds, Pageable pageable);
+
+  Page<RoutingRunEntity> findAllByStatus(RoutingRunStatus status, Pageable pageable);
+
+  Page<RoutingRunEntity> findAllByStatusAndDepot_Id(RoutingRunStatus status, Long depotId, Pageable pageable);
+
+  Page<RoutingRunEntity> findAllByStatusAndDepot_IdIn(RoutingRunStatus status, Collection<Long> depotIds, Pageable pageable);
 }

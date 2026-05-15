@@ -180,7 +180,8 @@ public class DriverServiceImpl implements DriverService {
             }
 
             try {
-                driverRepository.deleteById(id);
+                driver.markDeleted();
+                driverRepository.save(driver);
                 auditLogService.log(
                         auditActorService.getCurrentActor(),
                         AuditAction.DELETE,

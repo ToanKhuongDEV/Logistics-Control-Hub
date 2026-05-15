@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.vehicle.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.driver.entity.DriverEntity;
 import com.logistics.hub.feature.vehicle.enums.VehicleStatus;
@@ -8,25 +9,21 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.Objects;
 
 @Entity
 @Table(name = "vehicles")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class VehicleEntity {
+public class VehicleEntity extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String code;
 
     @Column(name = "max_weight_kg")
@@ -46,16 +43,12 @@ public class VehicleEntity {
     private String type;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "driver_id", unique = true)
+    @JoinColumn(name = "driver_id")
     private DriverEntity driver;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "depot_id")
     private DepotEntity depot;
-
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private Instant createdAt;
 
     @Override
     public boolean equals(Object o) {

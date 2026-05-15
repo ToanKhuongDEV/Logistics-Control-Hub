@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.routing.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.routing.enums.RoutingRunStatus;
 import jakarta.persistence.*;
@@ -7,9 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,15 +19,12 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "routing_runs")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RoutingRunEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class RoutingRunEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -54,10 +52,6 @@ public class RoutingRunEntity {
     @OneToMany(mappedBy = "routingRun", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Fetch(FetchMode.SUBSELECT)
     private List<RouteEntity> routes;
-
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     @Override
     public boolean equals(Object o) {

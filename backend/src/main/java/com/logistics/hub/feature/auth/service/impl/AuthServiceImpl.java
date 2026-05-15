@@ -405,7 +405,8 @@ public class AuthServiceImpl implements AuthService {
             clearAssignedDepots(user);
             refreshTokenRepository.deleteByUsername(user.getUsername());
             passwordResetTokenRepository.deleteByEmailIgnoreCase(user.getEmail());
-            userRepository.delete(user);
+            user.markDeleted();
+            userRepository.save(user);
 
             auditLogService.log(
                     actor,

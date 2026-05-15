@@ -4,6 +4,7 @@ import com.logistics.hub.feature.depot.entity.DepotEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -11,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Repository
-public interface DepotRepository extends JpaRepository<DepotEntity, Long> {
+public interface DepotRepository extends JpaRepository<DepotEntity, Long>, JpaSpecificationExecutor<DepotEntity> {
     List<DepotEntity> findByDispatcher_Id(Long dispatcherId);
 
     boolean existsByLocation_Id(Long locationId);

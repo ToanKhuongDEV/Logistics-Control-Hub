@@ -1,7 +1,8 @@
 package com.logistics.hub.feature.depot.dto.response;
 
 import lombok.Data;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 
 @Data
 public class DepotResponse {
@@ -13,5 +14,5 @@ public class DepotResponse {
   private String country;
   private String description;
   private Boolean isActive;
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 }

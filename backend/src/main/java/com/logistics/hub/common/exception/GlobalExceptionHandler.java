@@ -4,12 +4,17 @@ import com.logistics.hub.common.base.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -71,6 +76,56 @@ public class GlobalExceptionHandler {
                 "Validation failed",
                 errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String message = buildTypeMismatchMessage(ex);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), message));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex) {
+        String message = String.format("Tham số '%s' là bắt buộc.", ex.getParameterName());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), message));
+    }
+
+    private String buildTypeMismatchMessage(MethodArgumentTypeMismatchException ex) {
+        Class<?> requiredType = ex.getRequiredType();
+        String name = ex.getName();
+        Object value = ex.getValue();
+
+        if (LocalDate.class.equals(requiredType)) {
+            return String.format(
+                    "Tham số '%s' không đúng định dạng ngày. Định dạng ngày tháng năm nên là yyyy-MM-dd, ví dụ 2026-05-15.",
+                    name);
+        }
+
+        if (requiredType != null && requiredType.isEnum()) {
+            String allowedValues = Arrays.stream(requiredType.getEnumConstants())
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", "));
+            return String.format(
+                    "Giá trị '%s' không hợp lệ cho tham số '%s'. Giá trị hợp lệ: %s.",
+                    value,
+                    name,
+                    allowedValues);
+        }
+
+        if (Integer.class.equals(requiredType) || int.class.equals(requiredType)) {
+            return String.format("Tham số '%s' phải là số nguyên.", name);
+        }
+
+        if (Long.class.equals(requiredType) || long.class.equals(requiredType)) {
+            return String.format("Tham số '%s' phải là số.", name);
+        }
+
+        return String.format("Tham số '%s' có giá trị không hợp lệ: %s.", name, value);
     }
 
     @ExceptionHandler(Exception.class)

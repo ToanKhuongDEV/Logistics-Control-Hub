@@ -10,6 +10,7 @@ import { OrderStats } from "@/components/order-stats";
 import { OrderFilters } from "@/components/order-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { ExcelExportButton } from "@/components/excel-export-button";
 import { Pagination } from "@/components/pagination";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/auth";
@@ -247,12 +248,23 @@ export default function OrdersPage() {
 									</Button>
 								</div>}
 
-							{canManageOrders && (
-								<Button onClick={() => setIsFormOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-									<Plus className="w-4 h-4" />
-									Thêm đơn hàng mới
-								</Button>
-							)}
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+								<ExcelExportButton
+									type="ORDER"
+									title="Xuất danh sách đơn hàng"
+									filters={{
+										search: searchQuery || undefined,
+										status: statusFilter !== "all" ? statusFilter : undefined,
+										depotId: depotFilter !== "all" ? Number(depotFilter) : undefined,
+									}}
+								/>
+								{canManageOrders && (
+									<Button onClick={() => setIsFormOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+										<Plus className="w-4 h-4" />
+										Thêm đơn hàng mới
+									</Button>
+								)}
+							</div>
 						</div>
 
 						<div className="space-y-4">

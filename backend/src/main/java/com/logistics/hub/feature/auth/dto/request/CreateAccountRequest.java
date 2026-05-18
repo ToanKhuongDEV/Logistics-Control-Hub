@@ -28,4 +28,6 @@ public class CreateAccountRequest {
     private String role;
 
     private List<Long> assignedDepotIds;
+
+    private Long driverId;
 }

@@ -9,5 +9,8 @@ import org.mapstruct.Mapping;
 public interface UserMapper {
 
     @Mapping(target = "permissions", ignore = true)
+    @Mapping(target = "assignedDepots", ignore = true)
+    @Mapping(target = "driverId", source = "driver.id")
+    @Mapping(target = "driverName", source = "driver.name")
     UserResponse toResponse(UserEntity entity);
 }

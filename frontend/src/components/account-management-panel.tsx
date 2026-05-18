@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
-import { authService, UpdateAccountRequest, User, UserRole } from "@/lib/auth";
+import { authService, hasPermission, UpdateAccountRequest, User, UserRole } from "@/lib/auth";
 import { depotApi } from "@/lib/depot-api";
 import { Depot } from "@/types/depot-types";
 import { toast } from "sonner";
@@ -35,7 +35,7 @@ const EMPTY_EDIT_FORM = {
 };
 
 export function AccountManagementPanel() {
-	const { user: currentUser } = useAuth();
+	const { user: currentUser, refreshUser } = useAuth();
 	const [depots, setDepots] = useState<Depot[]>([]);
 	const [accounts, setAccounts] = useState<User[]>([]);
 	const [accountDirectory, setAccountDirectory] = useState<User[]>([]);
@@ -158,6 +158,7 @@ export function AccountManagementPanel() {
 	}, [accountDirectory]);
 
 	const isEditingAnotherAdmin = useMemo(() => !!selectedAccount && selectedAccount.role === "ADMIN" && currentUser != null && currentUser.id !== selectedAccount.id, [currentUser, selectedAccount]);
+	const isEditingCurrentUser = useMemo(() => !!selectedAccount && currentUser != null && currentUser.id === selectedAccount.id, [currentUser, selectedAccount]);
 
 	const createDepotOptions = useMemo(() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || createAccountForm.assignedDepotIds.includes(depot.id)), [createAccountForm.assignedDepotIds, depots, assignedDepotMap]);
 
@@ -300,9 +301,27 @@ export function AccountManagementPanel() {
 
 		setIsUpdatingAccount(true);
 		try {
-			await authService.updateAccount(selectedAccount.id, payload);
+			const updatedAccount = await authService.updateAccount(selectedAccount.id, payload);
 
-			await refreshAfterMutation(selectedAccount.id);
+			if (isEditingCurrentUser) {
+				await refreshUser();
+
+				if (hasPermission(updatedAccount, "account.manage")) {
+					await refreshAfterMutation(updatedAccount.id);
+				} else {
+					setSelectedAccount(updatedAccount);
+					setEditAccountForm({
+						id: updatedAccount.id,
+						fullName: updatedAccount.fullName || "",
+						email: updatedAccount.email || "",
+						role: updatedAccount.role,
+						assignedDepotIds: updatedAccount.assignedDepots?.map((depot) => depot.id) || [],
+					});
+					setEditDepotPicker(undefined);
+				}
+			} else {
+				await refreshAfterMutation(selectedAccount.id);
+			}
 			toast.success("Đã cập nhật tài khoản");
 		} catch (error: any) {
 			console.error("Update account error:", error);

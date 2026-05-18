@@ -31,10 +31,6 @@ export interface LoginRequest {
 	password: string;
 }
 
-export interface LoginResponse {
-	accessToken: string;
-}
-
 export interface User {
 	id: number;
 	username: string;
@@ -84,15 +80,11 @@ export interface ResetPasswordRequest {
 }
 
 class AuthService {
-	async login(username: string, password: string): Promise<LoginResponse> {
-		const response = await apiClient.post<{ data: LoginResponse }>("/api/v1/auth/login", {
+	async login(username: string, password: string): Promise<void> {
+		await apiClient.post("/api/v1/auth/login", {
 			username,
 			password,
 		});
-
-		const { accessToken } = response.data.data;
-		localStorage.setItem("accessToken", accessToken);
-		return response.data.data;
 	}
 
 	async logout(): Promise<void> {
@@ -101,16 +93,6 @@ class AuthService {
 		} catch {
 			// Ignore logout transport errors and still clear local auth state.
 		}
-
-		localStorage.removeItem("accessToken");
-	}
-
-	getAccessToken(): string | null {
-		return localStorage.getItem("accessToken");
-	}
-
-	isAuthenticated(): boolean {
-		return !!this.getAccessToken();
 	}
 
 	async getCurrentUser(): Promise<User> {

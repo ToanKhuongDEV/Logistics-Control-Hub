@@ -16,7 +16,6 @@ import com.logistics.hub.feature.auth.dto.request.LoginRequest;
 import com.logistics.hub.feature.auth.dto.request.ResetPasswordRequest;
 import com.logistics.hub.feature.auth.dto.request.UpdateAccountRequest;
 import com.logistics.hub.feature.auth.dto.response.AssignedDepotResponse;
-import com.logistics.hub.feature.auth.dto.response.AuthTokensResponse;
 import com.logistics.hub.feature.auth.dto.response.UserResponse;
 import com.logistics.hub.feature.auth.entity.PasswordResetTokenEntity;
 import com.logistics.hub.feature.auth.entity.RefreshTokenEntity;
@@ -133,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
                 null,
                 Map.of("username", user.getUsername()));
 
-        return new LoginResult(new AuthTokensResponse(accessToken), refreshToken);
+        return new LoginResult(accessToken, refreshToken);
     }
 
     @Override
@@ -170,7 +169,7 @@ public class AuthServiceImpl implements AuthService {
         String newRefreshToken = jwtUtils.generateRefreshToken(userDetails);
         saveRefreshToken(newRefreshToken, user.getUsername());
 
-        return new RefreshResult(new AuthTokensResponse(newAccessToken), newRefreshToken);
+        return new RefreshResult(newAccessToken, newRefreshToken);
     }
 
     @Override

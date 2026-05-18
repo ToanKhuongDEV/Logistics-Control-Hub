@@ -26,9 +26,17 @@ CREATE TABLE users (
     email VARCHAR(255),
     full_name VARCHAR(100),
     role VARCHAR(20) NOT NULL DEFAULT 'DISPATCHER',
+    driver_id BIGINT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ,
-    deleted BOOLEAN NOT NULL DEFAULT FALSE
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT ck_users_role
+        CHECK (role IN ('ADMIN', 'DISPATCHER', 'DRIVER')),
+    CONSTRAINT ck_users_driver_role_link
+        CHECK (
+            (role = 'DRIVER' AND driver_id IS NOT NULL)
+            OR (role <> 'DRIVER' AND driver_id IS NULL)
+        )
 );
 
 -- 3. Drivers
@@ -42,6 +50,11 @@ CREATE TABLE drivers (
     updated_at TIMESTAMPTZ,
     deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_driver
+        FOREIGN KEY (driver_id)
+        REFERENCES drivers(id);
 
 -- 4. Locations
 CREATE TABLE locations (
@@ -94,7 +107,9 @@ CREATE TABLE vehicles (
         REFERENCES drivers(id),
     CONSTRAINT fk_vehicles_depot
         FOREIGN KEY (depot_id)
-        REFERENCES depots(id)
+        REFERENCES depots(id),
+    CONSTRAINT ck_vehicles_status
+        CHECK (status IN ('ACTIVE', 'MAINTENANCE', 'IDLE'))
 );
 
 -- 7. Orders
@@ -118,13 +133,15 @@ CREATE TABLE orders (
         REFERENCES drivers(id),
     CONSTRAINT fk_orders_depot
         FOREIGN KEY (depot_id)
-        REFERENCES depots(id)
+        REFERENCES depots(id),
+    CONSTRAINT ck_orders_status
+        CHECK (status IN ('CREATED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'))
 );
 
 -- 8. Routing Runs
 CREATE TABLE routing_runs (
     id BIGSERIAL PRIMARY KEY,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    status VARCHAR(20) NOT NULL,
     start_time TIMESTAMP WITHOUT TIME ZONE,
     end_time TIMESTAMP WITHOUT TIME ZONE,
     total_distance_km NUMERIC(12,2),
@@ -136,7 +153,9 @@ CREATE TABLE routing_runs (
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_routing_runs_depot
         FOREIGN KEY (depot_id)
-        REFERENCES depots(id)
+        REFERENCES depots(id),
+    CONSTRAINT ck_routing_runs_status
+        CHECK (status IN ('COMPLETED', 'FAILED'))
 );
 
 -- 9. Routes
@@ -158,7 +177,9 @@ CREATE TABLE routes (
         ON DELETE CASCADE,
     CONSTRAINT fk_routes_routing_run
         FOREIGN KEY (routing_run_id)
-        REFERENCES routing_runs(id)
+        REFERENCES routing_runs(id),
+    CONSTRAINT ck_routes_status
+        CHECK (status IN ('CREATED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
 );
 
 -- 10. Route Stops
@@ -236,7 +257,9 @@ CREATE TABLE audit_logs (
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_audit_logs_actor
         FOREIGN KEY (actor_user_id)
-        REFERENCES users(id)
+        REFERENCES users(id),
+    CONSTRAINT ck_audit_logs_status
+        CHECK (status IN ('SUCCESS', 'FAILED'))
 );
 
 -- =====================================================
@@ -244,6 +267,7 @@ CREATE TABLE audit_logs (
 -- =====================================================
 
 CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_users_driver ON users(driver_id);
 CREATE INDEX idx_orders_driver ON orders(driver_id);
 CREATE INDEX idx_routes_vehicle ON routes(vehicle_id);
 CREATE INDEX idx_route_stops_route ON route_stops(route_id);
@@ -270,6 +294,10 @@ CREATE UNIQUE INDEX ux_users_username_active
 CREATE UNIQUE INDEX ux_users_email_active
     ON users (email)
     WHERE deleted = FALSE AND email IS NOT NULL;
+
+CREATE UNIQUE INDEX ux_users_driver_active
+    ON users (driver_id)
+    WHERE deleted = FALSE AND driver_id IS NOT NULL;
 
 CREATE UNIQUE INDEX ux_drivers_license_number_active
     ON drivers (license_number)

@@ -1,7 +1,7 @@
 import apiClient from "./api";
 import { PaginatedResponse } from "@/types/common-types";
 
-export type UserRole = "ADMIN" | "DISPATCHER" | "USER";
+export type UserRole = "ADMIN" | "DISPATCHER" | "DRIVER";
 export type UserPermission =
 	| "account.manage"
 	| "audit.read"
@@ -11,6 +11,8 @@ export type UserPermission =
 	| "depot.manage"
 	| "driver.read"
 	| "driver.manage"
+	| "driver.delivery.read"
+	| "driver.delivery.update"
 	| "order.read"
 	| "order.manage"
 	| "order.cancel.confirmed"
@@ -37,6 +39,8 @@ export interface User {
 	email: string;
 	fullName: string;
 	role: UserRole;
+	driverId?: number | null;
+	driverName?: string | null;
 	permissions?: UserPermission[];
 	assignedDepots?: AssignedDepot[];
 }
@@ -56,6 +60,7 @@ export interface CreateAccountRequest {
 	password: string;
 	role: UserRole;
 	assignedDepotIds?: number[];
+	driverId?: number | null;
 }
 
 export interface UpdateAccountRequest {
@@ -63,6 +68,7 @@ export interface UpdateAccountRequest {
 	email?: string;
 	role?: UserRole;
 	assignedDepotIds?: number[];
+	driverId?: number | null;
 }
 
 export interface ChangePasswordRequest {

@@ -46,7 +46,8 @@ apiClient.interceptors.response.use(
 				// Refresh failed; backend clears auth cookies when possible.
 				const isPublicAuthRoute =
 					typeof window !== "undefined" &&
-					PUBLIC_AUTH_ROUTES.some((route) => window.location.pathname.startsWith(route));
+					(window.location.pathname === "/" ||
+						PUBLIC_AUTH_ROUTES.some((route) => window.location.pathname.startsWith(route)));
 				if (typeof window !== "undefined" && !isPublicAuthRoute) {
 					window.location.href = "/login";
 				}

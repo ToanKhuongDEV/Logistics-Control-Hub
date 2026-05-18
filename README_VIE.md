@@ -43,7 +43,7 @@ So với README cũ, code hiện tại đã có thêm các phần quản lý tà
 ### Xác Thực Và Phân Quyền
 
 - Đăng nhập, refresh token, logout và lấy thông tin người dùng hiện tại bằng JWT
-- Hỗ trợ role: `ADMIN`, `DISPATCHER`, `USER`
+- Hỗ trợ role: `ADMIN`, `DISPATCHER`, `DRIVER`
 - Giao diện và API kiểm soát theo permission
 - Đổi mật khẩu, quên mật khẩu và đặt lại mật khẩu
 

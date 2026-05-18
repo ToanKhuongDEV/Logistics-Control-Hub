@@ -30,6 +30,14 @@ const DEMO_ACCOUNTS = [
 		description: "Điều phối shipment trong các kho đã được gán.",
 		icon: UserCog,
 	},
+	{
+		id: "demo-driver",
+		label: "Driver Demo",
+		username: "driver01",
+		password: DEMO_PASSWORD,
+		description: "Tài khoản tài xế, vào mobile driver portal.",
+		icon: Truck,
+	},
 ];
 
 export default function LoginPage() {
@@ -53,9 +61,9 @@ export default function LoginPage() {
 		setIsLoading(true);
 
 		try {
-			await login(username, password);
+			const userData = await login(username, password);
 			toast.success("Đăng nhập thành công!");
-			router.push("/dashboard");
+			router.push(userData.role === "DRIVER" ? "/driver" : "/dashboard");
 		} catch (err: any) {
 			console.error("Login error:", err);
 

@@ -8,7 +8,7 @@ interface AuthContextType {
 	user: User | null;
 	isLoading: boolean;
 	isAuthenticated: boolean;
-	login: (username: string, password: string) => Promise<void>;
+	login: (username: string, password: string) => Promise<User>;
 	logout: () => void;
 	refreshUser: () => Promise<void>;
 }
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 	// HttpOnly cookies are not readable from JS, so validate the session with the API.
 	useEffect(() => {
-		const isPublicAuthRoute = ["/login", "/forgot-password", "/reset-password"].some((route) =>
+		const isPublicAuthRoute = pathname === "/" || ["/login", "/forgot-password", "/reset-password"].some((route) =>
 			pathname.startsWith(route),
 		);
 
@@ -53,6 +53,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		await authService.login(username, password);
 		const userData = await authService.getCurrentUser();
 		setUser(userData);
+		return userData;
 	};
 
 	const logout = () => {

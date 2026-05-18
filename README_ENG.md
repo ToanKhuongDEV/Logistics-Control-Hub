@@ -43,7 +43,7 @@ The current codebase also includes account administration, password reset flow, 
 ### Authentication and Access Control
 
 - JWT-based login, refresh, logout, and current-user endpoints
-- Role support: `ADMIN`, `DISPATCHER`, `USER`
+- Role support: `ADMIN`, `DISPATCHER`, `DRIVER`
 - Permission-based UI and API access
 - Change password, forgot password, and reset password flows
 

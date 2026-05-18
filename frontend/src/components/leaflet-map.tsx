@@ -80,9 +80,10 @@ export function LeafletMap({ routes }: LeafletMapProps) {
 
 		map.current = L.map(mapContainer.current).setView([21.0, 105.8], 10);
 
-		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-			attribution: "© OpenStreetMap contributors",
-			maxZoom: 19,
+		L.tileLayer("https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", {
+			attribution: "Map data © Google",
+			maxZoom: 20,
+			subdomains: ["mt0", "mt1", "mt2", "mt3"],
 		}).addTo(map.current);
 
 		return () => {
@@ -213,9 +214,6 @@ export function LeafletMap({ routes }: LeafletMapProps) {
 			<style jsx>{`
 				:global(.leaflet-container) {
 					background: #f8fafc;
-				}
-				:global(.leaflet-tile-pane) {
-					filter: hue-rotate(200deg) saturate(0.8);
 				}
 				:global(.custom-icon) {
 					background: none !important;

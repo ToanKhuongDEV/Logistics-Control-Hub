@@ -7,6 +7,7 @@ const AUTH_EXCLUDED_PATHS = [
 	"/api/v1/auth/forgot-password",
 	"/api/v1/auth/reset-password",
 ];
+const PUBLIC_AUTH_ROUTES = ["/login", "/forgot-password", "/reset-password"];
 
 // Create axios instance
 const apiClient = axios.create({
@@ -17,25 +18,15 @@ const apiClient = axios.create({
 	},
 });
 
-// Request interceptor to add token
-apiClient.interceptors.request.use(
-	(config: InternalAxiosRequestConfig) => {
-		const token = localStorage.getItem("accessToken");
-		if (token) {
-			config.headers.Authorization = `Bearer ${token}`;
-		}
-		return config;
-	},
-	(error: AxiosError) => {
-		return Promise.reject(error);
-	},
-);
-
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
 	(response) => response,
 	async (error: AxiosError) => {
 		const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+		if (!originalRequest) {
+			return Promise.reject(error);
+		}
+
 		const requestUrl = originalRequest?.url ?? "";
 		const isExcludedAuthRequest = AUTH_EXCLUDED_PATHS.some((path) => requestUrl.includes(path));
 
@@ -44,22 +35,21 @@ apiClient.interceptors.response.use(
 			originalRequest._retry = true;
 
 			try {
-				const response = await axios.post(
+				await axios.post(
 					`${API_URL}/api/v1/auth/refresh`,
 					{},
 					{ withCredentials: true },
 				);
 
-				const { accessToken } = response.data.data;
-
-				localStorage.setItem("accessToken", accessToken);
-
-				originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 				return apiClient(originalRequest);
 			} catch (refreshError) {
-				// Refresh failed, clear tokens and redirect to login
-				localStorage.removeItem("accessToken");
-				window.location.href = "/login";
+				// Refresh failed; backend clears auth cookies when possible.
+				const isPublicAuthRoute =
+					typeof window !== "undefined" &&
+					PUBLIC_AUTH_ROUTES.some((route) => window.location.pathname.startsWith(route));
+				if (typeof window !== "undefined" && !isPublicAuthRoute) {
+					window.location.href = "/login";
+				}
 				return Promise.reject(refreshError);
 			}
 		}

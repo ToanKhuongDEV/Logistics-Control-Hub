@@ -59,6 +59,10 @@ public class JwtUtils {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token, getSignInKey());
     }
 
+    public long getJwtExpirationSeconds() {
+        return jwtExpiration / 1000;
+    }
+
     private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);

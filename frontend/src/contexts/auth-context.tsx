@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { authService, User } from "@/lib/auth";
 
 interface AuthContextType {
@@ -21,24 +22,32 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
 	const [user, setUser] = useState<User | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const pathname = usePathname();
 
-	// Load user on mount if token exists
+	// HttpOnly cookies are not readable from JS, so validate the session with the API.
 	useEffect(() => {
+		const isPublicAuthRoute = ["/login", "/forgot-password", "/reset-password"].some((route) =>
+			pathname.startsWith(route),
+		);
+
+		if (isPublicAuthRoute) {
+			setIsLoading(false);
+			return;
+		}
+
 		const loadUser = async () => {
-			if (authService.isAuthenticated()) {
-				try {
-					const userData = await authService.getCurrentUser();
-					setUser(userData);
-				} catch (error) {
-					console.error("Failed to load user:", error);
-					authService.logout();
-				}
+			try {
+				const userData = await authService.getCurrentUser();
+				setUser(userData);
+			} catch (error) {
+				console.error("Failed to load user:", error);
+				setUser(null);
 			}
 			setIsLoading(false);
 		};
 
 		loadUser();
-	}, []);
+	}, [pathname]);
 
 	const login = async (username: string, password: string) => {
 		await authService.login(username, password);
@@ -55,10 +64,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 	};
 
 	const refreshUser = async () => {
-		if (authService.isAuthenticated()) {
-			const userData = await authService.getCurrentUser();
-			setUser(userData);
-		}
+		const userData = await authService.getCurrentUser();
+		setUser(userData);
 	};
 
 	const value: AuthContextType = {

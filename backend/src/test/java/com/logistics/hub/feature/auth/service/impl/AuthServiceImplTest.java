@@ -92,6 +92,25 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void updateAccount_shouldAllowAdminToUpdateOwnProfile() {
+        UserEntity actor = adminUser(1L, "admin01");
+        UpdateAccountRequest request = new UpdateAccountRequest();
+        request.setEmail("updated-admin@example.com");
+
+        when(authorizationService.getCurrentUser()).thenReturn(actor);
+        when(userRepository.findByIdWithAssignedDepots(1L)).thenReturn(Optional.of(actor), Optional.of(actor));
+        when(userRepository.findByEmailIgnoreCase("updated-admin@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(actor)).thenReturn(actor);
+        when(userMapper.toResponse(actor)).thenReturn(new UserResponse());
+
+        authService.updateAccount(1L, request);
+
+        assertEquals("updated-admin@example.com", actor.getEmail());
+        verify(userRepository).save(actor);
+        verify(depotRepository, never()).findByDispatcher_Id(1L);
+    }
+
+    @Test
     void deleteAccount_shouldRejectWhenAdminDeletesAnotherAdmin() {
         UserEntity actor = adminUser(1L, "admin01");
         UserEntity target = adminUser(2L, "admin02");

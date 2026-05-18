@@ -3,6 +3,7 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { ProtectedRoute } from "@/components/protected-route";
 import { PageHeader } from "@/components/page-header";
+import { ExcelExportButton } from "@/components/excel-export-button";
 import { routingApi, RoutingRun, RoutingHistoryPage } from "@/lib/routing-api";
 import { depotApi } from "@/lib/depot-api";
 import { Depot } from "@/types/depot-types";
@@ -138,22 +139,32 @@ export default function HistoryPage() {
 						</div>
 
 						{/* Depot Selector */}
-						<div className="flex items-center gap-2">
-							<Warehouse className="w-4 h-4 text-muted-foreground" />
-							<select
-								id="history-depot-select"
-								value={selectedDepotId ?? ""}
-								onChange={(e) => handleDepotChange(e.target.value ? Number(e.target.value) : null)}
-								disabled={isLoadingDepots}
-								className="border border-input bg-background text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px]"
-							>
-								<option value="">-- Chọn kho --</option>
-								{depots.map((depot) => (
-									<option key={depot.id} value={depot.id}>
-										{depot.name}
-									</option>
-								))}
-							</select>
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+							<div className="flex items-center gap-2">
+								<Warehouse className="w-4 h-4 text-muted-foreground" />
+								<select
+									id="history-depot-select"
+									value={selectedDepotId ?? ""}
+									onChange={(e) => handleDepotChange(e.target.value ? Number(e.target.value) : null)}
+									disabled={isLoadingDepots}
+									className="border border-input bg-background text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed min-w-[220px]"
+								>
+									<option value="">-- Chọn kho --</option>
+									{depots.map((depot) => (
+										<option key={depot.id} value={depot.id}>
+											{depot.name}
+										</option>
+									))}
+								</select>
+							</div>
+							<ExcelExportButton
+								type="ROUTING"
+								title="Xuất lịch sử tối ưu"
+								disabled={selectedDepotId === null}
+								filters={{
+									depotId: selectedDepotId ?? undefined,
+								}}
+							/>
 						</div>
 					</div>
 

@@ -228,7 +228,9 @@ public class RoutingServiceImpl implements RoutingService {
 
         RoutingSearchParameters searchParameters = main.defaultRoutingSearchParameters()
                 .toBuilder()
+                // tuyến ban đầu theo kiểu chọn đường rẻ/gần nhất trước
                 .setFirstSolutionStrategy(FirstSolutionStrategy.Value.PATH_CHEAPEST_ARC)
+                // optimize tuyến bằng cách thử đổi route và phạt các đoạn đường xấu
                 .setLocalSearchMetaheuristic(LocalSearchMetaheuristic.Value.GUIDED_LOCAL_SEARCH)
                 .setTimeLimit(Duration.newBuilder().setSeconds(timeLimitSeconds).build())
                 .build();

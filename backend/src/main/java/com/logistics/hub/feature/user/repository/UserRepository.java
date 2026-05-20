@@ -16,13 +16,13 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByUsername(String username);
 
-    @Query("SELECT DISTINCT u FROM UserEntity u LEFT JOIN FETCH u.assignedDepots WHERE u.username = :username")
+    @Query("SELECT DISTINCT u FROM UserEntity u LEFT JOIN FETCH u.assignedDepots LEFT JOIN FETCH u.driver WHERE u.username = :username")
     Optional<UserEntity> findByUsernameWithAssignedDepots(String username);
 
-    @Query("SELECT DISTINCT u FROM UserEntity u LEFT JOIN FETCH u.assignedDepots ORDER BY u.id")
+    @Query("SELECT DISTINCT u FROM UserEntity u LEFT JOIN FETCH u.assignedDepots LEFT JOIN FETCH u.driver ORDER BY u.id")
     List<UserEntity> findAllWithAssignedDepots();
 
-    @EntityGraph(attributePaths = "assignedDepots")
+    @EntityGraph(attributePaths = {"assignedDepots", "driver"})
     @Query(value = """
             SELECT DISTINCT u
             FROM UserEntity u
@@ -48,7 +48,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             """)
     Page<UserEntity> searchAccounts(String searchPattern, String role, Long depotId, Pageable pageable);
 
-    @Query("SELECT DISTINCT u FROM UserEntity u LEFT JOIN FETCH u.assignedDepots WHERE u.id = :id")
+    @Query("SELECT DISTINCT u FROM UserEntity u LEFT JOIN FETCH u.assignedDepots LEFT JOIN FETCH u.driver WHERE u.id = :id")
     Optional<UserEntity> findByIdWithAssignedDepots(Long id);
 
     Optional<UserEntity> findByEmailIgnoreCase(String email);
@@ -56,6 +56,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     boolean existsByUsername(String username);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByDriver_Id(Long driverId);
+
+    boolean existsByDriver_IdAndIdNot(Long driverId, Long id);
 
     long countByRoleIgnoreCase(String role);
 }

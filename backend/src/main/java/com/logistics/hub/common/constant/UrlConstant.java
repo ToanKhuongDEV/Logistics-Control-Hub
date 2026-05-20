@@ -70,6 +70,19 @@ public class UrlConstant {
         }
     }
 
+    public static class DriverPortal {
+        public static final String PREFIX = API_V1 + "/driver";
+        public static final String MY_ORDERS = "/me/orders";
+        public static final String MY_ORDER_BY_ID = "/me/orders/{orderId}";
+        public static final String COMPLETE_MY_ORDER = "/me/orders/{orderId}/complete";
+        public static final String MY_ROUTING_HISTORY = "/me/routing/history";
+        public static final String MY_ROUTING_RUN_BY_ID = "/me/routing/runs/{runId}";
+        public static final String MY_LATEST_ROUTING_RUN = "/me/routing/latest";
+
+        private DriverPortal() {
+        }
+    }
+
     public static class Depot {
         public static final String PREFIX = API_V1 + "/depots";
         public static final String BY_ID = "/{id}";

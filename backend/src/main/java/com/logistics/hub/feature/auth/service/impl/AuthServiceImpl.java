@@ -28,6 +28,8 @@ import com.logistics.hub.feature.auth.service.PasswordResetMailService;
 import com.logistics.hub.feature.auth.util.JwtUtils;
 import com.logistics.hub.feature.depot.entity.DepotEntity;
 import com.logistics.hub.feature.depot.repository.DepotRepository;
+import com.logistics.hub.feature.driver.entity.DriverEntity;
+import com.logistics.hub.feature.driver.repository.DriverRepository;
 import com.logistics.hub.feature.user.entity.UserEntity;
 import com.logistics.hub.feature.user.mapper.UserMapper;
 import com.logistics.hub.feature.user.repository.UserRepository;
@@ -65,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordResetMailService passwordResetMailService;
     private final DepotRepository depotRepository;
+    private final DriverRepository driverRepository;
     private final AuditLogService auditLogService;
     private final AuthorizationService authorizationService;
 
@@ -224,6 +227,7 @@ public class AuthServiceImpl implements AuthService {
             user.setEmail(request.getEmail().trim().toLowerCase());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setRole(normalizeRole(request.getRole()));
+            syncDriverLink(user, user.getRole(), request.getDriverId(), request.getDriverId() != null, null);
 
             UserEntity savedUser = userRepository.save(user);
             syncAssignedDepots(savedUser, request.getAssignedDepotIds());
@@ -284,8 +288,9 @@ public class AuthServiceImpl implements AuthService {
             boolean emailProvided = request.getEmail() != null;
             boolean roleProvided = request.getRole() != null;
             boolean assignedDepotsProvided = request.getAssignedDepotIds() != null;
+            boolean driverIdProvided = request.getDriverId() != null;
 
-            if (!fullNameProvided && !emailProvided && !roleProvided && !assignedDepotsProvided) {
+            if (!fullNameProvided && !emailProvided && !roleProvided && !assignedDepotsProvided && !driverIdProvided) {
                 throw new ValidationException("No fields provided for update.");
             }
 
@@ -339,6 +344,11 @@ public class AuthServiceImpl implements AuthService {
                     userChanged = true;
                     roleChanged = true;
                 }
+            }
+
+            boolean driverLinkChanged = syncDriverLink(user, targetRole, request.getDriverId(), driverIdProvided, id);
+            if (driverLinkChanged) {
+                userChanged = true;
             }
 
             Set<Long> currentAssignedDepotIds = assignedDepotIdsOf(user);
@@ -580,7 +590,7 @@ public class AuthServiceImpl implements AuthService {
                 throw new ValidationException("Dispatcher must be assigned at least one depot.");
             }
         } else {
-            // ADMIN and USER do not require scoped depot assignments
+            // Non-dispatcher roles do not require scoped depot assignments.
             mutableTargetDepotIds = Set.of();
         }
 
@@ -610,6 +620,46 @@ public class AuthServiceImpl implements AuthService {
         if (!currentDepots.isEmpty()) {
             depotRepository.saveAll(currentDepots);
         }
+    }
+
+    private boolean syncDriverLink(UserEntity user, String targetRole, Long requestedDriverId,
+            boolean driverIdProvided, Long currentUserId) {
+        String role = normalizeRole(targetRole);
+        DriverEntity currentDriver = user.getDriver();
+
+        if (!AuthorizationPolicy.ROLE_DRIVER.equals(role)) {
+            if (currentDriver == null) {
+                return false;
+            }
+            user.setDriver(null);
+            return true;
+        }
+
+        Long targetDriverId = driverIdProvided
+                ? requestedDriverId
+                : currentDriver != null ? currentDriver.getId() : null;
+
+        if (targetDriverId == null) {
+            throw new ValidationException("Driver account must be linked to a driver profile.");
+        }
+
+        DriverEntity targetDriver = driverRepository.findById(targetDriverId)
+                .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + targetDriverId));
+
+        boolean driverAlreadyLinked = currentUserId == null
+                ? userRepository.existsByDriver_Id(targetDriverId)
+                : userRepository.existsByDriver_IdAndIdNot(targetDriverId, currentUserId);
+
+        if (driverAlreadyLinked) {
+            throw new ValidationException("Driver is already linked to another account.");
+        }
+
+        if (currentDriver != null && currentDriver.getId().equals(targetDriver.getId())) {
+            return false;
+        }
+
+        user.setDriver(targetDriver);
+        return true;
     }
 
     private void clearAssignedDepots(UserEntity user) {
@@ -672,6 +722,8 @@ public class AuthServiceImpl implements AuthService {
         snapshot.put("fullName", user.getFullName());
         snapshot.put("email", user.getEmail());
         snapshot.put("role", user.getRole());
+        snapshot.put("driverId", user.getDriver() != null ? user.getDriver().getId() : null);
+        snapshot.put("driverName", user.getDriver() != null ? user.getDriver().getName() : null);
         snapshot.put("assignedDepotIds", user.getAssignedDepots().stream()
                 .map(DepotEntity::getId)
                 .sorted()
@@ -686,6 +738,7 @@ public class AuthServiceImpl implements AuthService {
         snapshot.put("email", request.getEmail());
         snapshot.put("role", request.getRole());
         snapshot.put("assignedDepotIds", request.getAssignedDepotIds());
+        snapshot.put("driverId", request.getDriverId());
         return snapshot;
     }
 
@@ -695,6 +748,7 @@ public class AuthServiceImpl implements AuthService {
         snapshot.put("email", request.getEmail());
         snapshot.put("role", request.getRole());
         snapshot.put("assignedDepotIds", request.getAssignedDepotIds());
+        snapshot.put("driverId", request.getDriverId());
         return snapshot;
     }
 
@@ -717,6 +771,9 @@ public class AuthServiceImpl implements AuthService {
         }
         if (request.getAssignedDepotIds() != null) {
             fields.add("assignedDepotIds");
+        }
+        if (request.getDriverId() != null) {
+            fields.add("driverId");
         }
         return fields;
     }

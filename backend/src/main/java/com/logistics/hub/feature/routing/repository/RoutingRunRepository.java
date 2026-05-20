@@ -35,6 +35,23 @@ public interface RoutingRunRepository extends JpaRepository<RoutingRunEntity, Lo
   @Query(value = "SELECT r FROM RoutingRunEntity r WHERE r.depot.id = :depotId ORDER BY r.createdAt DESC", countQuery = "SELECT COUNT(r) FROM RoutingRunEntity r WHERE r.depot.id = :depotId")
   Page<RoutingRunEntity> findAllByDepot_Id(@Param("depotId") Long depotId, Pageable pageable);
 
+  @Query(value = """
+      SELECT DISTINCT rr
+      FROM RoutingRunEntity rr
+      JOIN rr.routes r
+      JOIN r.vehicle v
+      WHERE v.driver.id = :driverId
+      ORDER BY rr.createdAt DESC
+      """,
+      countQuery = """
+      SELECT COUNT(DISTINCT rr.id)
+      FROM RoutingRunEntity rr
+      JOIN rr.routes r
+      JOIN r.vehicle v
+      WHERE v.driver.id = :driverId
+      """)
+  Page<RoutingRunEntity> findAllByDriverId(@Param("driverId") Long driverId, Pageable pageable);
+
   Page<RoutingRunEntity> findAllByDepot_IdIn(Collection<Long> depotIds, Pageable pageable);
 
   Page<RoutingRunEntity> findAllByStatus(RoutingRunStatus status, Pageable pageable);

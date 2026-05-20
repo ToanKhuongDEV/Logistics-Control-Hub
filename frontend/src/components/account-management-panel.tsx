@@ -11,7 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/auth-context";
 import { authService, hasPermission, UpdateAccountRequest, User, UserRole } from "@/lib/auth";
 import { depotApi } from "@/lib/depot-api";
+import { driverApi } from "@/lib/driver-api";
 import { Depot } from "@/types/depot-types";
+import { Driver } from "@/types/driver-types";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 10;
@@ -22,21 +24,24 @@ const EMPTY_CREATE_FORM = {
 	email: "",
 	password: "",
 	confirmPassword: "",
-	role: "USER" as UserRole,
+	role: "DISPATCHER" as UserRole,
 	assignedDepotIds: [] as number[],
+	driverId: undefined as number | undefined,
 };
 
 const EMPTY_EDIT_FORM = {
 	id: 0,
 	fullName: "",
 	email: "",
-	role: "USER" as UserRole,
+	role: "DISPATCHER" as UserRole,
 	assignedDepotIds: [] as number[],
+	driverId: null as number | null,
 };
 
 export function AccountManagementPanel() {
 	const { user: currentUser, refreshUser } = useAuth();
 	const [depots, setDepots] = useState<Depot[]>([]);
+	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [accounts, setAccounts] = useState<User[]>([]);
 	const [accountDirectory, setAccountDirectory] = useState<User[]>([]);
 	const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
@@ -74,6 +79,15 @@ export function AccountManagementPanel() {
 		} catch (error: any) {
 			console.error("Error fetching depots:", error);
 			toast.error(error?.response?.data?.message || "Không thể tải danh sách kho");
+		}
+	};
+
+	const loadDrivers = async () => {
+		try {
+			const response = await driverApi.getAll();
+			setDrivers(response);
+		} catch (error) {
+			console.error("Error fetching drivers:", error);
 		}
 	};
 
@@ -119,6 +133,7 @@ export function AccountManagementPanel() {
 				email: account.email || "",
 				role: account.role,
 				assignedDepotIds: account.assignedDepots?.map((depot) => depot.id) || [],
+				driverId: account.driverId ?? null,
 			});
 			setEditDepotPicker(undefined);
 		} catch (error: any) {
@@ -132,6 +147,7 @@ export function AccountManagementPanel() {
 
 	useEffect(() => {
 		void loadDepots();
+		void loadDrivers();
 		void loadAccountDirectory();
 	}, []);
 
@@ -157,12 +173,26 @@ export function AccountManagementPanel() {
 		return map;
 	}, [accountDirectory]);
 
+	const linkedDriverMap = useMemo(() => {
+		const map = new Map<number, number>();
+		accountDirectory.forEach((account) => {
+			if (account.driverId != null) {
+				map.set(account.driverId, account.id);
+			}
+		});
+		return map;
+	}, [accountDirectory]);
+
 	const isEditingAnotherAdmin = useMemo(() => !!selectedAccount && selectedAccount.role === "ADMIN" && currentUser != null && currentUser.id !== selectedAccount.id, [currentUser, selectedAccount]);
 	const isEditingCurrentUser = useMemo(() => !!selectedAccount && currentUser != null && currentUser.id === selectedAccount.id, [currentUser, selectedAccount]);
 
 	const createDepotOptions = useMemo(() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || createAccountForm.assignedDepotIds.includes(depot.id)), [createAccountForm.assignedDepotIds, depots, assignedDepotMap]);
 
 	const editDepotOptions = useMemo(() => depots.filter((depot) => !assignedDepotMap.has(depot.id) || assignedDepotMap.get(depot.id) === selectedAccount?.id || editAccountForm.assignedDepotIds.includes(depot.id)), [depots, assignedDepotMap, selectedAccount?.id, editAccountForm.assignedDepotIds]);
+
+	const createDriverOptions = useMemo(() => drivers.filter((driver) => !linkedDriverMap.has(driver.id) || createAccountForm.driverId === driver.id), [createAccountForm.driverId, drivers, linkedDriverMap]);
+
+	const editDriverOptions = useMemo(() => drivers.filter((driver) => !linkedDriverMap.has(driver.id) || linkedDriverMap.get(driver.id) === selectedAccount?.id || editAccountForm.driverId === driver.id), [drivers, editAccountForm.driverId, linkedDriverMap, selectedAccount?.id]);
 
 	const resetCreateForm = () => {
 		setCreateAccountForm(EMPTY_CREATE_FORM);
@@ -177,9 +207,13 @@ export function AccountManagementPanel() {
 		}
 	};
 
-	const validateScopedRoleSelection = (role: UserRole, assignedDepotIds: number[]) => {
+	const validateScopedRoleSelection = (role: UserRole, assignedDepotIds: number[], driverId?: number | null) => {
 		if (role === "DISPATCHER" && assignedDepotIds.length === 0) {
 			toast.error("Dispatcher phải được gán ít nhất một kho");
+			return false;
+		}
+		if (role === "DRIVER" && driverId == null) {
+			toast.error("Driver phải được liên kết với một hồ sơ tài xế");
 			return false;
 		}
 		return true;
@@ -233,7 +267,7 @@ export function AccountManagementPanel() {
 			return;
 		}
 
-		if (!validateScopedRoleSelection(createAccountForm.role, createAccountForm.assignedDepotIds)) {
+		if (!validateScopedRoleSelection(createAccountForm.role, createAccountForm.assignedDepotIds, createAccountForm.driverId)) {
 			return;
 		}
 
@@ -246,6 +280,7 @@ export function AccountManagementPanel() {
 				password: createAccountForm.password,
 				role: createAccountForm.role,
 				assignedDepotIds: createAccountForm.role === "DISPATCHER" ? createAccountForm.assignedDepotIds : [],
+				driverId: createAccountForm.role === "DRIVER" ? createAccountForm.driverId : undefined,
 			});
 			resetCreateForm();
 			setIsCreateExpanded(false);
@@ -268,9 +303,10 @@ export function AccountManagementPanel() {
 		const nextFullName = editAccountForm.fullName.trim();
 		const nextEmail = editAccountForm.email.trim();
 		const currentAssignedDepotIds = selectedAccount.assignedDepots?.map((depot) => depot.id) || [];
+		const currentDriverId = selectedAccount.driverId ?? null;
 		const payload: UpdateAccountRequest = {};
 
-		if (!validateScopedRoleSelection(editAccountForm.role, editAccountForm.assignedDepotIds)) {
+		if (!validateScopedRoleSelection(editAccountForm.role, editAccountForm.assignedDepotIds, editAccountForm.driverId)) {
 			return;
 		}
 
@@ -288,6 +324,14 @@ export function AccountManagementPanel() {
 
 		if (!haveSameDepotIds(editAccountForm.assignedDepotIds, currentAssignedDepotIds)) {
 			payload.assignedDepotIds = editAccountForm.role === "DISPATCHER" ? editAccountForm.assignedDepotIds : [];
+		}
+
+		if (editAccountForm.role === "DRIVER" && editAccountForm.driverId !== currentDriverId) {
+			payload.driverId = editAccountForm.driverId;
+		}
+
+		if (payload.role === "DRIVER" && payload.driverId === undefined) {
+			payload.driverId = editAccountForm.driverId;
 		}
 
 		if (payload.role === "ADMIN" && payload.assignedDepotIds === undefined) {
@@ -316,6 +360,7 @@ export function AccountManagementPanel() {
 						email: updatedAccount.email || "",
 						role: updatedAccount.role,
 						assignedDepotIds: updatedAccount.assignedDepots?.map((depot) => depot.id) || [],
+						driverId: updatedAccount.driverId ?? null,
 					});
 					setEditDepotPicker(undefined);
 				}
@@ -413,6 +458,44 @@ export function AccountManagementPanel() {
 		</div>
 	);
 
+	const renderDriverDropdown = ({ value, onValueChange, options }: { value?: number | null; onValueChange: (value: number) => void; options: Driver[] }) => {
+		const selectedDriver = value != null ? drivers.find((driver) => driver.id === value) : null;
+
+		return (
+			<div className="space-y-3 rounded-lg border border-border p-4">
+				<div className="flex items-center gap-2 text-sm font-medium text-foreground">
+					<UserPlus className="h-4 w-4 text-primary" />
+					Hồ sơ tài xế
+				</div>
+				<Select value={value != null ? value.toString() : undefined} onValueChange={(nextValue) => onValueChange(Number(nextValue))}>
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder="Chọn tài xế để liên kết" />
+					</SelectTrigger>
+					<SelectContent>
+						{options.length > 0 ? (
+							options.map((driver) => (
+								<SelectItem key={driver.id} value={driver.id.toString()}>
+									{driver.name} - {driver.licenseNumber}
+								</SelectItem>
+							))
+						) : (
+							<SelectItem value="no-driver" disabled>
+								Không còn tài xế khả dụng
+							</SelectItem>
+						)}
+					</SelectContent>
+				</Select>
+				{selectedDriver ? (
+					<p className="text-sm text-muted-foreground">
+						Đang liên kết: {selectedDriver.name} - {selectedDriver.licenseNumber}
+					</p>
+				) : (
+					<p className="text-sm text-muted-foreground">Chưa chọn hồ sơ tài xế.</p>
+				)}
+			</div>
+		);
+	};
+
 	return (
 		<div className="space-y-6">
 			<Card className="p-6">
@@ -464,6 +547,7 @@ export function AccountManagementPanel() {
 											...createAccountForm,
 											role: value as UserRole,
 											assignedDepotIds: value === "DISPATCHER" ? createAccountForm.assignedDepotIds : [],
+											driverId: value === "DRIVER" ? createAccountForm.driverId : undefined,
 										})
 									}
 								>
@@ -471,8 +555,8 @@ export function AccountManagementPanel() {
 										<SelectValue placeholder="Chọn vai trò" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="USER">User</SelectItem>
 										<SelectItem value="DISPATCHER">Dispatcher</SelectItem>
+										<SelectItem value="DRIVER">Driver</SelectItem>
 										<SelectItem value="ADMIN">Admin</SelectItem>
 									</SelectContent>
 								</Select>
@@ -485,6 +569,15 @@ export function AccountManagementPanel() {
 										options: createDepotOptions.filter((depot) => !createAccountForm.assignedDepotIds.includes(depot.id)),
 										selectedDepotIds: createAccountForm.assignedDepotIds,
 										onRemove: removeCreateDepot,
+									})}
+								</div>
+							)}
+							{createAccountForm.role === "DRIVER" && (
+								<div className="md:col-span-2">
+									{renderDriverDropdown({
+										value: createAccountForm.driverId,
+										onValueChange: (driverId) => setCreateAccountForm((current) => ({ ...current, driverId })),
+										options: createDriverOptions,
 									})}
 								</div>
 							)}
@@ -540,8 +633,8 @@ export function AccountManagementPanel() {
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="all">Tất cả vai trò</SelectItem>
-								<SelectItem value="USER">User</SelectItem>
 								<SelectItem value="DISPATCHER">Dispatcher</SelectItem>
+								<SelectItem value="DRIVER">Driver</SelectItem>
 								<SelectItem value="ADMIN">Admin</SelectItem>
 							</SelectContent>
 						</Select>
@@ -713,6 +806,7 @@ export function AccountManagementPanel() {
 											...editAccountForm,
 											role: value as UserRole,
 											assignedDepotIds: value === "DISPATCHER" ? editAccountForm.assignedDepotIds : [],
+											driverId: value === "DRIVER" ? editAccountForm.driverId : null,
 										})
 									}
 								>
@@ -720,8 +814,8 @@ export function AccountManagementPanel() {
 										<SelectValue placeholder="Chọn vai trò" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="USER">User</SelectItem>
 										<SelectItem value="DISPATCHER">Dispatcher</SelectItem>
+										<SelectItem value="DRIVER">Driver</SelectItem>
 										<SelectItem value="ADMIN">Admin</SelectItem>
 									</SelectContent>
 								</Select>
@@ -734,6 +828,12 @@ export function AccountManagementPanel() {
 									options: editDepotOptions.filter((depot) => !editAccountForm.assignedDepotIds.includes(depot.id)),
 									selectedDepotIds: editAccountForm.assignedDepotIds,
 									onRemove: removeEditDepot,
+								})}
+							{editAccountForm.role === "DRIVER" &&
+								renderDriverDropdown({
+									value: editAccountForm.driverId,
+									onValueChange: (driverId) => setEditAccountForm((current) => ({ ...current, driverId })),
+									options: editDriverOptions,
 								})}
 
 							<div className="flex flex-wrap gap-3">

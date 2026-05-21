@@ -2,87 +2,81 @@
 
 Copyright (c) 2026 Khuong Xuan Toan
 
-Logistics Control Hub is a full-stack logistics operations platform for managing depots, vehicles, drivers, orders, route optimization, and audit visibility in one place.
-
-It combines:
-- Spring Boot for the backend API
-- Next.js for the web dashboard
-- PostgreSQL for operational data
-- Redis for caching
-- OSRM for road-network distance calculations
-- Google OR-Tools for vehicle routing optimization
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Core Features](#core-features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [API Highlights](#api-highlights)
-- [Demo Data](#demo-data)
+Logistics Control Hub is a full-stack logistics operations platform for managing depots, vehicles, drivers, orders, route optimization, driver delivery work, Excel exports, and audit visibility in one place.
 
 ## Overview
 
-This project simulates an AI-enabled supply chain control tower focused on last-mile and depot-based delivery planning.
+The project simulates a logistics control tower focused on depot-based delivery operations and last-mile route planning.
 
 Main workflow:
-1. Create and manage orders.
-2. Assign or review depot scope.
-3. Manage vehicles, drivers, and dispatcher accounts.
-4. Run route optimization for a depot.
-5. Inspect optimized routes and route history.
-6. Track sensitive actions through audit logs.
 
-The current codebase also includes account administration, password reset flow, company settings, and audit monitoring beyond the original MVP scope.
+1. Admin signs in and manages company data, accounts, depots, drivers, vehicles, and orders.
+2. Dispatchers work inside their assigned depot scope.
+3. Orders can be created manually and assigned to a depot, or auto-assigned to the nearest accessible active depot.
+4. Routing optimization selects `CREATED` orders and `ACTIVE` vehicles with assigned drivers for a depot.
+5. Routes are saved with stops, route geometry, distance, duration, cost, and run history.
+6. Driver users open the driver portal, view their assigned in-transit orders, and mark deliveries as completed.
+7. Sensitive operations are recorded in audit logs for traceability.
 
 ## Core Features
 
-### Authentication and Access Control
+### Authentication and Authorization
 
-- JWT-based login, refresh, logout, and current-user endpoints
-- Role support: `ADMIN`, `DISPATCHER`, `DRIVER`
-- Permission-based UI and API access
-- Change password, forgot password, and reset password flows
+- JWT access and refresh tokens stored as HttpOnly cookies.
+- Login, refresh, logout, current user, change password, forgot password, and reset password APIs.
+- Role model: `ADMIN`, `DISPATCHER`, `DRIVER`.
+- Permission model returned from `/api/v1/auth/me` and used by the frontend sidebar.
+- Depot-scoped authorization for dispatcher users.
 
-### Order Operations
+### Admin and Dispatcher Operations
 
-- Create, list, update, and delete orders
-- Filter and paginate order data
-- Order statistics endpoint
-- Bulk status updates
-- Delivery lifecycle support such as `CREATED`, `IN_TRANSIT`, and `DELIVERED`
+- CRUD-style management for orders, vehicles, drivers, depots, accounts, and company settings.
+- Paginated lists with search/filter support across the main modules.
+- Dashboard statistics for high-level operations.
+- Account management for admin users, including role and depot assignment.
+- Audit log search by actor, action, resource, depot scope, status, and date range.
 
-### Fleet and Driver Management
+### Orders
 
-- CRUD for vehicles, drivers, and depots
-- Vehicle statistics and driver statistics
-- Bulk vehicle-to-depot reassignment
-- Vehicle capacity and cost configuration
-- Driver availability lookup
+- Order lifecycle: `CREATED`, `IN_TRANSIT`, `DELIVERED`, `CANCELLED`.
+- Auto-generated order code when no code is provided.
+- Nearest active depot assignment when an admin creates an order without a depot.
+- Bulk status update endpoint.
+- Audit logging for create, update, delete, and bulk update operations.
 
-### Routing and Optimization
+### Fleet, Drivers, and Depots
 
-- Depot-based route optimization with Google OR-Tools
-- Road distance and travel-time estimation through OSRM
-- Optimization run tracking
-- Latest route result by depot
-- Route history by depot
+- Vehicle statuses: `ACTIVE`, `MAINTENANCE`, `IDLE`.
+- Vehicle types: `KG_500`, `KG_750`, `T_1`, `T_1_25`, `T_1_49`.
+- Vehicle capacity fields for weight and volume.
+- Vehicle operating cost per kilometer.
+- Driver availability lookup.
+- Bulk vehicle-to-depot reassignment with admin permission.
 
-### Dashboard and Administration
+### Routing
 
-- Dashboard statistics for operational overview
-- Company information management
-- Account management for admin users
-- Audit log search with filters for action, resource, actor, depot scope, and date range
+- Depot-based route optimization with Google OR-Tools.
+- OSRM distance matrix, duration matrix, and polyline retrieval.
+- Haversine fallback when OSRM is unavailable.
+- Redis-backed cache for expensive OSRM matrix calls.
+- Routing run statuses: `COMPLETED`, `FAILED`.
+- Route statuses: `CREATED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`.
+- Automatic order update to `IN_TRANSIT` and driver assignment after successful routing.
 
-### Caching and Reliability
+### Driver Portal
 
-- Redis-backed caching for expensive routing lookups
-- Health endpoint via Spring Boot Actuator
-- Dockerized local stack for reproducible setup
+- Driver-facing page at `/driver`.
+- Driver API prefix: `/api/v1/driver`.
+- Drivers can view assigned in-transit delivery orders.
+- Drivers can complete their own orders.
+- Route status is moved to `COMPLETED` when all order stops on that route are delivered.
+
+### Excel
+
+- Export endpoint: `GET /api/v1/excel/export`.
+- Template endpoint: `GET /api/v1/excel/template`.
+- Supported export/template types: `DEPOT`, `DRIVER`, `ORDER`, `ROUTING`, `VEHICLE`.
+- Export filters include search, status, depot, date range, and `maxRows`.
 
 ## Tech Stack
 
@@ -90,15 +84,17 @@ The current codebase also includes account administration, password reset flow, 
 
 - Java 17
 - Spring Boot 3.4.4
-- Spring Web, Validation, Security, Data JPA, Mail, Actuator, WebSocket
+- Spring Web, Validation, Security, OAuth2 Resource Server, Data JPA, Mail, Actuator, WebSocket
 - PostgreSQL
 - Redis
 - Google OR-Tools `9.8.3296`
-- Temporal SDK `1.24.0` present in dependencies
-- MapStruct
-- Lombok
-- SpringDoc OpenAPI / Swagger UI
+- Temporal SDK `1.24.0` is present as a dependency, but no Temporal workflow is currently wired into the app
+- MapStruct `1.5.5.Final`
+- Lombok `1.18.36`
+- SpringDoc OpenAPI `2.8.5`
+- Apache POI `5.3.0`
 - JJWT `0.11.5`
+- spring-dotenv `4.0.0`
 
 ### Frontend
 
@@ -107,44 +103,40 @@ The current codebase also includes account administration, password reset flow, 
 - TypeScript
 - Tailwind CSS v4
 - Radix UI
-- shadcn/ui-style component structure
+- Local shadcn-style components
+- Axios
 - Leaflet
 - Recharts
 - React Hook Form + Zod
-- Axios
 - Framer Motion
 
 ### Infrastructure
 
 - Docker and Docker Compose
 - PostgreSQL 15 Alpine
-- Redis Cloud or external Redis connection
-- OSRM container with Hanoi map data
+- External Redis or Redis Cloud
+- OSRM container using map data from `osrm-data/data-HANOI`
 
 ## Architecture
 
 ```text
 Frontend (Next.js)
-  -> Authenticated dashboard pages
-  -> Orders, fleet, drivers, depots, accounts, audit, settings
-  -> Calls REST APIs on the backend
+  -> Auth pages and protected dashboard pages
+  -> Orders, fleet, drivers, depots, route history, driver portal, accounts, audit, settings
+  -> Calls backend REST APIs with credentials-enabled Axios
 
 Backend (Spring Boot)
-  -> Auth
-  -> Company
-  -> Dashboard
-  -> Depot
-  -> Driver
-  -> Order
-  -> Routing
-  -> Vehicle
-  -> Audit
-  -> Redis cache integration
+  -> Auth and authorization
+  -> Company, dashboard, depot, driver, order, vehicle
+  -> Routing with OR-Tools, OSRM, and Redis cache
+  -> Driver portal
+  -> Excel export/template
+  -> Audit logging
 
-Infrastructure
-  -> PostgreSQL for business data
-  -> Redis for caching
-  -> OSRM for road-network calculations
+Data and services
+  -> PostgreSQL for operational data
+  -> Redis for OSRM cache
+  -> OSRM for road-network distance and route geometry
 ```
 
 ## Project Structure
@@ -162,6 +154,8 @@ Logistics Control Hub/
 |   |       |-- dashboard/
 |   |       |-- depot/
 |   |       |-- driver/
+|   |       |-- driverportal/
+|   |       |-- excel/
 |   |       |-- geocoding/
 |   |       |-- location/
 |   |       |-- order/
@@ -179,6 +173,7 @@ Logistics Control Hub/
 |-- database/
 |   |-- database_schema.sql
 |   `-- seeding_data.sql
+|-- document/
 |-- osrm-data/
 |-- docker-compose.yml
 |-- DOCKER_GUIDE.md
@@ -197,11 +192,12 @@ Logistics Control Hub/
   - Node.js 20+
   - PostgreSQL 15
   - Redis or Redis Cloud access
+  - OSRM if you want road-network routing locally
 
-### Option A: Run with Docker Compose
+### Run with Docker Compose
 
-1. Create a root `.env` file with the required variables.
-2. Prepare OSRM data in `osrm-data/data-HANOI` as described in `DOCKER_GUIDE.md`.
+1. Create a root `.env` file with the variables listed below.
+2. Prepare OSRM files in `osrm-data/data-HANOI`, with `/data/hanoi.osrm` available inside the OSRM container.
 3. Start the stack:
 
 ```bash
@@ -212,28 +208,29 @@ docker compose up -d --build
 
 | Service | URL |
 | --- | --- |
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| Health Check | http://localhost:8080/actuator/health |
-| OSRM | http://localhost:5000 |
+| Frontend | `http://localhost:3000` |
+| Backend API | `http://localhost:8080` |
+| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8080/api-docs` |
+| Health Check | `http://localhost:8080/actuator/health` |
+| OSRM | `http://localhost:5000` |
 
 Notes:
-- The backend container expects PostgreSQL from Docker Compose.
-- Redis is not started by this compose file and is expected from external configuration.
 
-### Option B: Run Locally
+- PostgreSQL is internal to Docker Compose by default and is not exposed to the host.
+- Redis is external and must be configured through environment variables.
+- `NEXT_PUBLIC_API_URL` is passed at frontend build time.
 
-#### Backend
+### Run Locally
+
+Backend:
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-The backend reads configuration from environment variables and the root `.env` file through `spring-dotenv`.
-
-#### Frontend
+Frontend:
 
 ```bash
 cd frontend
@@ -243,7 +240,7 @@ npm run dev
 
 ## Environment Variables
 
-Create a root `.env` file with values similar to the following:
+Root `.env` example for Docker Compose:
 
 ```env
 DB_NAME=logistics_db
@@ -251,16 +248,12 @@ DB_USERNAME=postgres
 DB_PASSWORD=postgres
 DB_PORT=5432
 
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/logistics_db
-SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=postgres
-
 REDIS_HOST=your-redis-host
 REDIS_PORT=6379
 REDIS_PASSWORD=your-redis-password
 
-JWT_SECRET=your_jwt_secret_min_32_chars
-JWT_REFRESH_SECRET=your_refresh_secret_min_32_chars
+JWT_SECRET=change_me_to_a_32_char_or_longer_secret
+JWT_REFRESH_SECRET=change_me_to_another_32_char_secret
 
 SERVER_PORT=8080
 FRONTEND_URL=http://localhost:3000
@@ -269,16 +262,13 @@ RESET_PASSWORD_EXPIRATION_MINUTES=15
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=your_email@example.com
-MAIL_PASSWORD=your_email_password
+MAIL_PASSWORD=your_email_app_password
 
 NEXT_PUBLIC_API_URL=http://localhost:8080
-OSRM_URL=http://localhost:5000
+DOCKERHUB_USERNAME=logistics
 ```
 
-Important:
-- `SPRING_DATASOURCE_*` variables are required by `application.yml`.
-- In Docker Compose, the backend uses `jdbc:postgresql://postgres:5432/...`.
-- `NEXT_PUBLIC_API_URL` is used at frontend build time.
+For local backend development, `backend/.env.example` contains the backend-specific variables. For local frontend development, copy `frontend/.env.local.example` to `frontend/.env.local`.
 
 ## API Highlights
 
@@ -288,8 +278,6 @@ Swagger UI:
 http://localhost:8080/swagger-ui.html
 ```
 
-Key route groups:
-
 | Area | Endpoint Prefix |
 | --- | --- |
 | Auth | `/api/v1/auth` |
@@ -297,36 +285,48 @@ Key route groups:
 | Orders | `/api/v1/orders` |
 | Vehicles | `/api/v1/vehicles` |
 | Drivers | `/api/v1/drivers` |
+| Driver Portal | `/api/v1/driver` |
 | Depots | `/api/v1/depots` |
 | Dashboard | `/api/v1/dashboard` |
 | Company | `/api/v1/company` |
 | Routing | `/api/v1/routing` |
 | Audit Logs | `/api/v1/audit-logs` |
+| Excel | `/api/v1/excel` |
 
 Examples:
 
 - `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
 - `GET /api/v1/auth/me`
 - `POST /api/v1/auth/forgot-password`
 - `POST /api/v1/auth/reset-password`
 - `GET /api/v1/orders`
 - `PATCH /api/v1/orders/bulk/status`
 - `PATCH /api/v1/vehicles/bulk/depot`
-- `POST /api/v1/routing/optimize`
+- `POST /api/v1/routing/optimize?depotId=1`
+- `GET /api/v1/routing/runs/{id}`
 - `GET /api/v1/routing/latest/{depotId}`
 - `GET /api/v1/routing/history/{depotId}`
+- `GET /api/v1/driver/me/orders`
+- `PATCH /api/v1/driver/me/orders/{orderId}/complete`
+- `GET /api/v1/excel/export?type=ORDER`
 - `GET /api/v1/audit-logs`
 
 ## Demo Data
 
-The seed script currently provides:
+The current seed script provides:
+
 - 1 company
-- 11 user accounts
+- 12 user accounts
 - 12 drivers
+- 64 locations
 - 4 depots
 - 14 vehicles
 - 60 orders
-- Realistic Vietnam sample locations
+- 1 sample routing run
+- 1 sample route
+- 7 route stops
+- 1 audit log row
 
 Default demo credentials:
 
@@ -335,18 +335,32 @@ Default demo credentials:
 | Admin | `admin01` | `password123` |
 | Dispatcher | `user01` | `password123` |
 
-`user01` is seeded as a dispatcher and assigned to depots `1` and `2`.
+`user01` is seeded as a dispatcher assigned to depots `1` and `2`.
 
-## Author
+## Tests
 
-- Owner: Khuong Xuan Toan
-- Contact: `khuongxuantoan@gmail.com`
+Backend tests live in `backend/src/test/java`.
+
+```bash
+cd backend
+mvn test
+```
+
+Frontend lint:
+
+```bash
+cd frontend
+npm run lint
+```
+
+## Documentation
+
+- Vietnamese README: `README_VIE.md`
+- English README: `README_ENG.md`
+- Docker guide: `DOCKER_GUIDE.md`
+- Current implementation notes and roadmap: `PLAN.md`
+- Business restriction notes: `document/business-restrictions.md`
 
 ## License
 
 This project is licensed under the GNU General Public License v3.0.
-
-## Notes
-
-- `frontend/README.md` is still the default Next.js template and can be updated separately if you want module-specific frontend documentation.
-- The root documentation files are `README_ENG.md` and `README_VIE.md`.

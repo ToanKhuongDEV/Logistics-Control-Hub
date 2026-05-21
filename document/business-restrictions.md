@@ -1,82 +1,148 @@
-# Ràng buộc logic nghiệp vụ
+# Ràng Buộc Nghiệp Vụ
 
-Tài liệu này liệt kê các ràng buộc restrict cơ bản nên có trong dự án Logistics Control Hub để tránh sai lệch dữ liệu và sai luồng vận hành.
+Tài liệu này ghi lại các ràng buộc nghiệp vụ của Logistics Control Hub theo trạng thái code hiện tại. Một số ràng buộc đã được enforce trong service/controller, một số là quy tắc nên bổ sung tiếp để giảm sai lệch dữ liệu vận hành.
 
-## 1. Ràng buộc đơn hàng
+## 1. Phân Quyền Và Phạm Vi Kho
 
-- Đơn hàng chỉ được sửa địa chỉ, kho, khối lượng, thể tích khi còn ở trạng thái `CREATED`.
-- Đơn hàng đang ở trạng thái `IN_TRANSIT` không được đổi địa chỉ giao, đổi kho, đổi tài xế, đổi khối lượng hoặc đổi thể tích.
-- Đơn hàng ở trạng thái `DELIVERED` hoặc `CANCELLED` là trạng thái cuối, không được sửa, xóa hoặc chuyển ngược về trạng thái khác.
-- Luồng trạng thái hợp lệ nên là:
-  - `CREATED -> IN_TRANSIT -> DELIVERED`
-  - `CREATED -> CANCELLED`
-  - `IN_TRANSIT -> CANCELLED` chỉ dành cho admin hoặc người có quyền cao.
-- Một đơn hàng không được nằm trong nhiều route đang hoạt động cùng lúc.
-- Không cho chuyển đơn hàng sang `IN_TRANSIT` nếu chưa có route, tài xế và xe hợp lệ.
-- Không cho xóa đơn hàng đang `IN_TRANSIT`; cần hủy hoặc hoàn tất đơn trước.
-- Chỉ các đơn hàng `CREATED` mới được đưa vào tối ưu tuyến đường.
-- Không đưa đơn hàng `DELIVERED`, `CANCELLED` hoặc `IN_TRANSIT` vào routing mới.
+### Đã có
 
-## 2. Ràng buộc tài xế
+- Hệ thống có 3 role: `ADMIN`, `DISPATCHER`, `DRIVER`.
+- Quyền được gom theo permission như `order.read`, `order.manage`, `routing.execute`, `audit.read`, `account.manage`.
+- `ADMIN` có global scope.
+- `DISPATCHER` bị giới hạn theo danh sách kho được phân công.
+- `DRIVER` chỉ có quyền liên quan đến ca giao của chính mình.
+- Các service nghiệp vụ chính kiểm tra permission và depot access trước khi đọc/sửa dữ liệu.
+- API quản lý tài khoản, audit, company và driver portal có `@PreAuthorize` theo permission cụ thể.
 
-- Một tài xế chỉ được gán cho một xe tại một thời điểm.
-- Tài xế đang có đơn hàng `IN_TRANSIT` hoặc route `IN_PROGRESS` không được nhận thêm đơn hoặc route khác trùng thời gian.
-- Không cho xóa tài xế nếu tài xế đang được gán với xe hoặc còn đơn hàng liên quan.
-- Không cho đổi thông tin quan trọng của tài xế, ví dụ số bằng lái, khi tài xế đang đi giao.
-- Tài xế được gán với xe thuộc kho nào thì chỉ nên nhận đơn hàng của kho đó, trừ trường hợp admin điều phối liên kho.
-- Số bằng lái và số điện thoại tài xế phải là duy nhất trong hệ thống.
+### Nên bổ sung/duy trì
 
-## 3. Ràng buộc xe
+- Đưa cấu hình CORS production ra biến môi trường thay vì hard-code host.
+- Bổ sung test cho từng boundary: admin, dispatcher cùng kho, dispatcher khác kho, driver không liên kết hồ sơ tài xế.
 
-- Chỉ xe `ACTIVE`, có tài xế và có kho mới được dùng để tối ưu tuyến đường.
-- Xe `MAINTENANCE` hoặc `IDLE` không được đưa vào route giao hàng.
-- Xe đang có route `IN_PROGRESS` không được đổi tài xế, đổi kho, chuyển sang bảo trì hoặc xóa.
-- Tổng khối lượng đơn hàng trong route không được vượt quá `maxWeightKg` của xe.
-- Tổng thể tích đơn hàng trong route không được vượt quá `maxVolumeM3` của xe.
-- `costPerKm`, `maxWeightKg` và `maxVolumeM3` không được là giá trị âm.
-- Mã xe phải là duy nhất trong hệ thống.
+## 2. Đơn Hàng
 
-## 4. Ràng buộc kho
+### Đã có
 
-- Chỉ kho đang hoạt động, tức `isActive = true`, mới được nhận đơn mới hoặc chạy routing.
-- Không được tắt hoặc xóa kho nếu kho còn đơn hàng `CREATED`, đơn hàng `IN_TRANSIT`, xe active hoặc route chưa hoàn tất.
-- Đơn hàng và xe được chọn để tối ưu tuyến đường phải thuộc cùng một kho.
-- Nhân viên bị giới hạn kho chỉ được xem, tạo, sửa, xóa dữ liệu trong các kho được phân quyền.
-- Chuyển đơn hàng hoặc xe sang kho khác nên yêu cầu quyền admin hoặc quyền điều phối liên kho.
+- Trạng thái đơn hàng: `CREATED`, `IN_TRANSIT`, `DELIVERED`, `CANCELLED`.
+- Khi tạo đơn, nếu không nhập mã thì hệ thống tự sinh mã dạng `ORD-xxx`.
+- Không cho trùng mã đơn.
+- Dispatcher bắt buộc chọn kho khi tạo đơn.
+- Admin có thể tạo đơn không chọn kho; hệ thống tự gán kho active gần nhất trong phạm vi truy cập.
+- Dispatcher không được hủy đơn đã xác nhận hoặc đang giao nếu không có quyền `order.cancel.confirmed`.
+- Dispatcher không được bulk cancel.
+- Chuyển đơn sang kho khác yêu cầu quyền admin tương đương `vehicle.reassign`.
+- Các thao tác create, update, delete, bulk update được ghi audit log; lỗi validation/forbidden/not found cũng được ghi nhận ở một số luồng.
 
-## 5. Ràng buộc tuyến đường
+### Nên siết thêm
 
-- Route phải bắt đầu tại kho và kết thúc tại kho.
-- Mỗi đơn hàng trong một route chỉ được xuất hiện đúng một lần.
-- Khi route đã `IN_PROGRESS`, không được đổi thứ tự điểm dừng, đổi xe, đổi tài xế hoặc đổi địa chỉ đơn hàng.
-- Route chỉ được chuyển sang `COMPLETED` khi tất cả đơn hàng trong route đã được giao thành công hoặc được xử lý hợp lệ.
-- Nếu sửa đơn hàng, xe hoặc kho sau khi đã tạo route nhưng trước khi route chạy, route cũ nên bị hủy hoặc bắt buộc tối ưu lại.
-- Một xe không được có nhiều route `IN_PROGRESS` cùng lúc.
-- Một route `CANCELLED` hoặc `COMPLETED` không được tiếp tục cập nhật điểm dừng.
+- Chỉ cho sửa địa chỉ, kho, khối lượng, thể tích khi đơn còn `CREATED`.
+- Không cho sửa/xóa đơn `IN_TRANSIT` nếu thao tác đó làm sai route đang chạy.
+- Coi `DELIVERED` và `CANCELLED` là trạng thái cuối, không cho chuyển ngược.
+- Bulk update nên validate toàn bộ danh sách trước khi lưu, đặc biệt với trạng thái terminal.
 
-## 6. Ràng buộc dữ liệu
+## 3. Xe
 
-- Mã đơn hàng phải là duy nhất trong hệ thống.
-- Địa chỉ giao hàng phải có đủ thông tin cần thiết và geocode được ra tọa độ.
-- Không cho tạo đơn hàng thiếu địa chỉ giao.
-- Không cho tạo xe thiếu tải trọng hoặc thể tích nếu xe được dùng cho routing.
-- Khối lượng và thể tích đơn hàng không được là giá trị âm.
-- Bulk update phải validate toàn bộ danh sách trước khi cập nhật. Nếu có một bản ghi lỗi, không nên cập nhật nửa chừng.
-- Các bản ghi đã soft delete không được xuất hiện trong danh sách lựa chọn hoặc được gán vào nghiệp vụ mới.
+### Đã có
 
-## 7. Ràng buộc phân quyền và audit
+- Trạng thái xe: `ACTIVE`, `MAINTENANCE`, `IDLE`.
+- Loại xe: `KG_500`, `KG_750`, `T_1`, `T_1_25`, `T_1_49`.
+- Không cho trùng mã xe.
+- Không cho gán một tài xế cho nhiều xe.
+- Dispatcher không được chuyển xe sang kho khác; thao tác này cần quyền admin.
+- Không cho gán tài xế thuộc kho khác cho xe trong phạm vi không hợp lệ.
+- Bulk update depot cho xe có kiểm tra danh sách ID tồn tại.
 
-- Dispatcher chỉ được hủy đơn hàng `CREATED`; hủy đơn đã xác nhận hoặc đang giao cần quyền cao hơn.
-- Chuyển đơn hàng hoặc xe sang kho khác cần quyền admin hoặc quyền tương đương.
-- Mọi thao tác quan trọng phải được ghi audit log, bao gồm tạo đơn, sửa đơn, hủy đơn, tạo route, chạy routing, đổi kho, đổi tài xế và đổi trạng thái.
-- Không cho người dùng thao tác trên dữ liệu ngoài phạm vi kho được phân quyền.
-- Khi thao tác thất bại do validation hoặc phân quyền, hệ thống nên ghi nhận audit log thất bại để phục vụ truy vết.
+### Nên siết thêm
 
-## 8. Nhóm ràng buộc nên ưu tiên triển khai
+- Không cho đổi tài xế, đổi kho hoặc chuyển trạng thái bảo trì nếu xe đang có route `IN_PROGRESS`.
+- Không cho xóa xe đang tham gia đơn hoặc route chưa hoàn tất.
+- Validate rõ `maxWeightKg`, `maxVolumeM3`, `costPerKm` không âm ở cả request và database.
 
-- Khóa sửa đơn hàng khi đơn đã `IN_TRANSIT`.
-- Chặn tài xế hoặc xe nhận route trùng khi đang giao hàng.
-- Chỉ cho routing các đơn hàng `CREATED`.
-- Không cho đổi xe, tài xế hoặc kho khi route đang chạy.
-- Enforce tải trọng và thể tích tối đa của xe.
-- Không cho xóa tài xế, xe, kho hoặc đơn hàng đang tham gia nghiệp vụ chưa hoàn tất.
+## 4. Tài Xế
+
+### Đã có
+
+- Có CRUD-style API cho tài xế.
+- Có API lấy tài xế khả dụng.
+- Tài khoản role `DRIVER` có thể liên kết với một hồ sơ tài xế.
+- Driver portal yêu cầu user hiện tại phải có hồ sơ tài xế liên kết.
+
+### Nên siết thêm
+
+- Không cho xóa tài xế nếu đang được gán với xe hoặc còn đơn `IN_TRANSIT`.
+- Không cho đổi thông tin quan trọng như bằng lái khi tài xế đang có route chưa hoàn tất.
+- Duy trì unique cho số bằng lái, số điện thoại hoặc email nếu nghiệp vụ yêu cầu.
+
+## 5. Kho
+
+### Đã có
+
+- Kho có cờ `isActive`.
+- Đơn hàng và xe trong routing phải thuộc cùng kho.
+- Dispatcher chỉ được thao tác trong kho được phân công.
+- Routing theo kho kiểm tra depot access trước khi chạy.
+
+### Nên siết thêm
+
+- Chỉ kho `isActive = true` mới được nhận đơn mới hoặc chạy auto-routing.
+- Không cho tắt/xóa kho nếu còn đơn `CREATED`, đơn `IN_TRANSIT`, xe active hoặc route chưa hoàn tất.
+- Việc chuyển đơn/xe liên kho nên tiếp tục giới hạn ở admin.
+
+## 6. Routing
+
+### Đã có
+
+- Routing chạy theo `depotId`.
+- Auto-routing chọn đơn `CREATED` và xe `ACTIVE` có tài xế trong kho.
+- Tất cả xe đưa vào routing phải cùng kho.
+- Đơn hàng được chọn phải cùng kho với đội xe.
+- OR-Tools tối ưu theo ma trận khoảng cách OSRM, có ràng buộc tải trọng và thể tích.
+- OSRM failure có fallback Haversine.
+- Redis cache ma trận OSRM.
+- Kết quả routing lưu `routing_runs`, `routes`, `route_stops`.
+- Sau khi routing thành công, các đơn được route sẽ chuyển sang `IN_TRANSIT` và gán tài xế theo xe.
+
+### Nên siết thêm
+
+- Không cho một đơn nằm trong nhiều route active cùng lúc.
+- Không cho một xe có nhiều route `IN_PROGRESS` cùng lúc.
+- Nếu sửa đơn/xe/kho sau khi đã tạo route nhưng trước khi route hoàn tất, cần hủy route cũ hoặc bắt buộc tối ưu lại.
+- Route `COMPLETED` hoặc `CANCELLED` không nên cho cập nhật stop/vehicle/driver.
+
+## 7. Driver Portal
+
+### Đã có
+
+- Driver chỉ xem đơn `IN_TRANSIT` được gán cho chính mình.
+- Driver chỉ hoàn tất đơn của chính mình.
+- Chỉ đơn `IN_TRANSIT` mới được driver mark delivered.
+- Không cho hoàn tất đơn thuộc route đã `CANCELLED`.
+- Khi tất cả order stop của route đã delivered, route tự chuyển sang `COMPLETED`; nếu chưa đủ thì route là `IN_PROGRESS`.
+- Hoàn tất đơn có ghi audit log.
+
+### Nên siết thêm
+
+- Bổ sung timestamp thực tế lúc giao thành công nếu cần báo cáo SLA.
+- Bổ sung trạng thái thất bại giao hàng hoặc giao lại nếu nghiệp vụ yêu cầu.
+
+## 8. Excel Và Audit
+
+### Đã có
+
+- Export/template hỗ trợ `DEPOT`, `DRIVER`, `ORDER`, `ROUTING`, `VEHICLE`.
+- Export hỗ trợ search, status, depotId, fromDate, toDate và maxRows.
+- Audit log lưu actor, role, action, resource type, resource id/name, scope depot, status, before/after data, metadata, IP, user agent, request id.
+
+### Nên siết thêm
+
+- Giới hạn `maxRows` bằng cấu hình để tránh export quá lớn.
+- Chuẩn hóa audit cho mọi thao tác thất bại quan trọng, không chỉ một số service.
+- Nếu có import Excel trong tương lai, cần validate toàn bộ file trước khi ghi database.
+
+## 9. Ưu Tiên Tiếp Theo
+
+- Siết lifecycle của đơn hàng và route.
+- Chặn sửa/xóa tài nguyên đang tham gia vận hành chưa hoàn tất.
+- Bổ sung test phân quyền theo kho.
+- Bổ sung test routing cho trường hợp sai kho, thiếu xe active, thiếu đơn `CREATED`, OSRM fallback và vượt tải.
+- Đưa các cấu hình triển khai như CORS, frontend URL, Redis, OSRM vào tài liệu môi trường nhất quán.

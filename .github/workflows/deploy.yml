@@ -14,14 +14,12 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: 22
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT || 22 }}
           script: |
-            cd /root/app/Logistics-Control-Hub
+            cd /home/ubuntu/app/Logistics-Control-Hub
             git fetch origin
             git checkout production
-            git pull origin production
-            docker compose down
-            docker compose build --no-cache
-            docker compose up -d
-            docker image prune -f
+            git pull --ff-only origin production
+            sudo docker compose up -d --build
+            sudo docker image prune -f

@@ -65,6 +65,14 @@ public class DriverPortalController {
         return ResponseEntity.ok(ApiResponse.success("Hoan thanh don giao hang thanh cong", response));
     }
 
+    @PatchMapping(UrlConstant.DriverPortal.FAIL_MY_ORDER)
+    @PreAuthorize("hasAuthority('driver.delivery.update')")
+    @Operation(summary = "Fail my delivery order", description = "Marks an assigned IN_TRANSIT order as CANCELLED")
+    public ResponseEntity<ApiResponse<DriverDeliveryOrderResponse>> failMyOrder(@PathVariable Long orderId) {
+        DriverDeliveryOrderResponse response = driverPortalService.failMyOrder(orderId);
+        return ResponseEntity.ok(ApiResponse.success("Cap nhat giao hang that bai thanh cong", response));
+    }
+
     @GetMapping(UrlConstant.DriverPortal.MY_ROUTING_HISTORY)
     @PreAuthorize("hasAuthority('driver.delivery.read')")
     @Operation(summary = "Get my routing history", description = "Returns routing runs containing routes assigned to the current driver")

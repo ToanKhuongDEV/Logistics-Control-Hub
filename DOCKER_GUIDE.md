@@ -2,279 +2,257 @@
 
 Hướng dẫn cài đặt và vận hành toàn bộ hạ tầng Docker cho **Logistics Control Hub**.
 
----
+## Stack Hiện Tại
 
-## ⚡ Quick Start
+`docker-compose.yml` đang chạy 4 service:
 
-```bash
-# 1. Tạo file môi trường
-cp .env.example .env
-# Chỉnh sửa .env với các giá trị thực của bạn
+| Service | Container | Port host | Ghi chú |
+| --- | --- | --- | --- |
+| PostgreSQL | `logistics-postgres` | Không expose mặc định | Backend kết nối qua Docker network |
+| OSRM | `logistics-osrm` | `5000` | Đọc dữ liệu từ `./osrm-data/data-HANOI` |
+| Backend | `logistics-backend` | `${SERVER_PORT:-8080}` | Spring Boot API |
+| Frontend | `logistics-frontend` | `3000` | Next.js standalone |
 
-# 2. Setup OSRM (xem phần bên dưới)
+Redis không được dựng thành container trong compose hiện tại. Backend cần kết nối tới Redis bên ngoài, ví dụ Redis Cloud hoặc một Redis local do bạn tự chạy riêng.
 
-# 3. Khởi động tất cả dịch vụ
-docker-compose up -d
+## Quick Start
 
-# 4. Kiểm tra trạng thái
-docker-compose ps
-```
-
----
-
-## 🗺️ OSRM Setup (Bắt buộc)
-
-OSRM cần dữ liệu bản đồ Việt Nam để tính toán khoảng cách đường thực tế.
-
-### Bước 1: Tải dữ liệu OpenStreetMap
-
-```bash
-cd osrm-data
-
-# Tải bản đồ Việt Nam (khoảng 100MB)
-curl -O https://download.geofabrik.de/asia/vietnam-latest.osm.pbf
-```
-
-### Bước 2: Xử lý dữ liệu với OSRM
-
-```bash
-# Trích xuất (Extract)
-docker run -t -v $(pwd):/data ghcr.io/project-osrm/osrm-backend:v5.27.1 \
-  osrm-extract -p /opt/car.lua /data/vietnam-latest.osm.pbf
-
-# Phân vùng (Partition)
-docker run -t -v $(pwd):/data ghcr.io/project-osrm/osrm-backend:v5.27.1 \
-  osrm-partition /data/vietnam-latest.osrm
-
-# Tùy chỉnh (Customize)
-docker run -t -v $(pwd):/data ghcr.io/project-osrm/osrm-backend:v5.27.1 \
-  osrm-customize /data/vietnam-latest.osrm
-```
-
-> ⏱️ Quá trình này mất khoảng 5-15 phút tùy máy.
-
-### Bước 3: Đổi tên file
-
-Cập nhật `docker-compose.yml` nếu cần, đảm bảo đường dẫn file `.osrm` khớp:
-
-```yaml
-osrm:
-  command: osrm-routed --algorithm mld /data/vietnam-latest.osrm
-```
-
----
-
-## 🔧 Services Overview
-
-### PostgreSQL (Port 5432)
-
-- **Database**: `logistics_db`
-- **Connection**: `jdbc:postgresql://localhost:5432/logistics_db`
-- Schema & seed data được tự động import khi container khởi động lần đầu
-- Data được lưu trữ persistent tại volume `postgres_data`
-
-### Redis (Port 6379)
-
-- **Purpose**: Cache OSRM API responses, metadata entities
-- **Connection**: `redis://localhost:6379`
-- Yêu cầu password (cấu hình trong `.env`)
-
-### OSRM (Port 5000)
-
-- **Purpose**: Tính toán khoảng cách và thời gian di chuyển theo đường thực
-- **Test**: `curl http://localhost:5000/health`
-
-### Backend – Spring Boot (Port 8080)
-
-- **API Base**: `http://localhost:8080/api/v1`
-- **Swagger UI**: `http://localhost:8080/swagger-ui.html`
-- **Health**: `http://localhost:8080/actuator/health`
-
-### Frontend – Next.js (Port 3000)
-
-- **URL**: `http://localhost:3000`
-
----
-
-## 📋 Common Commands
-
-```bash
-# Khởi động tất cả services
-docker-compose up -d
-
-# Khởi động service cụ thể
-docker-compose up -d postgres redis
-
-# Xem logs
-docker-compose logs -f
-docker-compose logs -f backend
-docker-compose logs -f postgres
-
-# Kiểm tra trạng thái + health
-docker-compose ps
-
-# Dừng tất cả services
-docker-compose down
-
-# Dừng và xóa toàn bộ data (reset hoàn toàn)
-docker-compose down -v
-
-# Rebuild image sau khi thay đổi code
-docker-compose build backend
-docker-compose up -d backend
-```
-
----
-
-## 🌐 Environment Variables
-
-File `.env` cần có các biến sau:
+1. Tạo file `.env` ở thư mục gốc repo:
 
 ```env
-# ── Database ──────────────────────
 DB_NAME=logistics_db
 DB_USERNAME=postgres
-DB_PASSWORD=your_secure_db_password
+DB_PASSWORD=postgres
 DB_PORT=5432
 
-# ── Redis ─────────────────────────
-REDIS_HOST=localhost
+REDIS_HOST=your-redis-host
 REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
+REDIS_PASSWORD=your-redis-password
 
-# ── JWT ───────────────────────────
-JWT_SECRET=min_32_chars_secret_key_here
-JWT_REFRESH_SECRET=min_32_chars_refresh_secret_here
+JWT_SECRET=change_me_to_a_32_char_or_longer_secret
+JWT_REFRESH_SECRET=change_me_to_another_32_char_secret
 
-# ── Server ────────────────────────
 SERVER_PORT=8080
+FRONTEND_URL=http://localhost:3000
+RESET_PASSWORD_EXPIRATION_MINUTES=15
+
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@example.com
+MAIL_PASSWORD=your_email_app_password
+
+NEXT_PUBLIC_API_URL=http://localhost:8080
+DOCKERHUB_USERNAME=logistics
 ```
 
----
+2. Chuẩn bị dữ liệu OSRM tại `osrm-data/data-HANOI`.
 
-## 🔍 Troubleshooting
-
-### PostgreSQL không kết nối được
+3. Build và chạy stack:
 
 ```bash
-docker-compose logs postgres
-docker-compose restart postgres
-# Kiểm tra biến DB_USERNAME, DB_PASSWORD trong .env
+docker compose up -d --build
 ```
 
-### Redis lỗi xác thực
+4. Kiểm tra trạng thái:
 
 ```bash
-docker-compose logs redis
-# Đảm bảo REDIS_PASSWORD khớp giữa .env và redis command
+docker compose ps
+docker compose logs -f backend
 ```
 
-### OSRM trả về lỗi
+## URL Dịch Vụ
 
-```bash
-docker-compose logs osrm
-# Kiểm tra file .osrm đã được xử lý chưa (xem phần OSRM Setup)
-# Đảm bảo tên file trong command khớp với file trong osrm-data/
-```
+| Dịch vụ | URL |
+| --- | --- |
+| Frontend | `http://localhost:3000` |
+| Backend API | `http://localhost:8080` |
+| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8080/api-docs` |
+| Health check | `http://localhost:8080/actuator/health` |
+| OSRM | `http://localhost:5000` |
 
-### Backend không start
+## OSRM Setup
 
-```bash
-docker-compose logs backend
-# Kiểm tra PostgreSQL và Redis đã healthy chưa
-docker-compose ps
-```
-
-### Reset hoàn toàn
-
-```bash
-docker-compose down -v
-docker-compose up -d
-```
-
----
-
-## ✅ Health Checks
-
-| Service    | Endpoint / Command     | Thời gian sẵn sàng |
-| ---------- | ---------------------- | ------------------ |
-| PostgreSQL | `pg_isready`           | ~5 giây            |
-| Redis      | `redis-cli ping`       | ~3 giây            |
-| OSRM       | `GET /health`          | ~10 giây           |
-| Backend    | `GET /actuator/health` | ~30 giây           |
-| Frontend   | `GET /`                | ~15 giây           |
-
-```bash
-# Check manual
-docker-compose ps  # "Status" column must show "healthy"
-curl http://localhost:8080/actuator/health
-curl http://localhost:5000/health
-```
-
----
-
-## 🌐 VPS Deployment
-
-### How OSRM data works on a VPS
-
-The `docker-compose.yml` mounts a local directory into the OSRM container:
+Compose mount thư mục sau vào container OSRM:
 
 ```yaml
-osrm:
-  volumes:
-    - ./osrm-data:/data # local osrm-data/ → /data inside container
+volumes:
+  - ./osrm-data/data-HANOI:/data
+command: osrm-routed --algorithm mld /data/hanoi.osrm
 ```
 
-This means you need to prepare the OSRM processed files **directly on the VPS** — do NOT upload them from your machine (they are 2–5 GB after processing).
+Vì vậy trong `osrm-data/data-HANOI` cần có các file đã xử lý với tên gốc `hanoi.osrm`.
 
-### Step-by-step VPS setup
+Ví dụ nếu bạn có file OSM/PBF cho Hà Nội:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/ToanKhuongDEV/Logistics-Control-Hub.git
-cd Logistics-Control-Hub
+cd osrm-data/data-HANOI
 
-# 2. Download Vietnam map data (~100 MB)
-cd osrm-data
-wget https://download.geofabrik.de/asia/vietnam-latest.osm.pbf
+docker run -t -v "${PWD}:/data" osrm/osrm-backend:latest \
+  osrm-extract -p /opt/car.lua /data/hanoi.osm.pbf
 
-# 3. Process the map data (takes ~10-20 minutes)
-docker run -t -v "$(pwd):/data" ghcr.io/project-osrm/osrm-backend:v5.27.1 \
-  osrm-extract -p /opt/car.lua /data/vietnam-latest.osm.pbf
+docker run -t -v "${PWD}:/data" osrm/osrm-backend:latest \
+  osrm-partition /data/hanoi.osrm
 
-docker run -t -v "$(pwd):/data" ghcr.io/project-osrm/osrm-backend:v5.27.1 \
-  osrm-partition /data/vietnam-latest.osrm
-
-docker run -t -v "$(pwd):/data" ghcr.io/project-osrm/osrm-backend:v5.27.1 \
-  osrm-customize /data/vietnam-latest.osrm
-
-# 4. Set up environment variables
-cd ..
-cp backend/.env.example backend/.env
-# Edit backend/.env with production values
-nano backend/.env
-
-# 5. Start all services
-docker-compose up -d
-
-# 6. Verify OSRM is working
-curl http://localhost:5000/health
+docker run -t -v "${PWD}:/data" osrm/osrm-backend:latest \
+  osrm-customize /data/hanoi.osrm
 ```
 
-### Why process on VPS instead of uploading?
+Trên PowerShell, `${PWD}` thường hoạt động trong Docker Desktop. Nếu gặp lỗi mount path, dùng đường dẫn tuyệt đối tới thư mục `osrm-data/data-HANOI`.
 
-| Method                                    | Transfer size                        | Speed                    |
-| ----------------------------------------- | ------------------------------------ | ------------------------ |
-| Upload processed files from local machine | 2–5 GB                               | Slow, depends on network |
-| Download `.osm.pbf` + process on VPS      | ~100 MB download, ~15 min processing | **Much faster**          |
+Backend trong Docker nhận `OSRM_URL=http://osrm:5000` từ `docker-compose.yml`. Khi chạy backend local, giá trị mặc định trong `application.yml` là `http://localhost:5000`.
 
-### Add osrm-data to .gitignore
+## Database
 
-Make sure the large processed files are never committed to Git:
+PostgreSQL sử dụng image `postgres:15-alpine`.
+
+- Database: `${DB_NAME:-logistics_db}`
+- User: `${DB_USERNAME:-postgres}`
+- Password: `${DB_PASSWORD:-postgres}`
+- Volume: `postgres_data`
+- Init scripts:
+  - `database/database_schema.sql`
+  - `database/seeding_data.sql`
+
+Lưu ý: PostgreSQL chỉ import schema/seed khi volume mới được tạo lần đầu. Nếu đã có volume cũ và muốn import lại từ đầu:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+## Redis
+
+Compose hiện tại không khai báo service Redis. Backend cần các biến:
+
+```env
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
+```
+
+`application.yml` tạo Redis URL theo mẫu:
+
+```text
+redis://default:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+```
+
+Nếu muốn chạy Redis local bên ngoài compose, bạn có thể tự chạy:
+
+```bash
+docker run --name logistics-redis -p 6379:6379 redis:7-alpine redis-server --requirepass your_redis_password
+```
+
+Sau đó đặt `REDIS_HOST=host.docker.internal` khi backend chạy trong Docker, hoặc `REDIS_HOST=localhost` khi backend chạy local.
+
+## Backend
+
+Backend image build từ `backend/Dockerfile`:
+
+- Build bằng Maven và Java 17
+- Runtime bằng `eclipse-temurin:17-jre-jammy`
+- Jar output: `target/app.jar`
+- Port trong container: `8080`
+
+Biến môi trường quan trọng:
+
+| Biến | Mục đích |
+| --- | --- |
+| `SPRING_DATASOURCE_URL` | Được compose set thành `jdbc:postgresql://postgres:5432/...` |
+| `SPRING_DATASOURCE_USERNAME` | Database username |
+| `SPRING_DATASOURCE_PASSWORD` | Database password |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` | Redis external |
+| `JWT_SECRET`, `JWT_REFRESH_SECRET` | Ký JWT access/refresh token |
+| `OSRM_URL` | Override `osrm.url` cho backend trong Docker |
+| `SPRING_MAIL_*` | Cấu hình gửi email reset mật khẩu |
+| `RESET_PASSWORD_EXPIRATION_MINUTES` | Thời gian sống của reset token |
+
+## Frontend
+
+Frontend image build từ `frontend/Dockerfile`:
+
+- Node 20 Alpine
+- `npm ci`
+- `npm run build`
+- Next.js standalone output
+- Runtime chạy `node server.js`
+
+`NEXT_PUBLIC_API_URL` phải có ở build time:
+
+```yaml
+args:
+  NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+```
+
+Nếu đổi backend URL sau khi image đã build, cần rebuild frontend image.
+
+## Lệnh Thường Dùng
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f osrm
+docker compose down
+docker compose down -v
+docker compose build backend
+docker compose up -d backend
+```
+
+## Troubleshooting
+
+### Backend không kết nối được PostgreSQL
+
+```bash
+docker compose logs postgres
+docker compose logs backend
+docker compose ps
+```
+
+Kiểm tra `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` trong `.env`. Nếu vừa sửa schema/seed và cần tạo lại DB, chạy `docker compose down -v`.
+
+### Backend không kết nối được Redis
+
+Kiểm tra `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`. Nếu Redis chạy trên máy host và backend chạy trong Docker, thử dùng `host.docker.internal` thay vì `localhost`.
+
+### OSRM không sẵn sàng
+
+```bash
+docker compose logs osrm
+```
+
+Kiểm tra thư mục `osrm-data/data-HANOI` có file `hanoi.osrm` và các file phụ trợ sau khi `osrm-partition`/`osrm-customize` chưa.
+
+### Frontend gọi sai Backend URL
+
+Kiểm tra `NEXT_PUBLIC_API_URL` trong `.env`, sau đó rebuild frontend:
+
+```bash
+docker compose build frontend
+docker compose up -d frontend
+```
+
+### Reset môi trường từ đầu
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+Lệnh này xóa volume PostgreSQL, nên dữ liệu local sẽ mất.
+
+## VPS Deployment Notes
+
+Trên VPS nên xử lý OSRM trực tiếp trên máy chủ thay vì upload file đã process, vì bộ file `.osrm*` có thể rất lớn.
+
+Luôn đảm bảo các file OSRM lớn không bị commit:
 
 ```gitignore
-# OSRM processed map data (too large for Git)
 osrm-data/*.osm.pbf
 osrm-data/*.osrm
 osrm-data/*.osrm.*
+osrm-data/data-HANOI/*.osm.pbf
+osrm-data/data-HANOI/*.osrm
+osrm-data/data-HANOI/*.osrm.*
 ```

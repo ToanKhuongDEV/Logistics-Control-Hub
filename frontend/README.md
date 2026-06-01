@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Logistics Control Hub Frontend
 
-## Getting Started
+This folder contains the Next.js dashboard for Logistics Control Hub.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 with App Router
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Radix UI and shadcn-style local components
+- Axios with `withCredentials` for HttpOnly authentication cookies
+- Leaflet for maps
+- Recharts for dashboard charts
+- React Hook Form and Zod for forms
+- Framer Motion for small UI transitions
+
+## Pages
+
+| Route | Purpose |
+| --- | --- |
+| `/login` | Sign in |
+| `/forgot-password` | Request password reset email |
+| `/reset-password` | Reset password with token |
+| `/dashboard` | Operational overview |
+| `/orders` | Order management |
+| `/fleet` | Vehicle management |
+| `/drivers` | Driver management |
+| `/depots` | Depot management |
+| `/history` | Routing run history |
+| `/driver` | Driver delivery portal |
+| `/accounts` | Admin account management |
+| `/audit` | Audit log search |
+| `/settings` | Company and settings area |
+
+Menu visibility is permission-based. The permission list comes from the backend `/api/v1/auth/me` response.
+
+## Environment
+
+Create `frontend/.env.local` from `frontend/.env.local.example`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`NEXT_PUBLIC_API_URL` is used by `src/lib/api.ts` as the Axios base URL. In Docker builds it must be passed at build time because this is a public Next.js environment variable.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local Development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Learn More
+Open `http://localhost:3000`.
 
-To learn more about Next.js, take a look at the following resources:
+## Production Build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd frontend
+npm run build
+npm run start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Dockerfile uses `output: "standalone"` from `next.config.ts` and starts the generated `server.js` on port `3000`.

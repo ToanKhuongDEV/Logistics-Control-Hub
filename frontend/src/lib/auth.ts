@@ -1,7 +1,7 @@
 import apiClient from "./api";
 import { PaginatedResponse } from "@/types/common-types";
 
-export type UserRole = "ADMIN" | "DISPATCHER" | "USER";
+export type UserRole = "ADMIN" | "DISPATCHER" | "DRIVER";
 export type UserPermission =
 	| "account.manage"
 	| "audit.read"
@@ -11,6 +11,8 @@ export type UserPermission =
 	| "depot.manage"
 	| "driver.read"
 	| "driver.manage"
+	| "driver.delivery.read"
+	| "driver.delivery.update"
 	| "order.read"
 	| "order.manage"
 	| "order.cancel.confirmed"
@@ -31,16 +33,14 @@ export interface LoginRequest {
 	password: string;
 }
 
-export interface LoginResponse {
-	accessToken: string;
-}
-
 export interface User {
 	id: number;
 	username: string;
 	email: string;
 	fullName: string;
 	role: UserRole;
+	driverId?: number | null;
+	driverName?: string | null;
 	permissions?: UserPermission[];
 	assignedDepots?: AssignedDepot[];
 }
@@ -60,6 +60,7 @@ export interface CreateAccountRequest {
 	password: string;
 	role: UserRole;
 	assignedDepotIds?: number[];
+	driverId?: number | null;
 }
 
 export interface UpdateAccountRequest {
@@ -67,6 +68,7 @@ export interface UpdateAccountRequest {
 	email?: string;
 	role?: UserRole;
 	assignedDepotIds?: number[];
+	driverId?: number | null;
 }
 
 export interface ChangePasswordRequest {
@@ -84,15 +86,11 @@ export interface ResetPasswordRequest {
 }
 
 class AuthService {
-	async login(username: string, password: string): Promise<LoginResponse> {
-		const response = await apiClient.post<{ data: LoginResponse }>("/api/v1/auth/login", {
+	async login(username: string, password: string): Promise<void> {
+		await apiClient.post("/api/v1/auth/login", {
 			username,
 			password,
 		});
-
-		const { accessToken } = response.data.data;
-		localStorage.setItem("accessToken", accessToken);
-		return response.data.data;
 	}
 
 	async logout(): Promise<void> {
@@ -101,16 +99,6 @@ class AuthService {
 		} catch {
 			// Ignore logout transport errors and still clear local auth state.
 		}
-
-		localStorage.removeItem("accessToken");
-	}
-
-	getAccessToken(): string | null {
-		return localStorage.getItem("accessToken");
-	}
-
-	isAuthenticated(): boolean {
-		return !!this.getAccessToken();
 	}
 
 	async getCurrentUser(): Promise<User> {

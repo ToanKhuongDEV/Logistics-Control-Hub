@@ -1,10 +1,12 @@
 package com.logistics.hub.feature.auth.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -14,17 +16,14 @@ import java.time.Instant;
     @Index(name = "idx_refresh_tokens_jti", columnList = "jti"),
     @Index(name = "idx_refresh_tokens_expires_at", columnList = "expires_at")
 })
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshTokenEntity {
+public class RefreshTokenEntity extends BaseEntity {
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
-
-  @Column(nullable = false, unique = true, length = 36)
+  @Column(nullable = false, length = 36)
   private String jti;
 
   @Column(nullable = false, columnDefinition = "TEXT")
@@ -35,12 +34,4 @@ public class RefreshTokenEntity {
 
   @Column(name = "expires_at", nullable = false)
   private Instant expiresAt;
-
-  @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
-  }
 }

@@ -1,24 +1,21 @@
 package com.logistics.hub.feature.audit.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.logistics.hub.common.base.BaseEntity;
 import com.logistics.hub.feature.user.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
-
-import java.time.Instant;
 
 @Entity
 @Table(name = "audit_logs")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
-public class AuditLogEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class AuditLogEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_user_id")
@@ -71,14 +68,4 @@ public class AuditLogEntity {
 
     @Column(name = "request_id", length = 100)
     private String requestId;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
-
-    @PrePersist
-    void prePersist() {
-        if (createdAt == null) {
-            createdAt = Instant.now();
-        }
-    }
 }

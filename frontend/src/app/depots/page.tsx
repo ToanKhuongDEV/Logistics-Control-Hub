@@ -9,6 +9,7 @@ import { DepotStats } from "@/components/depot-stats";
 import { DepotFilters } from "@/components/depot-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { ExcelExportButton } from "@/components/excel-export-button";
 import { Pagination } from "@/components/pagination";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/auth";
@@ -145,6 +146,13 @@ export default function DepotsPage() {
 						<DepotStats statistics={statistics} />
 
 						<DepotFilters searchQuery={searchQuery} onSearchChange={handleSearchChange} onClearFilters={handleClearFilters}>
+							<ExcelExportButton
+								type="DEPOT"
+								title="Xuất danh sách kho"
+								filters={{
+									search: searchQuery || undefined,
+								}}
+							/>
 							{canManageDepots && (
 								<Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
 									<Plus className="w-4 h-4" />

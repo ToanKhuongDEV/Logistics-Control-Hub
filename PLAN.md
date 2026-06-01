@@ -1,196 +1,193 @@
-# 📋 Kế Hoạch Triển Khai - Logistics Control Hub
+# Implementation Status And Roadmap
 
-> **AI Supply Chain Control Tower System**  
-> **Thời gian:** 12-13 tuần (3 tháng)
+This document reflects the current state of the Logistics Control Hub codebase.
 
----
+## Current Status
 
-## 🎯 Mục Tiêu Dự Án
+The project is a working full-stack logistics dashboard with:
 
-Xây dựng hệ thống quản lý logistics với các tính năng:
+- Spring Boot backend
+- Next.js frontend
+- PostgreSQL schema and seed data
+- Docker Compose stack for PostgreSQL, OSRM, backend, and frontend
+- External Redis support for OSRM cache
+- Google OR-Tools route optimization
+- HttpOnly-cookie based authentication
+- Permission-based UI and backend authorization
 
-- ✅ CRUD cơ bản cho **Location**, Depot, Vehicle, Order
-- ✅ Authentication cho user
-- ✅ Tối ưu hóa tuyến đường, chi phí (Google OR-Tools)
-- ✅ Analytics: Tổng km, tổng thời gian, số xe, số đơn
-- ✅ Real-time tracking (WebSocket)
-- ✅ Disruption handling bằng cách can thiệp của admin
+Kafka is not part of the current implementation. Temporal is present as a Maven dependency, but no Temporal workflow is currently wired into the application.
 
----
+## Implemented Modules
 
-## 🛠️ Tech Stack
+| Module | Status | Notes |
+| --- | --- | --- |
+| Authentication | Implemented | Login, refresh, logout, current user, change password, forgot/reset password |
+| Authorization | Implemented | Roles, permissions, depot-scoped access |
+| Account management | Implemented | Admin can create, list, update, and delete employee accounts |
+| Company settings | Implemented | Read/update company information |
+| Dashboard | Implemented | Operational statistics endpoint and page |
+| Orders | Implemented | CRUD-style operations, filters, statistics, bulk status update, audit logs |
+| Vehicles | Implemented | CRUD-style operations, filters, statistics, bulk depot reassignment |
+| Drivers | Implemented | CRUD-style operations, filters, statistics, availability lookup |
+| Depots | Implemented | CRUD-style operations, filters, statistics |
+| Routing | Implemented | Auto routing by depot, run detail, latest run, paginated history |
+| Driver portal | Implemented | Driver sees assigned deliveries and completes orders |
+| Excel | Implemented | Export and template endpoints for depot, driver, order, routing, vehicle |
+| Audit | Implemented | Audit log entity, service, filters, and admin UI |
+| Docker | Implemented | PostgreSQL, OSRM, backend, frontend |
+| Redis cache | Implemented | Used for OSRM matrix cache through external Redis |
 
-### Backend
+## Backend Snapshot
 
-| Component    | Technology         | Version     | Purpose                   |
-| ------------ | ------------------ | ----------- | ------------------------- |
-| Framework    | Spring Boot        | 3.4.4       | REST API, Business Logic  |
-| Language     | Java               | 17          | Main programming language |
-| Database     | PostgreSQL         | 15          | Data persistence          |
-| ORM          | JPA/Hibernate      | -           | Object-relational mapping |
-| Event Bus    | Apache Kafka       | 4.x (KRaft) | Async messaging           |
-| Workflow     | Temporal           | 1.24.0      | Durable workflows         |
-| Optimization | Google OR-Tools    | 9.8.3296    | Route optimization        |
-| Validation   | Jakarta Validation | -           | Input validation          |
-| Mapping      | MapStruct          | 1.5.5       | DTO mapping               |
-| API Docs     | SpringDoc OpenAPI  | 2.3.0       | Swagger UI                |
+Main package:
 
-### Frontend
-
-| Component  | Technology              | Purpose                      |
-| ---------- | ----------------------- | ---------------------------- |
-| Framework  | Next.js 16              | React Framework (App Router) |
-| Styling    | Tailwind CSS v4         | Utility-first CSS            |
-| UI Library | Shadcn UI               | Accessible implementation    |
-| State      | React Context / Zustand | State management             |
-| Validation | Zod + React Hook Form   | Form validation              |
-| Map        | Leaflet                 | Map visualization            |
-
-### Infrastructure
-
-| Service       | Technology          | Purpose         |
-| ------------- | ------------------- | --------------- |
-| Database      | PostgreSQL (local)  | Data storage    |
-| Message Queue | Kafka (local KRaft) | Event streaming |
-
----
-
-## 📅 Timeline & Phases
-
-### **Giai đoạn 1: Nền tảng & Tính năng cốt lõi** (4 tuần) ✅ Tuần 1-3 HOÀN THÀNH
-
-> **Scope:** Chạy được bài toán logistics cơ bản, có kết quả rõ ràng
-
-**Tuần 1: Thiết lập dự án** ✅
-
-- Backend: Spring Boot + PostgreSQL + Kafka setup ✅
-- Frontend: React + Vite + Ant Design setup ✅
-- Exception handling, Value objects ✅
-
-**Tuần 2 : Tạo lược đồ cơ sở dữ liệu** ✅
-
-- Database tables for Core Entities ✅
-
-**Tuần 3: CRUD + Định tuyến cơ bản**
-
-- **Xác thực (Authentication)** ✅
-- **Location**, Depot, Vehicle, Driver, Order entities ✅
-- Full CRUD endpoints + UI pages
-  - **Vehicles/Fleet**: ✅
-  - **Drivers**: ✅
-  - **Orders**: ✅
-- **Order**: Manual create + Auto-generate button
-- **Routing**: OR-Tools integration (simplified - no time windows) 🚧 (Entities ready, Service pending)
-
-**Tuần 4: Tích hợp UI & KPI**
-
-- Hiển thị route trên map (Leaflet) ✅
-- Bảng xe - đơn ✅
-- KPI cơ bản (km, thời gian, số xe, số đơn)
-- Lưu lịch sử routing runs vào DB
-
----
-
-### **Giai đoạn 2: Tối ưu hóa & Mở rộng** (2-3 tuần)
-
-**Week 5-6:** Tích ích hợp Google OR-Tools:
-
-- Single depot
-- Capacity constraint (volume / weight)
-- No time window
-- Batch optimize (bấm nút “Optimize”)
-- Lưu kết quả:
-  - routing_run
-  - vehicle_routes
-- **Kafka Integration:**
-  - Publish events: `RoutingOptimizationRequested`, `RoutingOptimizationCompleted`
-  - Consumer xử lý optimization task async
-- refactor and optimize database schema
-  **Week 7:** Visualization & KPI
-- Hiển thị tuyến giao trên map (Leaflet)
-- Bảng:
-  - Xe → danh sách đơn được gán
-- KPI:
-  - Tổng km
-  - Tổng thời gian
-  - Số xe dùng
-  - Số đơn giao
-- Xem lại lịch sử routing runs
-
-### **Giai đoạn 3: Can thiệp Admin & Điều phối quy trình** (2-3 tuần)
-
-**Week 8:** Admin intervention
-
-- Admin can add or remove disruption and request re-optimization
-- Admin có thể thay đổi lộ trình thủ công (Human-in-the-loop):
-  - Người điều phối muốn đổi tuyến -> AI đề xuất các phương án khả dụng khác.
-  - Người điều phối chọn phương án tốt nhất.
-- **Kafka Events:**
-  - `DisruptionReported`, `RouteModified`, `ReoptimizationRequested`
-
-**Week 9:** Temporal Workflow Integration
-
-- **Workflow:** `RouteOptimizationWorkflow`
-  - Orchestrate: fetch orders → optimize → save results → notify
-  - Handle retry logic, timeouts
-- **Workflow:** `DisruptionHandlingWorkflow`
-  - Detect disruption → re-optimize affected routes → update DB
-- Activity implementation cho các bước trong workflow
-
----
-
-## 📂 Project Structure
-
-```
-Logistics-Control-Hub/
-├── backend/                     ✅
-│   └── src/main/java/com/logistics/hub/
-│       ├── feature/             ✅
-│       │   ├── auth/            ✅
-│       │   ├── vehicle/         ✅
-│       │   ├── driver/          ✅
-│       │   ├── order/           ✅ (Backend)
-│       │   └── routing/         🚧 (Entities only)
-│       ├── common/              ✅
-│       └── config/              ✅
-│
-├── frontend/                    ✅
-│   └── src/
-│       ├── app/                 ✅ (Next.js App Router)
-│       │   ├── dashboard/       ✅
-│       │   ├── fleet/           ✅
-│       │   ├── drivers/         ✅
-│       │   └── ...
-│       ├── components/          ✅ (Shadcn UI)
-│       ├── lib/                 ✅
-│       └── styles/              ✅
-│
-└── PLAN.md                      ✅ (this file)
+```text
+backend/src/main/java/com/logistics/hub/
+|-- common/
+|-- config/
+`-- feature/
+    |-- audit/
+    |-- auth/
+    |-- company/
+    |-- dashboard/
+    |-- depot/
+    |-- driver/
+    |-- driverportal/
+    |-- excel/
+    |-- geocoding/
+    |-- location/
+    |-- order/
+    |-- redis/
+    |-- routing/
+    |-- user/
+    `-- vehicle/
 ```
 
----
+Important runtime details:
 
-## 🚀 Getting Started
+- Java 17
+- Spring Boot 3.4.4
+- Database config is read from `SPRING_DATASOURCE_*`
+- Redis URL is built from `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
+- OSRM URL defaults to `http://localhost:5000` and can be overridden by `OSRM_URL`
+- Swagger UI is available at `/swagger-ui.html`
+- OpenAPI JSON is available at `/api-docs`
+- Health endpoint is `/actuator/health`
 
-### Backend
+## Frontend Snapshot
+
+Main routes:
+
+| Route | Purpose |
+| --- | --- |
+| `/login` | Login |
+| `/forgot-password` | Forgot password |
+| `/reset-password` | Reset password |
+| `/dashboard` | Overview |
+| `/orders` | Order management |
+| `/fleet` | Vehicle management |
+| `/drivers` | Driver management |
+| `/depots` | Depot management |
+| `/history` | Routing history |
+| `/driver` | Driver delivery portal |
+| `/accounts` | Account management |
+| `/audit` | Audit log |
+| `/settings` | Settings/company |
+
+Frontend auth relies on backend HttpOnly cookies. Axios is configured with `withCredentials: true` in `frontend/src/lib/api.ts`.
+
+## API Groups
+
+| Area | Prefix |
+| --- | --- |
+| Auth | `/api/v1/auth` |
+| Accounts | `/api/v1/auth/accounts` |
+| Orders | `/api/v1/orders` |
+| Vehicles | `/api/v1/vehicles` |
+| Drivers | `/api/v1/drivers` |
+| Driver Portal | `/api/v1/driver` |
+| Depots | `/api/v1/depots` |
+| Dashboard | `/api/v1/dashboard` |
+| Company | `/api/v1/company` |
+| Routing | `/api/v1/routing` |
+| Audit Logs | `/api/v1/audit-logs` |
+| Excel | `/api/v1/excel` |
+
+## Current Data Model
+
+The SQL schema currently defines:
+
+- `companies`
+- `users`
+- `drivers`
+- `locations`
+- `depots`
+- `vehicles`
+- `orders`
+- `routing_runs`
+- `routes`
+- `route_stops`
+- `refresh_tokens`
+- `password_reset_tokens`
+- `audit_logs`
+
+The seed file currently inserts:
+
+- 1 company
+- 12 users
+- 12 drivers
+- 64 locations
+- 4 depots
+- 14 vehicles
+- 60 orders
+- 1 routing run
+- 1 route
+- 7 route stops
+- 1 audit log
+
+## Known Gaps And Next Work
+
+### High Priority
+
+- Add stronger lifecycle validation for orders, vehicles, and routes so terminal/in-progress states cannot be changed incorrectly.
+- Add more focused tests for routing, driver portal, audit failure logs, and authorization boundaries.
+- Decide whether PostgreSQL should remain internal-only in Docker or expose a local development port.
+- Align CORS production origins with deployment environment variables instead of hard-coded host values.
+
+### Medium Priority
+
+- Add import flow if Excel templates are intended for uploads, not only downloads.
+- Improve deployment documentation for VPS/domain/HTTPS/cookie behavior.
+- Add frontend tests for permission-based menu visibility and auth refresh handling.
+- Add structured sample `.env` documentation for root Docker Compose usage.
+
+### Optional / Future
+
+- Remove Temporal dependency if workflows are not planned.
+- Add real async workflow processing if Temporal is adopted.
+- Add notification layer for route completion or delivery exceptions.
+- Add map data preparation scripts for OSRM.
+
+## Verification Commands
+
+Backend:
 
 ```bash
 cd backend
-mvn spring-boot:run
+mvn test
 ```
 
-→ http://localhost:8080
-
-### Frontend
+Frontend:
 
 ```bash
 cd frontend
-npm run dev
+npm run lint
+npm run build
 ```
 
-→ http://localhost:3000
+Docker:
 
----
-
-**Trạng thái:** Giai đoạn 1 - Tuần 3 ✅ HOÀN THÀNH
-**Tiếp theo:** Hoàn thiện Dịch vụ Định tuyến (OR-Tools) & UI Đơn hàng
+```bash
+docker compose up -d --build
+docker compose ps
+```

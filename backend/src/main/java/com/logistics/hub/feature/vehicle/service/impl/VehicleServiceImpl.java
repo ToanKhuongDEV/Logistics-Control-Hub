@@ -327,7 +327,8 @@ public class VehicleServiceImpl implements VehicleService {
             vehicle = vehicleRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException(VehicleConstant.VEHICLE_NOT_FOUND + id));
             authorizationService.requireVehicleAccess(vehicle);
-            vehicleRepository.deleteById(id);
+            vehicle.markDeleted();
+            vehicleRepository.save(vehicle);
             auditLogService.log(
                     auditActorService.getCurrentActor(),
                     AuditAction.DELETE,

@@ -1,22 +1,17 @@
 package com.logistics.hub.feature.company.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.Instant;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "companies")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
-public class CompanyEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class CompanyEntity extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
@@ -36,12 +31,4 @@ public class CompanyEntity {
 
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private Instant createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private Instant updatedAt;
 }

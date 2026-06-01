@@ -10,7 +10,7 @@ public final class AuthorizationPolicy {
 
     public static final String ROLE_ADMIN = "ADMIN";
     public static final String ROLE_DISPATCHER = "DISPATCHER";
-    public static final String ROLE_USER = "USER";
+    public static final String ROLE_DRIVER = "DRIVER";
 
     public static final String PERMISSION_ACCOUNT_MANAGE = "account.manage";
     public static final String PERMISSION_AUDIT_READ = "audit.read";
@@ -20,6 +20,8 @@ public final class AuthorizationPolicy {
     public static final String PERMISSION_DEPOT_MANAGE = "depot.manage";
     public static final String PERMISSION_DRIVER_READ = "driver.read";
     public static final String PERMISSION_DRIVER_MANAGE = "driver.manage";
+    public static final String PERMISSION_DRIVER_DELIVERY_READ = "driver.delivery.read";
+    public static final String PERMISSION_DRIVER_DELIVERY_UPDATE = "driver.delivery.update";
     public static final String PERMISSION_ORDER_READ = "order.read";
     public static final String PERMISSION_ORDER_MANAGE = "order.manage";
     public static final String PERMISSION_ORDER_CANCEL_CONFIRMED = "order.cancel.confirmed";
@@ -35,7 +37,7 @@ public final class AuthorizationPolicy {
 
     public static String normalizeRole(String role) {
         String normalizedRole = role == null ? "" : role.trim().toUpperCase(Locale.ROOT);
-        if (!Set.of(ROLE_ADMIN, ROLE_DISPATCHER, ROLE_USER).contains(normalizedRole)) {
+        if (!Set.of(ROLE_ADMIN, ROLE_DISPATCHER, ROLE_DRIVER).contains(normalizedRole)) {
             throw new ValidationException("Role is not supported.");
         }
         return normalizedRole;
@@ -48,6 +50,12 @@ public final class AuthorizationPolicy {
     public static Set<String> permissionsForRole(String role) {
         String normalizedRole = normalizeRole(role);
         LinkedHashSet<String> permissions = new LinkedHashSet<>();
+
+        if (ROLE_DRIVER.equals(normalizedRole)) {
+            permissions.add(PERMISSION_DRIVER_DELIVERY_READ);
+            permissions.add(PERMISSION_DRIVER_DELIVERY_UPDATE);
+            return Set.copyOf(permissions);
+        }
 
         permissions.add(PERMISSION_DASHBOARD_READ);
         permissions.add(PERMISSION_DEPOT_READ);

@@ -1,5 +1,7 @@
 package com.logistics.hub.common.constant;
 
+import org.checkerframework.checker.units.qual.Prefix;
+
 public class UrlConstant {
     public static final String API_V1 = "/api/v1";
 
@@ -68,6 +70,19 @@ public class UrlConstant {
         }
     }
 
+    public static class DriverPortal {
+        public static final String PREFIX = API_V1 + "/driver";
+        public static final String MY_ORDERS = "/me/orders";
+        public static final String MY_ORDER_BY_ID = "/me/orders/{orderId}";
+        public static final String COMPLETE_MY_ORDER = "/me/orders/{orderId}/complete";
+        public static final String MY_ROUTING_HISTORY = "/me/routing/history";
+        public static final String MY_ROUTING_RUN_BY_ID = "/me/routing/runs/{runId}";
+        public static final String MY_LATEST_ROUTING_RUN = "/me/routing/latest";
+
+        private DriverPortal() {
+        }
+    }
+
     public static class Depot {
         public static final String PREFIX = API_V1 + "/depots";
         public static final String BY_ID = "/{id}";
@@ -93,6 +108,16 @@ public class UrlConstant {
         public static final String PREFIX = API_V1 + "/audit-logs";
 
         private Audit() {
+        }
+    }
+
+    public static class Excel{
+        public static final String PREFIX = API_V1 + "/excel";
+        public static final String TEMPLATE = PREFIX + "/template";
+        public static final String EXPORT = PREFIX + "/export";
+        @Deprecated
+        public static final String Temlplate = TEMPLATE;
+        private Excel (){
         }
     }
 }

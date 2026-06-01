@@ -78,9 +78,8 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public void delete(Long id) {
-        if (!locationRepository.existsById(id)) {
-            throw new ResourceNotFoundException(LocationConstant.LOCATION_NOT_FOUND + id);
-        }
+        LocationEntity location = locationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(LocationConstant.LOCATION_NOT_FOUND + id));
 
         if (depotRepository.existsByLocation_Id(id)) {
             throw new com.logistics.hub.common.exception.ValidationException(LocationConstant.LOCATION_IN_USE_BY_DEPOT);
@@ -92,7 +91,8 @@ public class LocationServiceImpl implements LocationService {
         }
 
         try {
-            locationRepository.deleteById(id);
+            location.markDeleted();
+            locationRepository.save(location);
         } catch (DataIntegrityViolationException ex) {
             throw new com.logistics.hub.common.exception.ValidationException(
                     LocationConstant.LOCATION_IN_USE_BY_DEPOT);

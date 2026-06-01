@@ -10,6 +10,7 @@ import { FleetStats } from "@/components/fleet-stats";
 import { FleetFilters } from "@/components/fleet-filters";
 import { ProtectedRoute } from "@/components/protected-route";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { ExcelExportButton } from "@/components/excel-export-button";
 import { Pagination } from "@/components/pagination";
 import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/auth";
@@ -257,18 +258,29 @@ export default function FleetPage() {
 								)}
 							</div>
 
-							{canManageVehicles && (
-								<Button
-									onClick={() => {
-										setEditingVehicle(null);
-										setIsFormOpen(true);
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+								<ExcelExportButton
+									type="VEHICLE"
+									title="Xuất danh sách xe"
+									filters={{
+										search: searchQuery || undefined,
+										status: statusFilter !== "all" ? statusFilter : undefined,
+										depotId: depotFilter !== "all" ? Number(depotFilter) : undefined,
 									}}
-									className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-								>
-									<Plus className="w-4 h-4" />
-									Thêm xe mới
-								</Button>
-							)}
+								/>
+								{canManageVehicles && (
+									<Button
+										onClick={() => {
+											setEditingVehicle(null);
+											setIsFormOpen(true);
+										}}
+										className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+									>
+										<Plus className="w-4 h-4" />
+										Thêm xe mới
+									</Button>
+								)}
+							</div>
 						</div>
 
 						<div className="space-y-4">

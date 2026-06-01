@@ -1,5 +1,6 @@
 package com.logistics.hub.feature.location.entity;
 
+import com.logistics.hub.common.base.BaseEntity;
 import jakarta.persistence.*;
 import com.logistics.hub.feature.location.constant.LocationConstant;
 import jakarta.validation.constraints.Max;
@@ -9,23 +10,18 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.Objects;
 
 @Entity
-@Table(name = "locations", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_locations_address_coords", columnNames = { "street", "city", "country", "latitude",
-                "longitude" })
-})
+@Table(name = "locations")
+@SQLRestriction("deleted = false")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LocationEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class LocationEntity extends BaseEntity {
 
     @Column(nullable = false, length = 255)
     @NotNull(message = "Street is required")

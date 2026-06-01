@@ -1,50 +1,84 @@
 "use client";
 
-import { LayoutGrid, Truck, Package, Settings, LogOut, User, Warehouse, History, Users, ScrollText } from "lucide-react";
+import { ClipboardList, History, LayoutGrid, LogOut, Package, ScrollText, Settings, Truck, User, Users, Warehouse } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/auth-context";
+
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
+import { useAuth } from "@/contexts/auth-context";
 import { hasPermission } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 export function Sidebar() {
 	const pathname = usePathname();
 	const { user, logout } = useAuth();
 
 	const menuItems = [
-		{
-			name: "Tổng quan",
-			href: "/dashboard",
-			icon: LayoutGrid,
-		},
-		{
-			name: "Đội xe",
-			href: "/fleet",
-			icon: Truck,
-		},
-		{
-			name: "Đơn hàng",
-			href: "/orders",
-			icon: Package,
-		},
-		{
-			name: "Lái xe",
-			href: "/drivers",
-			icon: User,
-		},
-		{
-			name: "Kho",
-			href: "/depots",
-			icon: Warehouse,
-		},
-		{
-			name: "Lịch sử",
-			href: "/history",
-			icon: History,
-		},
+		...(hasPermission(user, "driver.delivery.read")
+			? [
+					{
+						name: "Ca giao",
+						href: "/driver",
+						icon: ClipboardList,
+					},
+				]
+			: []),
+		...(hasPermission(user, "dashboard.read")
+			? [
+					{
+						name: "Tổng quan",
+						href: "/dashboard",
+						icon: LayoutGrid,
+					},
+				]
+			: []),
+		...(hasPermission(user, "vehicle.read")
+			? [
+					{
+						name: "Đội xe",
+						href: "/fleet",
+						icon: Truck,
+					},
+				]
+			: []),
+		...(hasPermission(user, "order.read")
+			? [
+					{
+						name: "Đơn hàng",
+						href: "/orders",
+						icon: Package,
+					},
+				]
+			: []),
+		...(hasPermission(user, "driver.read")
+			? [
+					{
+						name: "Lái xe",
+						href: "/drivers",
+						icon: User,
+					},
+				]
+			: []),
+		...(hasPermission(user, "depot.read")
+			? [
+					{
+						name: "Kho",
+						href: "/depots",
+						icon: Warehouse,
+					},
+				]
+			: []),
+		...(hasPermission(user, "routing.read")
+			? [
+					{
+						name: "Lịch sử",
+						href: "/history",
+						icon: History,
+					},
+				]
+			: []),
 		...(hasPermission(user, "account.manage")
 			? [
 					{
@@ -63,15 +97,19 @@ export function Sidebar() {
 					},
 				]
 			: []),
-		{
-			name: "Cài đặt",
-			href: "/settings",
-			icon: Settings,
-		},
+		...(hasPermission(user, "settings.read")
+			? [
+					{
+						name: "Cài đặt",
+						href: "/settings",
+						icon: Settings,
+					},
+				]
+			: []),
 	];
 
 	return (
-		<div className="sticky top-0 left-0 flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar">
+		<div className="sticky left-0 top-0 flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar">
 			<div className="shrink-0 border-b border-sidebar-border p-6">
 				<Logo />
 			</div>
@@ -106,12 +144,12 @@ export function Sidebar() {
 			<div className="shrink-0 space-y-3 border-t border-sidebar-border bg-sidebar p-4">
 				{user && (
 					<div className="flex items-center gap-3 rounded-lg bg-sidebar-accent/50 px-3 py-2">
-						<div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent">
+						<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
 							<User className="h-4 w-4 text-accent-foreground" />
 						</div>
 						<div className="min-w-0 flex-1">
 							<p className="truncate text-sm font-medium text-sidebar-foreground">{user.fullName || user.username}</p>
-							<p className="truncate text-xs text-sidebar-foreground/60">{user.email || "Điều phối viên"}</p>
+							<p className="truncate text-xs text-sidebar-foreground/60">{user.email || "Người dùng"}</p>
 						</div>
 					</div>
 				)}

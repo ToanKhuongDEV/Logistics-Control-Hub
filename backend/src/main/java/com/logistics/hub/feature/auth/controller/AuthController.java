@@ -37,19 +37,21 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtils jwtUtils;
 
+    private static final String ACCESS_TOKEN_COOKIE = "accessToken";
     private static final String REFRESH_TOKEN_COOKIE = "refreshToken";
-    private static final String COOKIE_PATH = "/api/v1/auth";
+    private static final String ACCESS_COOKIE_PATH = UrlConstant.API_V1;
+    private static final String REFRESH_COOKIE_PATH = UrlConstant.Auth.PREFIX;
 
     @PostMapping(UrlConstant.Auth.LOGIN)
-    @Operation(summary = "Login with Username/Password", description = "Returns access token in body and sets refresh token as HttpOnly cookie")
+    @Operation(summary = "Login with Username/Password", description = "Sets access and refresh tokens as HttpOnly cookies")
     public ResponseEntity<?> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse response) {
         try {
             AuthService.LoginResult result = authService.login(request);
-            addRefreshTokenCookie(httpRequest, response, result.refreshToken());
-            return ResponseEntity.ok(ApiResponse.success(AuthConstant.LOGIN_SUCCESS, result.response()));
+            addAuthCookies(httpRequest, response, result.accessToken(), result.refreshToken());
+            return ResponseEntity.ok(ApiResponse.success(AuthConstant.LOGIN_SUCCESS, null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(401, e.getMessage()));
@@ -57,7 +59,7 @@ public class AuthController {
     }
 
     @PostMapping(UrlConstant.Auth.REFRESH)
-    @Operation(summary = "Refresh Access Token", description = "Uses refresh token from HttpOnly cookie to issue new tokens")
+    @Operation(summary = "Refresh Access Token", description = "Uses refresh token from HttpOnly cookie to issue new HttpOnly token cookies")
     public ResponseEntity<?> refreshToken(
             @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,
             HttpServletRequest httpRequest,
@@ -68,17 +70,17 @@ public class AuthController {
                         .body(ApiResponse.error(401, AuthConstant.REFRESH_TOKEN_NOT_FOUND));
             }
             AuthService.RefreshResult result = authService.refreshToken(refreshToken);
-            addRefreshTokenCookie(httpRequest, response, result.refreshToken());
-            return ResponseEntity.ok(ApiResponse.success(AuthConstant.TOKEN_REFRESH_SUCCESS, result.response()));
+            addAuthCookies(httpRequest, response, result.accessToken(), result.refreshToken());
+            return ResponseEntity.ok(ApiResponse.success(AuthConstant.TOKEN_REFRESH_SUCCESS, null));
         } catch (RuntimeException e) {
-            clearRefreshTokenCookie(httpRequest, response);
+            clearAuthCookies(httpRequest, response);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(401, e.getMessage()));
         }
     }
 
     @PostMapping(UrlConstant.Auth.LOGOUT)
-    @Operation(summary = "Logout", description = "Clears refresh token from cookie and database")
+    @Operation(summary = "Logout", description = "Clears access and refresh token cookies, then removes refresh token from database")
     public ResponseEntity<?> logout(
             @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,
             HttpServletRequest httpRequest,
@@ -86,7 +88,7 @@ public class AuthController {
         if (refreshToken != null && !refreshToken.isBlank()) {
             authService.logout(refreshToken);
         }
-        clearRefreshTokenCookie(httpRequest, response);
+        clearAuthCookies(httpRequest, response);
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.LOGOUT_SUCCESS, null));
     }
 
@@ -192,21 +194,45 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(AuthConstant.PASSWORD_RESET_SUCCESS, null));
     }
 
+    private void addAuthCookies(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String accessToken,
+            String refreshToken) {
+        addAccessTokenCookie(request, response, accessToken);
+        addRefreshTokenCookie(request, response, refreshToken);
+    }
+
+    private void addAccessTokenCookie(HttpServletRequest request, HttpServletResponse response, String accessToken) {
+        Cookie cookie = new Cookie(ACCESS_TOKEN_COOKIE, accessToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(request.isSecure());
+        cookie.setPath(ACCESS_COOKIE_PATH);
+        cookie.setMaxAge((int) jwtUtils.getJwtExpirationSeconds());
+        cookie.setAttribute("SameSite", "Strict");
+        response.addCookie(cookie);
+    }
+
     private void addRefreshTokenCookie(HttpServletRequest request, HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(request.isSecure());
-        cookie.setPath(COOKIE_PATH);
+        cookie.setPath(REFRESH_COOKIE_PATH);
         cookie.setMaxAge((int) jwtUtils.getRefreshExpirationSeconds());
         cookie.setAttribute("SameSite", "Strict");
         response.addCookie(cookie);
     }
 
-    private void clearRefreshTokenCookie(HttpServletRequest request, HttpServletResponse response) {
-        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, "");
+    private void clearAuthCookies(HttpServletRequest request, HttpServletResponse response) {
+        clearCookie(request, response, ACCESS_TOKEN_COOKIE, ACCESS_COOKIE_PATH);
+        clearCookie(request, response, REFRESH_TOKEN_COOKIE, REFRESH_COOKIE_PATH);
+    }
+
+    private void clearCookie(HttpServletRequest request, HttpServletResponse response, String name, String path) {
+        Cookie cookie = new Cookie(name, "");
         cookie.setHttpOnly(true);
         cookie.setSecure(request.isSecure());
-        cookie.setPath(COOKIE_PATH);
+        cookie.setPath(path);
         cookie.setMaxAge(0);
         cookie.setAttribute("SameSite", "Strict");
         response.addCookie(cookie);

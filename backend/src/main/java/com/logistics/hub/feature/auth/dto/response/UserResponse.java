@@ -15,6 +15,8 @@ public class UserResponse {
     private String email;
     private String fullName;
     private String role;
+    private Long driverId;
+    private String driverName;
     private List<String> permissions;
     private List<AssignedDepotResponse> assignedDepots;
 }

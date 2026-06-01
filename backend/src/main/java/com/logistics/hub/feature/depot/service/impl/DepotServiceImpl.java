@@ -192,7 +192,8 @@ public class DepotServiceImpl implements DepotService {
       }
 
       try {
-        depotRepository.deleteById(id);
+        depot.markDeleted();
+        depotRepository.save(depot);
         auditLogService.log(
             auditActorService.getCurrentActor(),
             AuditAction.DELETE,

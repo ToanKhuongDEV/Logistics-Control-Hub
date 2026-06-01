@@ -171,6 +171,52 @@ class DriverPortalServiceImplTest {
     }
 
     @Test
+    void failMyOrder_shouldCancelOrderAndKeepRouteInProgressWhenOtherStopsRemainInTransit() {
+        DriverEntity driver = driver(7L);
+        RouteEntity route = route(3L, RouteStatus.CREATED);
+        OrderEntity cancelledOrder = order(11L, driver, OrderStatus.IN_TRANSIT);
+        RouteStopEntity cancelledStop = stop(100L, route, cancelledOrder);
+        RouteStopEntity remainingStop = stop(101L, route, order(12L, driver, OrderStatus.IN_TRANSIT));
+
+        doNothing().when(authorizationService)
+                .requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_DELIVERY_UPDATE);
+        when(authorizationService.getCurrentUser()).thenReturn(driverUser(driver));
+        when(routeStopRepository.findDeliveryStopsByDriverIdAndOrderId(eq(7L), eq(11L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(cancelledStop)));
+        when(routeStopRepository.findOrderStopsByRouteIdWithOrders(3L)).thenReturn(List.of(cancelledStop, remainingStop));
+
+        DriverDeliveryOrderResponse response = driverPortalService.failMyOrder(11L);
+
+        assertEquals(OrderStatus.CANCELLED, cancelledOrder.getStatus());
+        assertEquals(RouteStatus.IN_PROGRESS, route.getStatus());
+        assertEquals(OrderStatus.CANCELLED, response.getStatus());
+        verify(orderRepository).save(cancelledOrder);
+        verify(routeRepository).save(route);
+    }
+
+    @Test
+    void failMyOrder_shouldCompleteRouteWhenAllStopsAreDeliveredOrCancelled() {
+        DriverEntity driver = driver(7L);
+        RouteEntity route = route(3L, RouteStatus.CREATED);
+        OrderEntity cancelledOrder = order(11L, driver, OrderStatus.IN_TRANSIT);
+        RouteStopEntity cancelledStop = stop(100L, route, cancelledOrder);
+        RouteStopEntity deliveredStop = stop(101L, route, order(12L, driver, OrderStatus.DELIVERED));
+
+        doNothing().when(authorizationService)
+                .requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_DELIVERY_UPDATE);
+        when(authorizationService.getCurrentUser()).thenReturn(driverUser(driver));
+        when(routeStopRepository.findDeliveryStopsByDriverIdAndOrderId(eq(7L), eq(11L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(cancelledStop)));
+        when(routeStopRepository.findOrderStopsByRouteIdWithOrders(3L)).thenReturn(List.of(cancelledStop, deliveredStop));
+
+        driverPortalService.failMyOrder(11L);
+
+        assertEquals(OrderStatus.CANCELLED, cancelledOrder.getStatus());
+        assertEquals(RouteStatus.COMPLETED, route.getStatus());
+        verify(routeRepository).save(route);
+    }
+
+    @Test
     void findMyRoutingHistory_shouldReturnDriverScopedRunsWithOnlyDriverRoutes() {
         DriverEntity driver = driver(7L);
         RoutingRunEntity run = routingRun(30L);

@@ -54,6 +54,11 @@ export const driverPortalApi = {
 		return response.data.data;
 	},
 
+	async failMyOrder(orderId: number): Promise<DriverDeliveryOrder> {
+		const response = await apiClient.patch<ApiResponse<DriverDeliveryOrder>>(`${DRIVER_PORTAL_API_BASE}/me/orders/${orderId}/fail`);
+		return response.data.data;
+	},
+
 	async getMyRoutingHistory(page = 0, size = 20): Promise<RoutingHistoryPage> {
 		const response = await apiClient.get<ApiResponse<RoutingHistoryPage>>(`${DRIVER_PORTAL_API_BASE}/me/routing/history?page=${page}&size=${size}`);
 		return response.data.data;

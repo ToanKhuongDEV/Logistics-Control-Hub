@@ -13,6 +13,8 @@ public interface DriverPortalService {
 
     DriverDeliveryOrderResponse completeMyOrder(Long orderId);
 
+    DriverDeliveryOrderResponse failMyOrder(Long orderId);
+
     Page<RoutingRunResponse> findMyRoutingHistory(Pageable pageable);
 
     RoutingRunResponse findMyRoutingRun(Long runId);

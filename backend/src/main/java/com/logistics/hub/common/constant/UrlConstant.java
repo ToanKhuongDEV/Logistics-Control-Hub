@@ -75,6 +75,7 @@ public class UrlConstant {
         public static final String MY_ORDERS = "/me/orders";
         public static final String MY_ORDER_BY_ID = "/me/orders/{orderId}";
         public static final String COMPLETE_MY_ORDER = "/me/orders/{orderId}/complete";
+        public static final String FAIL_MY_ORDER = "/me/orders/{orderId}/fail";
         public static final String MY_ROUTING_HISTORY = "/me/routing/history";
         public static final String MY_ROUTING_RUN_BY_ID = "/me/routing/runs/{runId}";
         public static final String MY_LATEST_ROUTING_RUN = "/me/routing/latest";

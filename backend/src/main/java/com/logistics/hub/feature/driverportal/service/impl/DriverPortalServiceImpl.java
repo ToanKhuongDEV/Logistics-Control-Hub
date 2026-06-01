@@ -79,6 +79,28 @@ public class DriverPortalServiceImpl implements DriverPortalService {
     @Override
     @Transactional
     public DriverDeliveryOrderResponse completeMyOrder(Long orderId) {
+        return updateMyOrderDeliveryStatus(
+                orderId,
+                OrderStatus.DELIVERED,
+                "completed",
+                "Driver completed delivery order");
+    }
+
+    @Override
+    @Transactional
+    public DriverDeliveryOrderResponse failMyOrder(Long orderId) {
+        return updateMyOrderDeliveryStatus(
+                orderId,
+                OrderStatus.CANCELLED,
+                "cancelled",
+                "Driver marked delivery order as failed");
+    }
+
+    private DriverDeliveryOrderResponse updateMyOrderDeliveryStatus(
+            Long orderId,
+            OrderStatus nextStatus,
+            String validationAction,
+            String auditMessage) {
         authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_DELIVERY_UPDATE);
         DriverEntity driver = requireCurrentDriver();
 
@@ -91,25 +113,26 @@ public class DriverPortalServiceImpl implements DriverPortalService {
         }
 
         if (order.getStatus() != OrderStatus.IN_TRANSIT) {
-            throw new ValidationException("Only IN_TRANSIT orders can be completed by the driver.");
+            throw new ValidationException("Only IN_TRANSIT orders can be " + validationAction + " by the driver.");
         }
 
         RouteEntity route = stop.getRoute();
         if (route != null && route.getStatus() == RouteStatus.CANCELLED) {
-            throw new ValidationException("Cannot complete an order from a cancelled route.");
+            throw new ValidationException("Cannot update an order from a cancelled route.");
         }
 
         Map<String, Object> beforeData = orderSnapshot(order, route);
-        order.setStatus(OrderStatus.DELIVERED);
+        order.setStatus(nextStatus);
         orderRepository.save(order);
 
-        boolean routeAutoCompleted = updateRouteAfterOrderCompletion(route);
+        boolean routeAutoCompleted = updateRouteAfterOrderFinalization(route);
 
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("driverId", driver.getId());
         metadata.put("orderId", order.getId());
         metadata.put("routeId", route != null ? route.getId() : null);
         metadata.put("routeAutoCompleted", routeAutoCompleted);
+        metadata.put("status", nextStatus.name());
 
         auditLogService.log(
                 auditActorService.getCurrentActor(),
@@ -119,7 +142,7 @@ public class DriverPortalServiceImpl implements DriverPortalService {
                 order.getCode(),
                 order.getDepot() != null ? order.getDepot().getId() : null,
                 AuditStatus.SUCCESS,
-                "Driver completed delivery order",
+                auditMessage,
                 beforeData,
                 orderSnapshot(order, route),
                 metadata);
@@ -181,20 +204,24 @@ public class DriverPortalServiceImpl implements DriverPortalService {
                 .findFirst();
     }
 
-    private boolean updateRouteAfterOrderCompletion(RouteEntity route) {
+    private boolean updateRouteAfterOrderFinalization(RouteEntity route) {
         if (route == null) {
             return false;
         }
 
         List<RouteStopEntity> orderStops = routeStopRepository.findOrderStopsByRouteIdWithOrders(route.getId());
-        boolean allDelivered = !orderStops.isEmpty()
+        boolean allFinalized = !orderStops.isEmpty()
                 && orderStops.stream()
                         .map(RouteStopEntity::getOrder)
-                        .allMatch(order -> order != null && order.getStatus() == OrderStatus.DELIVERED);
+                        .allMatch(order -> order != null && isFinalDeliveryStatus(order.getStatus()));
 
-        route.setStatus(allDelivered ? RouteStatus.COMPLETED : RouteStatus.IN_PROGRESS);
+        route.setStatus(allFinalized ? RouteStatus.COMPLETED : RouteStatus.IN_PROGRESS);
         routeRepository.save(route);
-        return allDelivered;
+        return allFinalized;
+    }
+
+    private boolean isFinalDeliveryStatus(OrderStatus status) {
+        return status == OrderStatus.DELIVERED || status == OrderStatus.CANCELLED;
     }
 
     private RoutingRunResponse toDriverScopedRoutingRunResponse(RoutingRunEntity run, Long driverId) {

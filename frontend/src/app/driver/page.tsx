@@ -19,6 +19,7 @@ import {
 	ShieldAlert,
 	Truck,
 	User,
+	XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -89,6 +90,7 @@ export default function DriverPage() {
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [isLoadingRun, setIsLoadingRun] = useState(false);
 	const [completingOrderId, setCompletingOrderId] = useState<number | null>(null);
+	const [failingOrderId, setFailingOrderId] = useState<number | null>(null);
 	const [mobileView, setMobileView] = useState<DriverMobileView>("orders");
 
 	const canUseDriverPortal = hasPermission(user, "driver.delivery.read");
@@ -162,6 +164,23 @@ export default function DriverPage() {
 		}
 	};
 
+	const handleFailOrder = async (orderId: number) => {
+		if (!confirm("Xác nhận giao thất bại cho đơn này?")) {
+			return;
+		}
+
+		setFailingOrderId(orderId);
+		try {
+			await driverPortalApi.failMyOrder(orderId);
+			toast.success("Đã cập nhật giao thất bại");
+			await loadDriverData(false);
+		} catch (error: any) {
+			toast.error(error?.response?.data?.message || "Không thể cập nhật giao thất bại");
+		} finally {
+			setFailingOrderId(null);
+		}
+	};
+
 	const handleSelectRun = async (run: RoutingRun) => {
 		setFocusedRun(run);
 		setIsLoadingRun(true);
@@ -196,10 +215,12 @@ export default function DriverPage() {
 						isRefreshing={isRefreshing}
 						isLoadingRun={isLoadingRun}
 						completingOrderId={completingOrderId}
+						failingOrderId={failingOrderId}
 						onRefresh={() => void loadDriverData(false)}
 						onLogout={logout}
 						onSelectOrder={(order) => setSelectedOrderId(order.id)}
 						onCompleteOrder={(orderId) => void handleCompleteOrder(orderId)}
+						onFailOrder={(orderId) => void handleFailOrder(orderId)}
 						onSelectRun={(run) => void handleSelectRun(run)}
 					/>
 					)}
@@ -217,6 +238,7 @@ export default function DriverPage() {
 						isRefreshing={isRefreshing}
 						isLoadingRun={isLoadingRun}
 						completingOrderId={completingOrderId}
+						failingOrderId={failingOrderId}
 						mobileView={mobileView}
 						onMobileViewChange={setMobileView}
 						onRefresh={() => void loadDriverData(false)}
@@ -226,6 +248,7 @@ export default function DriverPage() {
 							setMobileView("orders");
 						}}
 						onCompleteOrder={(orderId) => void handleCompleteOrder(orderId)}
+						onFailOrder={(orderId) => void handleFailOrder(orderId)}
 						onSelectRun={(run) => void handleSelectRun(run)}
 					/>
 				</div>
@@ -250,10 +273,12 @@ interface SharedDriverViewProps {
 	isRefreshing: boolean;
 	isLoadingRun: boolean;
 	completingOrderId: number | null;
+	failingOrderId: number | null;
 	onRefresh: () => void;
 	onLogout: () => void;
 	onSelectOrder: (order: DriverDeliveryOrder) => void;
 	onCompleteOrder: (orderId: number) => void;
+	onFailOrder: (orderId: number) => void;
 	onSelectRun: (run: RoutingRun) => void;
 }
 
@@ -273,10 +298,12 @@ function DriverDesktopView(props: SharedDriverViewProps & { userEmail?: string }
 		isRefreshing,
 		isLoadingRun,
 		completingOrderId,
+		failingOrderId,
 		onRefresh,
 		onLogout,
 		onSelectOrder,
 		onCompleteOrder,
+		onFailOrder,
 		onSelectRun,
 	} = props;
 
@@ -343,7 +370,7 @@ function DriverDesktopView(props: SharedDriverViewProps & { userEmail?: string }
 
 						<section className="col-span-4 overflow-hidden rounded-lg border border-border bg-card">
 							<SectionHeader title="Chi tiết giao hàng" helper={selectedOrder?.code || "--"} />
-							<OrderDetail order={selectedOrder} completingOrderId={completingOrderId} onCompleteOrder={onCompleteOrder} />
+							<OrderDetail order={selectedOrder} completingOrderId={completingOrderId} failingOrderId={failingOrderId} onCompleteOrder={onCompleteOrder} onFailOrder={onFailOrder} />
 						</section>
 
 						<section className="col-span-4 overflow-hidden rounded-lg border border-border bg-card">
@@ -386,12 +413,14 @@ function DriverMobileView(props: SharedDriverViewProps & { mobileView: DriverMob
 		isRefreshing,
 		isLoadingRun,
 		completingOrderId,
+		failingOrderId,
 		mobileView,
 		onMobileViewChange,
 		onRefresh,
 		onLogout,
 		onSelectOrder,
 		onCompleteOrder,
+		onFailOrder,
 		onSelectRun,
 	} = props;
 
@@ -424,7 +453,7 @@ function DriverMobileView(props: SharedDriverViewProps & { mobileView: DriverMob
 				{mobileView === "orders" && (
 					<div className="space-y-4">
 						<OrderList orders={orders} selectedOrder={selectedOrder} isLoading={isLoading} onSelectOrder={onSelectOrder} compact />
-						<OrderDetail order={selectedOrder} completingOrderId={completingOrderId} onCompleteOrder={onCompleteOrder} compact />
+						<OrderDetail order={selectedOrder} completingOrderId={completingOrderId} failingOrderId={failingOrderId} onCompleteOrder={onCompleteOrder} onFailOrder={onFailOrder} compact />
 					</div>
 				)}
 
@@ -577,7 +606,21 @@ function OrderList({ orders, selectedOrder, isLoading, onSelectOrder, compact = 
 	);
 }
 
-function OrderDetail({ order, completingOrderId, onCompleteOrder, compact = false }: { order: DriverDeliveryOrder | null; completingOrderId: number | null; onCompleteOrder: (orderId: number) => void; compact?: boolean }) {
+function OrderDetail({
+	order,
+	completingOrderId,
+	failingOrderId,
+	onCompleteOrder,
+	onFailOrder,
+	compact = false,
+}: {
+	order: DriverDeliveryOrder | null;
+	completingOrderId: number | null;
+	failingOrderId: number | null;
+	onCompleteOrder: (orderId: number) => void;
+	onFailOrder: (orderId: number) => void;
+	compact?: boolean;
+}) {
 	if (!order) {
 		return (
 			<div className="flex h-64 flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted-foreground">
@@ -589,6 +632,8 @@ function OrderDetail({ order, completingOrderId, onCompleteOrder, compact = fals
 
 	const canComplete = order.status === OrderStatus.IN_TRANSIT;
 	const isCompleting = completingOrderId === order.id;
+	const isFailing = failingOrderId === order.id;
+	const isUpdating = isCompleting || isFailing;
 
 	return (
 		<div className={cn("space-y-4 p-4", compact && "rounded-lg border border-border bg-card")}>
@@ -616,10 +661,22 @@ function OrderDetail({ order, completingOrderId, onCompleteOrder, compact = fals
 				<InfoBlock label="Thể tích" value={`${formatNumber(Number(order.volumeM3 ?? 0), 2)} m³`} />
 			</div>
 
-			<Button className="w-full" disabled={!canComplete || isCompleting} onClick={() => onCompleteOrder(order.id)}>
-				{isCompleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-				{canComplete ? "Hoàn thành đơn" : statusLabel(order.status)}
-			</Button>
+			{canComplete ? (
+				<div className="grid grid-cols-2 gap-2">
+					<Button className="w-full" disabled={isUpdating} onClick={() => onCompleteOrder(order.id)}>
+						{isCompleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+						Đã giao
+					</Button>
+					<Button className="w-full" variant="destructive" disabled={isUpdating} onClick={() => onFailOrder(order.id)}>
+						{isFailing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+						Giao thất bại
+					</Button>
+				</div>
+			) : (
+				<Button className="w-full" disabled>
+					{statusLabel(order.status)}
+				</Button>
+			)}
 		</div>
 	);
 }
@@ -700,9 +757,16 @@ function HistoryList({ runs, activeRun, onSelectRun }: { runs: RoutingRun[]; act
 }
 
 function StatusPill({ status }: { status: OrderStatus }) {
-	const isInTransit = status === OrderStatus.IN_TRANSIT;
+	const statusClass =
+		status === OrderStatus.IN_TRANSIT
+			? "border-amber-500/20 bg-amber-500/10 text-amber-700"
+			: status === OrderStatus.CANCELLED
+				? "border-rose-500/20 bg-rose-500/10 text-rose-700"
+				: status === OrderStatus.DELIVERED
+					? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+					: "border-slate-500/20 bg-slate-500/10 text-slate-700";
 	return (
-		<span className={cn("shrink-0 rounded-md border px-2 py-1 text-xs font-medium", isInTransit ? "border-amber-500/20 bg-amber-500/10 text-amber-700" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700")}>
+		<span className={cn("shrink-0 rounded-md border px-2 py-1 text-xs font-medium", statusClass)}>
 			{statusLabel(status)}
 		</span>
 	);

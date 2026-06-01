@@ -86,7 +86,8 @@ public class OrderServiceImpl implements OrderService {
                 : orderRepository.findAll(OrderSpecification.withFilters(null, null, authorizationService.getAccessibleDepotIds()));
 
         long activeCount = allOrders.stream()
-                .filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.CANCELLED)
+                .filter(o -> o.getStatus() != OrderStatus.DELIVERED
+                        && o.getStatus() != OrderStatus.CANCELLED)
                 .count();
 
         long pending = allOrders.stream()

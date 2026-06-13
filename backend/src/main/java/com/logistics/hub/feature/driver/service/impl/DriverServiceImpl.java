@@ -205,24 +205,18 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = CacheConstant.DRIVERS, key = "'available:' + #includeDriverId")
     public List<DriverResponse> getAvailableDrivers(Long includeDriverId) {
         authorizationService.requirePermission(AuthorizationPolicy.PERMISSION_DRIVER_READ);
-        if (authorizationService.hasGlobalScope()) {
-            return driverRepository.findAvailableDrivers(includeDriverId)
-                    .stream()
-                    .map(driverMapper::toResponse)
-                    .toList();
+        if (!authorizationService.hasGlobalScope() && includeDriverId != null) {
+            DriverEntity currentDriver = driverRepository.findById(includeDriverId)
+                    .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
+            authorizationService.requireDriverAccess(currentDriver);
         }
 
-        if (includeDriverId == null) {
-            return List.of();
-        }
-
-        DriverEntity driver = driverRepository.findById(includeDriverId)
-                .orElseThrow(() -> new ResourceNotFoundException(DriverConstant.DRIVER_NOT_FOUND));
-        authorizationService.requireDriverAccess(driver);
-        return List.of(driverMapper.toResponse(driver));
+        return driverRepository.findAvailableDrivers(includeDriverId)
+                .stream()
+                .map(driverMapper::toResponse)
+                .toList();
     }
 
     private void validateDriverRequest(DriverRequest request, Long id) {

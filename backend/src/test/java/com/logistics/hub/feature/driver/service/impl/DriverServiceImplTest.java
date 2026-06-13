@@ -15,13 +15,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.annotation.Cacheable;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -69,35 +71,53 @@ class DriverServiceImplTest {
     }
 
     @Test
-    void getAvailableDrivers_shouldReturnEmptyForScopedUsersWithoutIncludedDriver() {
+    void getAvailableDrivers_shouldReturnUnassignedDriversForScopedUsers() {
+        DriverEntity availableDriver = driver(20L, "Available Driver");
+        DriverResponse mapped = new DriverResponse();
+        mapped.setId(20L);
+
         doNothing().when(authorizationService).requirePermission("driver.read");
         when(authorizationService.hasGlobalScope()).thenReturn(false);
+        when(driverRepository.findAvailableDrivers(null)).thenReturn(List.of(availableDriver));
+        when(driverMapper.toResponse(availableDriver)).thenReturn(mapped);
 
         List<DriverResponse> response = driverService.getAvailableDrivers(null);
 
-        assertTrue(response.isEmpty());
-        verify(driverRepository, never()).findAvailableDrivers(null);
-        verify(driverRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        assertEquals(List.of(mapped), response);
+        verify(driverRepository).findAvailableDrivers(null);
     }
 
     @Test
-    void getAvailableDrivers_shouldOnlyReturnIncludedDriverWhenScopedAccessIsAllowed() {
-        DriverEntity driver = driver(21L, "Depot Driver");
-        DriverResponse mapped = new DriverResponse();
-        mapped.setId(21L);
-        mapped.setName("Depot Driver");
+    void getAvailableDrivers_shouldReturnUnassignedAndIncludedDriverWhenScopedAccessIsAllowed() {
+        DriverEntity currentDriver = driver(21L, "Depot Driver");
+        DriverEntity availableDriver = driver(22L, "Available Driver");
+        DriverResponse currentMapped = new DriverResponse();
+        currentMapped.setId(21L);
+        DriverResponse availableMapped = new DriverResponse();
+        availableMapped.setId(22L);
 
         doNothing().when(authorizationService).requirePermission("driver.read");
         when(authorizationService.hasGlobalScope()).thenReturn(false);
-        when(driverRepository.findById(21L)).thenReturn(Optional.of(driver));
-        doNothing().when(authorizationService).requireDriverAccess(driver);
-        when(driverMapper.toResponse(driver)).thenReturn(mapped);
+        when(driverRepository.findById(21L)).thenReturn(Optional.of(currentDriver));
+        doNothing().when(authorizationService).requireDriverAccess(currentDriver);
+        when(driverRepository.findAvailableDrivers(21L)).thenReturn(List.of(currentDriver, availableDriver));
+        when(driverMapper.toResponse(currentDriver)).thenReturn(currentMapped);
+        when(driverMapper.toResponse(availableDriver)).thenReturn(availableMapped);
 
         List<DriverResponse> response = driverService.getAvailableDrivers(21L);
 
-        assertEquals(1, response.size());
+        assertEquals(2, response.size());
         assertEquals(21L, response.get(0).getId());
-        verify(driverRepository, never()).findAvailableDrivers(21L);
+        assertEquals(22L, response.get(1).getId());
+        verify(authorizationService).requireDriverAccess(currentDriver);
+        verify(driverRepository).findAvailableDrivers(21L);
+    }
+
+    @Test
+    void getAvailableDrivers_shouldNotCacheAssignmentDependentResults() throws NoSuchMethodException {
+        Method method = DriverServiceImpl.class.getMethod("getAvailableDrivers", Long.class);
+
+        assertFalse(method.isAnnotationPresent(Cacheable.class));
     }
 
     private DriverEntity driver(Long id, String name) {

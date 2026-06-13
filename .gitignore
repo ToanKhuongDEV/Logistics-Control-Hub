@@ -41,3 +41,4 @@ yarn-error.log*
 # OSRM processed map data (too large for Git, generate on server)
 osrm-data/*
 
+document/repot-final-subject/

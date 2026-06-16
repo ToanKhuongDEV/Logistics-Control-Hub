@@ -99,7 +99,7 @@ export function OrderForm({ order, onSubmit, onClose, isSubmitting = false }: Or
 	};
 
 	return (
-		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+		<div className="fixed inset-0 bg-[var(--overlay)] flex items-center justify-center z-50">
 			<div className="bg-card rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
 				<div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10">
 					<h2 className="text-lg font-semibold text-foreground">{order ? "Sửa đơn hàng" : "Thêm đơn hàng mới"}</h2>

@@ -343,7 +343,7 @@ function DriverDesktopView(props: SharedDriverViewProps & { userEmail?: string }
 				<div className="mx-auto max-w-7xl space-y-6 p-8">
 					<div className="flex items-start justify-between gap-4">
 						<div>
-							<div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700">
+							<div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
 								<Truck className="h-3.5 w-3.5" />
 								Driver Portal
 							</div>
@@ -516,9 +516,9 @@ function DriverNavItem({ icon: Icon, label, active = false }: { icon: typeof Cli
 
 function MetricTile({ icon: Icon, label, value, tone }: { icon: typeof PackageOpen; label: string; value: string; tone: "amber" | "sky" | "emerald" }) {
 	const toneClass = {
-		amber: "bg-amber-500/10 text-amber-700 border-amber-500/20",
-		sky: "bg-sky-500/10 text-sky-700 border-sky-500/20",
-		emerald: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+		amber: "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300",
+		sky: "bg-sky-500/10 text-sky-700 border-sky-500/20 dark:text-sky-300",
+		emerald: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300",
 	}[tone];
 
 	return (
@@ -759,12 +759,12 @@ function HistoryList({ runs, activeRun, onSelectRun }: { runs: RoutingRun[]; act
 function StatusPill({ status }: { status: OrderStatus }) {
 	const statusClass =
 		status === OrderStatus.IN_TRANSIT
-			? "border-amber-500/20 bg-amber-500/10 text-amber-700"
+			? "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
 			: status === OrderStatus.CANCELLED
-				? "border-rose-500/20 bg-rose-500/10 text-rose-700"
+				? "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300"
 				: status === OrderStatus.DELIVERED
-					? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-					: "border-slate-500/20 bg-slate-500/10 text-slate-700";
+					? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+					: "border-border bg-muted text-muted-foreground";
 	return (
 		<span className={cn("shrink-0 rounded-md border px-2 py-1 text-xs font-medium", statusClass)}>
 			{statusLabel(status)}

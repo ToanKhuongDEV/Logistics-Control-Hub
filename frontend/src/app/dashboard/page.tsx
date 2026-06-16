@@ -19,7 +19,7 @@ import { PageHeader } from "@/components/page-header";
 
 const LeafletMap = dynamic(() => import("@/components/leaflet-map").then((mod) => mod.LeafletMap), {
 	ssr: false,
-	loading: () => <p className="h-[400px] w-full flex items-center justify-center bg-gray-100 rounded-lg">Đang tải bản đồ...</p>,
+	loading: () => <p className="h-[400px] w-full flex items-center justify-center bg-muted/40 text-muted-foreground rounded-lg">Đang tải bản đồ...</p>,
 });
 
 export default function DashboardPage() {
@@ -155,9 +155,9 @@ export default function DashboardPage() {
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 						{isLoadingStats ? (
 							<>
-								<div className="h-24 bg-gray-100 animate-pulse rounded-lg" />
-								<div className="h-24 bg-gray-100 animate-pulse rounded-lg" />
-								<div className="h-24 bg-gray-100 animate-pulse rounded-lg" />
+								<div className="h-24 bg-muted/40 animate-pulse rounded-lg" />
+								<div className="h-24 bg-muted/40 animate-pulse rounded-lg" />
+								<div className="h-24 bg-muted/40 animate-pulse rounded-lg" />
 							</>
 						) : statistics ? (
 							<>

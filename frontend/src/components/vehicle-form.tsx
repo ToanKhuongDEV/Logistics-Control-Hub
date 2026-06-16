@@ -100,7 +100,7 @@ export function VehicleForm({ vehicle, onSubmit, onClose, isSubmitting = false }
 	};
 
 	return (
-		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+		<div className="fixed inset-0 bg-[var(--overlay)] flex items-center justify-center z-50">
 			<div className="bg-card rounded-lg shadow-lg max-w-md w-full mx-4">
 				<div className="flex items-center justify-between p-6 border-b border-border">
 					<h2 className="text-lg font-semibold text-foreground">{vehicle ? "Sửa xe" : "Thêm xe mới"}</h2>

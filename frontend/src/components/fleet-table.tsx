@@ -61,10 +61,10 @@ export function FleetTable({
 				<tbody className="divide-y divide-border">
 					{vehicles.map((vehicle) => {
 						const getStatusConfig = (status: VehicleStatus) => {
-							if (status === VehicleStatus.ACTIVE) return { label: "Đang hoạt động", color: "bg-green-500/10 text-green-600 border-green-500/20" };
-							if (status === VehicleStatus.MAINTENANCE) return { label: "Bảo trì", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" };
-							if (status === VehicleStatus.IDLE) return { label: "Nhàn rỗi", color: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
-							return { label: status, color: "bg-gray-500/10 text-gray-600 border-gray-500/20" };
+							if (status === VehicleStatus.ACTIVE) return { label: "Đang hoạt động", color: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-300" };
+							if (status === VehicleStatus.MAINTENANCE) return { label: "Bảo trì", color: "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-300" };
+							if (status === VehicleStatus.IDLE) return { label: "Nhàn rỗi", color: "bg-muted text-muted-foreground border-border" };
+							return { label: status, color: "bg-muted text-muted-foreground border-border" };
 						};
 
 						const statusConfig = getStatusConfig(vehicle.status);

@@ -13,22 +13,22 @@ export function DepotStats({ statistics }: DepotStatsProps) {
 			label: "Tổng số kho",
 			value: statistics?.total || 0,
 			icon: Warehouse,
-			color: "text-blue-600",
-			bgColor: "bg-blue-50",
+			color: "text-blue-600 dark:text-blue-300",
+			bgColor: "bg-blue-50 dark:bg-blue-500/10",
 		},
 		{
 			label: "Kho hoạt động",
 			value: statistics?.active || 0,
 			icon: CheckCircle,
-			color: "text-green-600",
-			bgColor: "bg-green-50",
+			color: "text-green-600 dark:text-green-300",
+			bgColor: "bg-green-50 dark:bg-green-500/10",
 		},
 		{
 			label: "Kho đóng cửa",
 			value: statistics?.inactive || 0,
 			icon: XCircle,
-			color: "text-red-600",
-			bgColor: "bg-red-50",
+			color: "text-red-600 dark:text-red-300",
+			bgColor: "bg-red-50 dark:bg-red-500/10",
 		},
 	];
 

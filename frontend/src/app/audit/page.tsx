@@ -188,7 +188,7 @@ export default function AuditPage() {
 						<div className="px-6 py-6 md:px-8">
 							<div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
 								<div className="space-y-3">
-									<div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
+									<div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">
 										<ShieldCheck className="h-3.5 w-3.5" />
 										Bảng điều khiển audit
 									</div>
@@ -397,9 +397,9 @@ export default function AuditPage() {
 																selectedLog?.id === log.id
 																	? "border-primary/50 bg-primary/5 shadow-sm"
 																	: isPriorityLog(log)
-																		? "border-rose-300/60 bg-rose-50/70 hover:border-rose-400 hover:bg-rose-50"
+																		? "border-rose-300/60 bg-rose-50/70 hover:border-rose-400 hover:bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10 dark:hover:bg-rose-500/15"
 																		: log.resourceType === "ROUTING_RUN"
-																			? "border-sky-300/60 bg-sky-50/60 hover:border-sky-400 hover:bg-sky-50"
+																			? "border-sky-300/60 bg-sky-50/60 hover:border-sky-400 hover:bg-sky-50 dark:border-sky-500/30 dark:bg-sky-500/10 dark:hover:bg-sky-500/15"
 																			: "border-border bg-background hover:border-primary/30 hover:bg-muted/20",
 															)}
 														>
@@ -481,12 +481,12 @@ export default function AuditPage() {
 												<div className="space-y-6">
 													<div
 														className={cn(
-															"rounded-2xl border p-5 text-slate-100 shadow-sm",
+															"rounded-2xl border p-5 shadow-sm",
 															selectedLog.status === "FAILED"
-																? "border-rose-400/40 bg-[linear-gradient(135deg,rgba(127,29,29,0.98),rgba(68,12,12,0.95))]"
+																? "border-rose-300/60 bg-rose-50/80 dark:border-rose-400/40 dark:bg-[linear-gradient(135deg,rgba(127,29,29,0.98),rgba(68,12,12,0.95))]"
 																: selectedLog.resourceType === "ROUTING_RUN"
-																	? "border-sky-400/40 bg-[linear-gradient(135deg,rgba(8,47,73,0.98),rgba(12,74,110,0.95))]"
-																	: "border-border bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.95))]",
+																	? "border-sky-300/60 bg-sky-50/80 dark:border-sky-400/40 dark:bg-[linear-gradient(135deg,rgba(8,47,73,0.98),rgba(12,74,110,0.95))]"
+																	: "border-border bg-muted/30 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(30,41,59,0.95))]",
 														)}
 													>
 														<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -497,14 +497,14 @@ export default function AuditPage() {
 																	<ResourceBadge resourceType={selectedLog.resourceType} />
 																</div>
 																<div>
-																	<p className="text-xs uppercase tracking-[0.22em] text-slate-400">Đối tượng mục tiêu</p>
-																	<h3 className="mt-2 text-2xl font-semibold text-white">{selectedLog.resourceName || selectedLog.resourceId || "Không rõ đối tượng"}</h3>
-																	<p className="mt-2 text-sm text-slate-300">{selectedLog.message || "Không có thông điệp bổ sung."}</p>
+																	<p className="text-xs uppercase tracking-[0.22em] text-muted-foreground dark:text-slate-400">Đối tượng mục tiêu</p>
+																	<h3 className="mt-2 text-2xl font-semibold text-foreground dark:text-white">{selectedLog.resourceName || selectedLog.resourceId || "Không rõ đối tượng"}</h3>
+																	<p className="mt-2 text-sm text-muted-foreground dark:text-slate-300">{selectedLog.message || "Không có thông điệp bổ sung."}</p>
 																</div>
 															</div>
-															<div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-																<p className="text-xs uppercase tracking-[0.2em] text-slate-400">Thời điểm xảy ra</p>
-																<p className="mt-2 font-medium text-white">{formatDateTime(selectedLog.createdAt)}</p>
+															<div className="rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm text-foreground dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+																<p className="text-xs uppercase tracking-[0.2em] text-muted-foreground dark:text-slate-400">Thời điểm xảy ra</p>
+																<p className="mt-2 font-medium text-foreground dark:text-white">{formatDateTime(selectedLog.createdAt)}</p>
 															</div>
 														</div>
 													</div>
@@ -585,7 +585,7 @@ function SummaryCard({ icon: Icon, label, value, helper, tone }: { icon: typeof 
 					<p className="mt-2 text-3xl font-semibold text-foreground">{value}</p>
 					<p className="mt-2 text-xs text-muted-foreground">{helper}</p>
 				</div>
-				<div className={cn("rounded-2xl p-3", tone === "neutral" && "bg-slate-900 text-white", tone === "success" && "bg-emerald-600 text-white", tone === "danger" && "bg-rose-600 text-white", tone === "routing" && "bg-sky-600 text-white")}>
+				<div className={cn("rounded-2xl p-3", tone === "neutral" && "bg-foreground text-background", tone === "success" && "bg-emerald-600 text-white", tone === "danger" && "bg-rose-600 text-white", tone === "routing" && "bg-sky-600 text-white")}>
 					<Icon className="h-5 w-5" />
 				</div>
 			</div>
@@ -595,7 +595,7 @@ function SummaryCard({ icon: Icon, label, value, helper, tone }: { icon: typeof 
 
 function PrioritySpotlightCard({ icon: Icon, title, value, description, buttonLabel, tone, onClick }: { icon: typeof ShieldCheck; title: string; value: string; description: string; buttonLabel: string; tone: "danger" | "routing"; onClick: () => void }) {
 	return (
-		<Card className={cn("overflow-hidden border-border/70 p-0 shadow-sm", tone === "danger" ? "border-rose-300/50 bg-[linear-gradient(135deg,rgba(255,241,242,0.98),rgba(255,228,230,0.95))]" : "border-sky-300/50 bg-[linear-gradient(135deg,rgba(240,249,255,0.98),rgba(224,242,254,0.95))]")}>
+		<Card className={cn("overflow-hidden border-border/70 p-0 shadow-sm", tone === "danger" ? "border-rose-300/50 bg-[linear-gradient(135deg,rgba(255,241,242,0.98),rgba(255,228,230,0.95))] dark:border-rose-500/30 dark:bg-rose-500/10" : "border-sky-300/50 bg-[linear-gradient(135deg,rgba(240,249,255,0.98),rgba(224,242,254,0.95))] dark:border-sky-500/30 dark:bg-sky-500/10")}>
 			<div className="flex h-full flex-col gap-4 p-5">
 				<div className="flex items-start justify-between gap-4">
 					<div>
@@ -628,28 +628,28 @@ function AuditMeta({ label, value, className }: { label: string; value: string; 
 
 function AuditJsonBlock({ title, value, onOpen }: { title: string; value: unknown; onOpen: () => void }) {
 	return (
-		<div className="overflow-hidden rounded-2xl border border-border bg-slate-950/95">
-			<div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-				<Label className="text-slate-200">{title}</Label>
-				<Button variant="ghost" size="icon-sm" className="text-slate-200 hover:bg-white/10 hover:text-white" onClick={onOpen}>
+		<div className="overflow-hidden rounded-2xl border border-border bg-muted/40 dark:bg-slate-950/95">
+			<div className="flex items-center justify-between border-b border-border px-4 py-3 dark:border-white/10">
+				<Label className="text-foreground dark:text-slate-200">{title}</Label>
+				<Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:bg-accent hover:text-foreground dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white" onClick={onOpen}>
 					<Eye className="h-4 w-4" />
 				</Button>
 			</div>
-			<pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-slate-100">{value ? JSON.stringify(value, null, 2) : "Không có dữ liệu"}</pre>
+			<pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-foreground dark:text-slate-100">{value ? JSON.stringify(value, null, 2) : "Không có dữ liệu"}</pre>
 		</div>
 	);
 }
 
 function AuditJsonViewerModal({ log, onClose }: { log: AuditLog; onClose: () => void }) {
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-			<div className="flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-950 shadow-2xl">
-				<div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] p-4 backdrop-blur-sm">
+			<div className="flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
+				<div className="flex items-center justify-between border-b border-border px-6 py-4">
 					<div>
-						<p className="text-sm font-medium text-slate-400">Trình xem dữ liệu audit</p>
-						<h3 className="mt-1 text-xl font-semibold text-white">{log.resourceName || log.resourceId || "Không rõ đối tượng"}</h3>
+						<p className="text-sm font-medium text-muted-foreground">Trình xem dữ liệu audit</p>
+						<h3 className="mt-1 text-xl font-semibold text-foreground">{log.resourceName || log.resourceId || "Không rõ đối tượng"}</h3>
 					</div>
-					<Button variant="ghost" size="icon-sm" className="text-slate-200 hover:bg-white/10 hover:text-white" onClick={onClose}>
+					<Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:bg-accent hover:text-foreground" onClick={onClose}>
 						<X className="h-5 w-5" />
 					</Button>
 				</div>
@@ -666,18 +666,18 @@ function AuditJsonViewerModal({ log, onClose }: { log: AuditLog; onClose: () => 
 
 function AuditJsonPanel({ title, value }: { title: string; value: unknown }) {
 	return (
-		<div className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80">
-			<div className="border-b border-white/10 px-4 py-3">
-				<p className="text-sm font-semibold text-slate-100">{title}</p>
+		<div className="overflow-hidden rounded-2xl border border-border bg-muted/40">
+			<div className="border-b border-border px-4 py-3">
+				<p className="text-sm font-semibold text-foreground">{title}</p>
 			</div>
-			<pre className="max-h-[65vh] overflow-auto p-4 text-xs leading-6 text-slate-100">{value ? JSON.stringify(value, null, 2) : "Không có dữ liệu"}</pre>
+			<pre className="max-h-[65vh] overflow-auto p-4 text-xs leading-6 text-foreground">{value ? JSON.stringify(value, null, 2) : "Không có dữ liệu"}</pre>
 		</div>
 	);
 }
 
 function StatusBadge({ status }: { status: string }) {
 	return (
-		<span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", status === "SUCCESS" && "bg-emerald-500/15 text-emerald-700", status === "FAILED" && "bg-rose-500/15 text-rose-700", status !== "SUCCESS" && status !== "FAILED" && "bg-slate-500/15 text-slate-700")}>
+		<span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", status === "SUCCESS" && "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300", status === "FAILED" && "bg-rose-500/15 text-rose-700 dark:text-rose-300", status !== "SUCCESS" && status !== "FAILED" && "bg-muted text-muted-foreground")}>
 			{formatStatusLabel(status)}
 		</span>
 	);
@@ -686,22 +686,22 @@ function StatusBadge({ status }: { status: string }) {
 function ActionBadge({ action }: { action: string }) {
 	const toneClass =
 		action === "LOGIN"
-			? "bg-sky-500/15 text-sky-700"
+			? "bg-sky-500/15 text-sky-700 dark:text-sky-300"
 			: action === "LOGOUT"
-				? "bg-violet-500/15 text-violet-700"
+				? "bg-violet-500/15 text-violet-700 dark:text-violet-300"
 				: action === "CHANGE_PASSWORD"
-					? "bg-amber-500/15 text-amber-700"
+					? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
 					: action === "CREATE"
-						? "bg-emerald-500/15 text-emerald-700"
+						? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
 						: action === "UPDATE"
-							? "bg-indigo-500/15 text-indigo-700"
-							: "bg-slate-500/15 text-slate-700";
+							? "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300"
+							: "bg-muted text-muted-foreground";
 
 	return <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", toneClass)}>{formatActionLabel(action)}</span>;
 }
 
 function ResourceBadge({ resourceType }: { resourceType: string }) {
-	return <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", resourceType === "ROUTING_RUN" ? "bg-sky-500/15 text-sky-700" : "bg-slate-900/10 text-slate-700")}>{formatResourceLabel(resourceType)}</span>;
+	return <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", resourceType === "ROUTING_RUN" ? "bg-sky-500/15 text-sky-700 dark:text-sky-300" : "bg-muted text-muted-foreground")}>{formatResourceLabel(resourceType)}</span>;
 }
 
 function isPriorityLog(log: AuditLog) {

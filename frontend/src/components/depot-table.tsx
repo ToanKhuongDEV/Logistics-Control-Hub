@@ -65,12 +65,12 @@ export function DepotTable({ depots, onEdit, onDelete, isLoading, canManage = tr
 							<td className="px-6 py-4 text-sm text-muted-foreground max-w-xs">{truncateText(depot.description, 40)}</td>
 							<td className="px-6 py-4">
 								{depot.isActive ? (
-									<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+									<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200 dark:bg-green-500/10 dark:text-green-300 dark:border-green-500/20">
 										<CheckCircle className="w-3.5 h-3.5" />
 										Hoạt động
 									</span>
 								) : (
-									<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+									<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/20">
 										<XCircle className="w-3.5 h-3.5" />
 										Đóng cửa
 									</span>

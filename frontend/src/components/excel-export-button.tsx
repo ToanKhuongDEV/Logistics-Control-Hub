@@ -75,7 +75,7 @@ export function ExcelExportButton({ type, filters, label = "Xuất Excel", title
 			</Button>
 
 			{isOpen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)]">
 					<div className="mx-4 w-full max-w-md rounded-lg bg-card shadow-lg">
 						<div className="flex items-center justify-between border-b border-border p-5">
 							<h2 className="text-lg font-semibold text-foreground">{title}</h2>

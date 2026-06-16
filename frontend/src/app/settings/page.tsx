@@ -13,6 +13,7 @@ import { companyApi } from "@/lib/company-api";
 import { authService, hasPermission } from "@/lib/auth";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type SettingsTab = "company" | "notifications" | "guide";
 
@@ -177,9 +178,14 @@ export default function SettingsPage() {
 				<div className="flex flex-col h-full">
 					<div className="border-b border-border bg-card">
 						<div className="px-8 py-6">
-							<PageHeader tag="Bảng điều khiển cài đặt" icon={Globe} />
-							<h1 className="text-3xl font-bold text-foreground">Cài đặt</h1>
-							<p className="text-muted-foreground mt-2">Quản lý thông tin hệ thống, thông báo và bảo mật</p>
+							<div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+								<div>
+									<PageHeader tag="Bảng điều khiển cài đặt" icon={Globe} />
+									<h1 className="text-3xl font-bold text-foreground">Cài đặt</h1>
+									<p className="text-muted-foreground mt-2">Quản lý thông tin hệ thống, thông báo và bảo mật</p>
+								</div>
+								<ThemeToggle className="w-fit min-w-36 justify-center" />
+							</div>
 						</div>
 					</div>
 

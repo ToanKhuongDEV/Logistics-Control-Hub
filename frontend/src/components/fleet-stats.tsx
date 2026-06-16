@@ -29,14 +29,14 @@ export function FleetStats({ totalVehicles, activeVehicles, maintenanceVehicles,
 			label: "ĐANG HOẠT ĐỘNG",
 			value: activeVehicles,
 			icon: CheckCircle,
-			color: "text-green-500",
+			color: "text-green-600 dark:text-green-300",
 			bgColor: "bg-card",
 		},
 		{
 			label: "BẢO TRÌ",
 			value: maintenanceVehicles,
 			icon: Wrench,
-			color: "text-orange-500",
+			color: "text-orange-600 dark:text-orange-300",
 			bgColor: "bg-card",
 		},
 		{
@@ -56,7 +56,7 @@ export function FleetStats({ totalVehicles, activeVehicles, maintenanceVehicles,
 			label: "CHI PHÍ TB/KM",
 			value: `${formatNumber(Number(averageCostPerKm))} ₫`,
 			icon: DollarSign,
-			color: "text-blue-500",
+			color: "text-blue-600 dark:text-blue-300",
 			bgColor: "bg-card",
 		});
 	}
@@ -66,7 +66,7 @@ export function FleetStats({ totalVehicles, activeVehicles, maintenanceVehicles,
 			label: "TỔNG TẢI TRỌNG",
 			value: `${formatNumber(totalCapacityKg)} kg`,
 			icon: Weight,
-			color: "text-purple-500",
+			color: "text-purple-600 dark:text-purple-300",
 			bgColor: "bg-card",
 		});
 	}
@@ -76,7 +76,7 @@ export function FleetStats({ totalVehicles, activeVehicles, maintenanceVehicles,
 			label: "TỔNG THỂ TÍCH",
 			value: `${Number(totalCapacityM3).toFixed(2)} m³`,
 			icon: Box,
-			color: "text-cyan-500",
+			color: "text-cyan-600 dark:text-cyan-300",
 			bgColor: "bg-card",
 		});
 	}

@@ -110,8 +110,8 @@ export default function LoginPage() {
 					<div
 						className="absolute inset-0 opacity-10"
 						style={{
-							backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+							backgroundImage: `linear-gradient(color-mix(in oklch, var(--foreground) 18%, transparent) 1px, transparent 1px),
+              linear-gradient(90deg, color-mix(in oklch, var(--foreground) 18%, transparent) 1px, transparent 1px)`,
 							backgroundSize: "50px 50px",
 						}}
 					/>

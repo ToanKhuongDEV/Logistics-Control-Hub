@@ -20,13 +20,13 @@ export function OrderStats({ totalOrders, pendingOrders, inTransitOrders }: Orde
 			label: "CHỜ XỬ LÝ",
 			value: pendingOrders,
 			icon: Clock,
-			color: "text-yellow-500",
+			color: "text-yellow-700 dark:text-yellow-300",
 		},
 		{
 			label: "ĐANG VẬN CHUYỂN",
 			value: inTransitOrders,
 			icon: Truck,
-			color: "text-blue-500",
+			color: "text-blue-600 dark:text-blue-300",
 		},
 	];
 

@@ -21,19 +21,19 @@ export function DriverStats({ statistics }: DriverStatsProps) {
 			title: "Tổng số tài xế",
 			value: formatNumber(statistics.total),
 			icon: Users,
-			color: "bg-blue-500/10 text-blue-500",
+			color: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
 		},
 		{
 			title: "Đã được phân công",
 			value: formatNumber(statistics.assigned),
 			icon: UserCheck,
-			color: "bg-green-500/10 text-green-500",
+			color: "bg-green-500/10 text-green-600 dark:text-green-300",
 		},
 		{
 			title: "Đang rảnh",
 			value: formatNumber(statistics.available),
 			icon: UserX,
-			color: "bg-yellow-500/10 text-yellow-500",
+			color: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300",
 		},
 	];
 

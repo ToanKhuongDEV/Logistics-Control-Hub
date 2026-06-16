@@ -820,7 +820,7 @@ export function AccountManagementPanel() {
 									</SelectContent>
 								</Select>
 							</div>
-							{isEditingAnotherAdmin && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Bạn chỉ có thể xem thông tin. Admin không được sửa hoặc xóa tài khoản admin khác.</div>}
+							{isEditingAnotherAdmin && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">Bạn chỉ có thể xem thông tin. Admin không được sửa hoặc xóa tài khoản admin khác.</div>}
 							{editAccountForm.role === "DISPATCHER" &&
 								renderDepotDropdown({
 									value: editDepotPicker,
